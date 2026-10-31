@@ -11,3 +11,5 @@ Atualizado: 2026-10-31 UTC. **PROMPT 01 concluído como auditoria; base original
 - Auditoria entregue: BASE_AUDIT.md, RUNTIME_AUDIT.md, MATTERFALL_COMPARISON.md, protocolo AGENTS/CLAUDE/GEMINI, DECISIONS, ROADMAP, TEST_MATRIX e HANDOFF. Nenhum código comercial ou ativo de jogo adicionado.
 
 Próxima intervenção: correção mínima do link dos alvos services-test/pad-map-test em checkout de desenvolvimento, preservando esta referência original, antes de adaptar perfil Concrete Genie. Critério e comando em HANDOFF.
+
+Checkpoint documental da auditoria: `6b3c845e9169b6da94bbb286ba1561d860b4b202`. Raiz mantém não rastreados o playbook fornecido, references/ e user/ gerado pelo smoke; não foram incluídos em commits.
