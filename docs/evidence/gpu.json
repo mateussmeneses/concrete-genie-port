@@ -1,0 +1,10 @@
+[
+  {
+    "Name": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "DriverVersion": "32.0.16.2101"
+  },
+  {
+    "Name": "Intel(R) UHD Graphics",
+    "DriverVersion": "32.0.101.7088"
+  }
+]

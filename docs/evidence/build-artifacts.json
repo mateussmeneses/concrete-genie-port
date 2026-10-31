@@ -1,0 +1,14 @@
+[
+  {
+    "Path": "C:\\projetos\\concrete-genie-port\\references\\medievil\\out\\medievil-runtime.exe",
+    "Hash": "D4C53535A8734F80564E3F0162379D3ED2DC2A48D728371667C1EE976BD8025F"
+  },
+  {
+    "Path": "C:\\projetos\\concrete-genie-port\\references\\medievil\\out\\medievil-gpu-check.exe",
+    "Hash": "07B4A95395D06CE0F3F13A3DB61C326BADBEA372F4393322C1C5CACDE71DC805"
+  },
+  {
+    "Path": "C:\\projetos\\concrete-genie-port\\references\\medievil\\out\\medievil-play.exe",
+    "Hash": "AA6FC6936C080FB2F50CBACEE8CFBA82C276F96644218D7E0CD167D85A7481B5"
+  }
+]

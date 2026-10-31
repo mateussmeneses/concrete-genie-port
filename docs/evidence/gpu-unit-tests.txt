@@ -1,0 +1,18 @@
+ninja: Entering directory `out/gpu'
+[0/2] Re-checking globbed directories...
+[1/5] Linking CXX executable aliasing-test.exe
+[2/5] Linking CXX executable depth-stencil-state-test.exe
+[3/5] Linking CXX executable warmup-inbox-test.exe
+[4/5] Linking CXX executable async-compiler-test.exe
+RUN aliasing-test
+aliasing-test: OK
+EXIT_CODE=0
+RUN depth-stencil-state-test
+depth-stencil-state-test: OK
+EXIT_CODE=0
+RUN async-compiler-test
+EXIT_CODE=0
+RUN warmup-inbox-test
+PASS: warm-up inbox
+EXIT_CODE=0
+COMMAND_EXIT_CODE=0

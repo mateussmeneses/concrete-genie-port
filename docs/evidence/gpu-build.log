@@ -1,0 +1,340 @@
+ninja: Entering directory `out/gpu'
+[0/2] Re-checking globbed directories...
+[1/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr4_v07_assets.dir/src/ffx_vk_fsr4_v07_schedule.c.obj
+[2/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr4_v07_assets.dir/src/ffx_vk_fsr4_v07_assets.c.obj
+[3/295] Generating include/video_core/host_shaders/buffer_multi_copy_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/buffer_multi_copy.comp
+[4/295] Generating include/video_core/host_shaders/fault_buffer_process_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/fault_buffer_process.comp
+[5/295] Generating include/video_core/host_shaders/camera_motion_debug_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/camera_motion.comp
+[6/295] Generating include/video_core/host_shaders/depth_stencil_resample_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/depth_resample.frag
+[7/295] Generating include/video_core/host_shaders/camera_motion_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/camera_motion.comp
+[8/295] Generating include/video_core/host_shaders/ms_image_blit_msaa_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/ms_image_blit.frag
+[9/295] Generating include/video_core/host_shaders/depth_stencil_bits_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/depth_resample.frag
+[10/295] Generating include/video_core/host_shaders/color_to_ms_depth_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/color_to_ms_depth.frag
+[11/295] Generating include/video_core/host_shaders/fsr_easu_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/fsr.comp
+[12/295] Generating include/video_core/host_shaders/ms_image_blit_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/ms_image_blit.frag
+[13/295] Generating include/video_core/host_shaders/depth_resample_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/depth_resample.frag
+[14/295] Generating include/video_core/host_shaders/fs_tri_vert.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/fs_tri.vert
+[15/295] Generating include/video_core/host_shaders/fsr_rcas_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/fsr.comp
+[16/295] Generating include/video_core/host_shaders/post_process_frag.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/post_process.frag
+[17/295] Generating include/video_core/host_shaders/taa_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/taa.comp
+[18/295] Generating include/video_core/host_shaders/tiling_macro_128_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[19/295] Generating include/video_core/host_shaders/tiling_macro_16_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[20/295] Generating include/video_core/host_shaders/taa_sharpen_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/taa_sharpen.comp
+[21/295] Generating include/video_core/host_shaders/taa_sharpen_ldr_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/taa_sharpen.comp
+[22/295] Generating include/video_core/host_shaders/tiling_macro_32_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[23/295] Generating include/video_core/host_shaders/tiling_macro_8_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[24/295] Generating include/video_core/host_shaders/tiling_macro_64_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[25/295] Generating include/video_core/host_shaders/tiling_micro_128_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[26/295] Generating include/video_core/host_shaders/tiling_macro_96_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[27/295] Generating include/video_core/host_shaders/tiling_micro_16_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[28/295] Generating include/video_core/host_shaders/tiling_micro_32_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[29/295] Generating include/video_core/host_shaders/tiling_micro_64_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[30/295] Generating include/video_core/host_shaders/tiling_micro_8_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[31/295] Generating include/video_core/host_shaders/tiling_micro_96_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/tiling.comp
+[32/295] Generating include/video_core/host_shaders/upscale_reactive_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/upscale_reactive.comp
+[33/295] Generating include/video_core/host_shaders/upscale_merge_comp.h
+C:/projetos/concrete-genie-port/references/medievil/gpu/shadps4/video_core/host_shaders/upscale_merge.comp
+[34/295] Building C object third_party/miniz/CMakeFiles/miniz.dir/miniz.c.obj
+[35/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_vk_backend_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/shared/ffx_breadcrumbs_list.cpp.obj
+[36/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/shared/ffx_object_management.cpp.obj
+[37/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_vk_backend_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/backends/shared/ffx_shader_blobs.cpp.obj
+[38/295] Building C object third_party/miniz/CMakeFiles/miniz.dir/miniz_tinfl.c.obj
+[39/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/components/fsr3/ffx_fsr3.cpp.obj
+[40/295] Building C object third_party/miniz/CMakeFiles/miniz.dir/miniz_tdef.c.obj
+[41/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/components/frameinterpolation/ffx_frameinterpolation.cpp.obj
+[42/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/components/fsr3upscaler/ffx_fsr3upscaler.cpp.obj
+[43/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/components/opticalflow/ffx_opticalflow.cpp.obj
+[44/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_vk_backend_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/backends/shared/blob_accessors/ffx_opticalflow_shaderblobs.cpp.obj
+[45/295] Linking C static library third_party\fsr-vulkan\libffx_vulkan_fsr4_v07_assets.a
+[46/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr4_v07_vulkan.dir/src/ffx_vk_fsr4_v07.c.obj
+[47/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/shared/ffx_assert.cpp.obj
+[48/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_host_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/shared/ffx_message.cpp.obj
+[49/295] Linking CXX static library third_party\fsr-vulkan\libffx_vulkan_fsr3_host_1_1_4.a
+[50/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr4_v07_vulkan.dir/src/ffx_vk_fsr4_v07_provider.c.obj
+[51/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_portable.c.obj
+[52/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_fsr3_3_1_5_catalog.c.obj
+[53/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_fsr3_3_1_5_reflection.c.obj
+C:/projetos/concrete-genie-port/references/medievil/gpu/third_party/fsr-vulkan/src/ffx_vk_fsr3_3_1_5_reflection.c:169:34: warning: use of an empty initializer is a C23 extension [-Wc23-extensions]
+  169 |     uint8_t seenBindings[1024] = {};
+      |                                  ^
+1 warning generated.
+[54/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_fsr3_3_1_5_pipeline.c.obj
+[55/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/barrier.cpp.obj
+[56/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_fsr3_3_1_5_descriptor.c.obj
+[57/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/misc.cpp.obj
+[58/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/function.cpp.obj
+[59/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/conversion.cpp.obj
+[60/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/bit.cpp.obj
+[61/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/debug.cpp.obj
+[62/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/derivatives.cpp.obj
+[63/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/group.cpp.obj
+[64/295] Building C object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_fsr3_3_1_5_bundle.c.obj
+[65/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/annotation.cpp.obj
+[66/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/atomic.cpp.obj
+[67/295] Building C object third_party/miniz/CMakeFiles/miniz.dir/miniz_zip.c.obj
+[68/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/arithmetic.cpp.obj
+[69/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/memory.cpp.obj
+[70/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/flow.cpp.obj
+[71/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/bit_reader.c.obj
+[72/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/logical.cpp.obj
+[73/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/libatrac9.c.obj
+[74/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/bit_allocation.c.obj
+[75/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/decoder.c.obj
+[76/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/huffCodes.c.obj
+[77/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/tables.c.obj
+[78/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/constant.cpp.obj
+[79/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/utility.c.obj
+[80/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/decinit.c.obj
+[81/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/quantization.c.obj
+[82/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/scale_factors.c.obj
+[83/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/imdct.c.obj
+[84/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/type.cpp.obj
+[85/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/band_extension.c.obj
+[86/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/extension.cpp.obj
+[87/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/instructions/image.cpp.obj
+[88/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_vk_backend_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/backends/shared/blob_accessors/ffx_frameinterpolation_shaderblobs.cpp.obj
+[89/295] Building C object CMakeFiles/atrac9.dir/C_/projetos/concrete-genie-port/references/medievil/third_party/LibAtrac9/C/src/unpack.c.obj
+[90/295] Building CXX object third_party/sirit/src/CMakeFiles/sirit.dir/sirit.cpp.obj
+[91/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_portable.dir/src/ffx_vk_fsr3_portable.cpp.obj
+[92/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_vk_backend_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/backends/vk/ffx_vk.cpp.obj
+[93/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_barrier_tracker.cpp.obj
+[94/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/amdgpu/pixel_format.cpp.obj
+[95/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/amdgpu/regs.cpp.obj
+[96/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/amdgpu/tiling.cpp.obj
+[97/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/fsr411/fsr411.cpp.obj
+[98/295] Building CXX object third_party/fsr-vulkan/CMakeFiles/ffx_vulkan_fsr3_vk_backend_1_1_4.dir/upstream/ffx-1.1.4/sdk/src/backends/shared/blob_accessors/ffx_fsr3upscaler_shaderblobs.cpp.obj
+[99/295] Linking CXX static library third_party\fsr-vulkan\libffx_vulkan_fsr3_vk_backend_1_1_4.a
+[100/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_dlss.cpp.obj
+[101/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/liverpool_to_vk.cpp.obj
+[102/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_fsr4.cpp.obj
+[103/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_common.cpp.obj
+[104/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/buffer_cache/buffer.cpp.obj
+[105/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_frame_capture.cpp.obj
+[106/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/host_passes/fsr_pass.cpp.obj
+[107/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/cache_storage.cpp.obj
+[108/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_gpu_profiler.cpp.obj
+[109/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/host_passes/pp_pass.cpp.obj
+[110/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_object_motion.cpp.obj
+[111/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_camera_motion.cpp.obj
+[112/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_compute_pipeline.cpp.obj
+[113/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_pipeline_common.cpp.obj
+[114/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_graphics_pipeline.cpp.obj
+[115/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/buffer_cache/fault_manager.cpp.obj
+[116/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_platform.cpp.obj
+[117/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_instance.cpp.obj
+[118/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_resource_pool.cpp.obj
+[119/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/page_manager.cpp.obj
+[120/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_draw_prep.cpp.obj
+[121/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/aliasing.cpp.obj
+[122/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/host_compatibility.cpp.obj
+[123/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/amdgpu/liverpool.cpp.obj
+[124/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_staging_buffer_pool.cpp.obj
+[125/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_shader_util.cpp.obj
+[126/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_semaphore.cpp.obj
+[127/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_presenter.cpp.obj
+[128/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_runtime.cpp.obj
+[129/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_pipeline_serialization.cpp.obj
+[130/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_swapchain.cpp.obj
+[131/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_scene_resolution.cpp.obj
+[132/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_pipeline_cache.cpp.obj
+[133/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/buffer_cache/buffer_cache.cpp.obj
+[134/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_scheduler.cpp.obj
+[135/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_atomic.cpp.obj
+[136/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_barriers.cpp.obj
+[137/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_bitwise_conversion.cpp.obj
+[138/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_composite.cpp.obj
+[139/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/sampler.cpp.obj
+[140/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_convert.cpp.obj
+[141/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/blit_helper.cpp.obj
+[142/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/image_view.cpp.obj
+[143/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_discard_frag.cpp.obj
+[144/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/image_info.cpp.obj
+[145/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/image.cpp.obj
+[146/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_floating_point.cpp.obj
+[147/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_temporal_upscaler.cpp.obj
+[148/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_context_get_set.cpp.obj
+[149/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_logical.cpp.obj
+[150/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_integer.cpp.obj
+[151/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_image.cpp.obj
+[152/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_quad_rect.cpp.obj
+[153/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv.cpp.obj
+[154/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_select.cpp.obj
+[155/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_shared_memory.cpp.obj
+[156/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_shader_hle.cpp.obj
+[157/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_undefined.cpp.obj
+[158/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_warp.cpp.obj
+[159/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/emit_spirv_special.cpp.obj
+[160/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/format.cpp.obj
+[161/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/copy_shader.cpp.obj
+[162/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/instruction.cpp.obj
+[163/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/control_flow_graph.cpp.obj
+[164/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/tile_manager.cpp.obj
+[165/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/fetch_shader.cpp.obj
+[166/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/opcodes.cpp.obj
+[167/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/attribute.cpp.obj
+[168/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/abstract_syntax_list.cpp.obj
+[169/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/scalar_flow.cpp.obj
+[170/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/data_share.cpp.obj
+[171/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/backend/spirv/spirv_emit_context.cpp.obj
+[172/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/export.cpp.obj
+[173/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/scalar_memory.cpp.obj
+[174/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/scalar_alu.cpp.obj
+[175/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/decode.cpp.obj
+[176/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/vector_interpolation.cpp.obj
+[177/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/dominance.cpp.obj
+[178/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/structured_control_flow.cpp.obj
+[179/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/vector_alu.cpp.obj
+[180/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/vector_memory.cpp.obj
+[181/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/microinstruction.cpp.obj
+[182/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/basic_block.cpp.obj
+[183/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/constant_propagation_pass.cpp.obj
+[184/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/ir_emitter.cpp.obj
+[185/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/dead_code_elimination_pass.cpp.obj
+[186/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/renderer_vulkan/vk_rasterizer.cpp.obj
+[187/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/inject_clip_distance_attributes.cpp.obj
+[188/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/frontend/translate/translate.cpp.obj
+[189/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/video_core/texture_cache/texture_cache.cpp.obj
+[190/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/patch.cpp.obj
+[191/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/interpolated_integer_pass.cpp.obj
+[192/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/lower_hardware_intrinsics.cpp.obj
+[193/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/lower_buffer_format_to_raw.cpp.obj
+[194/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/lower_phis_to_regs_pass.cpp.obj
+[195/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/lower_fp64_to_fp32.cpp.obj
+[196/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/lower_user_clip_planes.cpp.obj
+[197/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/type.cpp.obj
+[198/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/hull_shader_transform.cpp.obj
+[199/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/decoder.cpp.obj
+[200/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/inverse_ballot_elimination_pass.cpp.obj
+[201/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/resource_discover_pass.cpp.obj
+[202/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/spin_lock.cpp.obj
+[203/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/readlane_elimination_pass.cpp.obj
+[204/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/ring_access_elimination.cpp.obj
+[205/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/lower_wave64_pass.cpp.obj
+[206/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/error.cpp.obj
+[207/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/native_clock.cpp.obj
+[208/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/shared_memory_simplify_pass.cpp.obj
+[209/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/phi_simplification_pass.cpp.obj
+[210/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/shared_memory_barrier_pass.cpp.obj
+[211/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/shared_memory_to_storage_pass.cpp.obj
+[212/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/ssa_repair_pass.cpp.obj
+[213/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/number_utils.cpp.obj
+[214/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/resource_patching_pass.cpp.obj
+[215/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/signal_context.cpp.obj
+[216/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_actors.cpp.obj
+[217/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_orbs.cpp.obj
+[218/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/rdtsc.cpp.obj
+[219/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/value.cpp.obj
+[220/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/post_order.cpp.obj
+[221/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/string_util.cpp.obj
+[222/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_png.cpp.obj
+[223/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/recursive_lock.cpp.obj
+[224/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_write_log.cpp.obj
+[225/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/ssa_rewrite_pass.cpp.obj
+[226/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/program.cpp.obj
+[227/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/common/logging/log.cpp.obj
+[228/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/io_file.cpp.obj
+[229/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/common/assert.cpp.obj
+[230/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_settings.cpp.obj
+[231/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/avplayer/avplayer_file_streamer.cpp.obj
+[232/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/thread.cpp.obj
+[233/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/recompiler.cpp.obj
+[234/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/avplayer/avplayer_common.cpp.obj
+[235/295] Linking C static library third_party\miniz\libminiz.a
+[236/295] Linking CXX static library third_party\sirit\src\libsirit.a
+[237/295] Linking C static library third_party\fsr-vulkan\libffx_vulkan_fsr4_v07_vulkan.a
+[238/295] Linking CXX static library third_party\fsr-vulkan\libffx_vulkan_portable.a
+[239/295] Building CXX object CMakeFiles/gow3gpu.dir/third_party/imgui/backends/imgui_impl_vulkan.cpp.obj
+[240/295] Linking C static library libatrac9.a
+[241/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/shader_info_collection_pass.cpp.obj
+[242/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/shader_recompiler/ir/passes/flatten_extended_userdata_pass.cpp.obj
+[243/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_sampler.cpp.obj
+C:/projetos/concrete-genie-port/references/medievil/gpu/shim/gow3_sampler.cpp:75:71: warning: format specifies type 'unsigned int' but the argument has type 'DWORD' (aka 'unsigned long') [-Wformat]
+   75 |             std::snprintf(text, sizeof(text), "%s!%s+%x", name, best, rva - best_rva);
+      |                                                      ~~               ^~~~~~~~~~~~~~
+      |                                                      %lx
+C:/projetos/concrete-genie-port/references/medievil/gpu/shim/gow3_sampler.cpp:77:62: warning: format specifies type 'unsigned int' but the argument has type 'DWORD' (aka 'unsigned long') [-Wformat]
+   77 |             std::snprintf(text, sizeof(text), "%s+%x", name, rva);
+      |                                                   ~~         ^~~
+      |                                                   %lx
+2 warnings generated.
+[244/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_copy.cpp.obj
+[245/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/common/path_util.cpp.obj
+[246/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime.c.obj
+[247/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_audio.c.obj
+[248/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_content.c.obj
+[249/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_ajm.c.obj
+[250/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_mp3.c.obj
+[251/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_kernel.c.obj
+[252/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_rtc.c.obj
+[253/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_rwlock.c.obj
+[254/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_pad.c.obj
+[255/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_extra.c.obj
+[256/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/probe.c.obj
+[257/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/avplayer/avplayer.cpp.obj
+[258/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_file.c.obj
+[259/295] Building CXX object CMakeFiles/gow3gpu.dir/third_party/imgui/imgui_tables.cpp.obj
+[260/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_sema.c.obj
+[261/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/avplayer/avplayer_impl.cpp.obj
+[262/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_time.c.obj
+[263/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_savedata.c.obj
+[264/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_mutex.c.obj
+[265/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_videodec.c.obj
+[266/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/videodec/video_utils.cpp.obj
+[267/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/vulkan_smoke.c.obj
+[268/295] Building RC object CMakeFiles/medievil-gpu-check.dir/C_/projetos/concrete-genie-port/references/medievil/packaging/windows/medievil-gpu-check.rc.obj
+[269/295] Building RC object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/packaging/windows/medievil-runtime.rc.obj
+[270/295] Building RC object CMakeFiles/medievil-play.dir/C_/projetos/concrete-genie-port/references/medievil/packaging/windows/play.rc.obj
+[271/295] Building C object CMakeFiles/medievil-gpu-check.dir/C_/projetos/concrete-genie-port/references/medievil/tools/gpu_capabilities.c.obj
+[272/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_memory.c.obj
+[273/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_sse4a.c.obj
+[274/295] Linking C executable medievil-gpu-check.exe
+[275/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_thread.c.obj
+[276/295] Building C object CMakeFiles/medievil-play.dir/C_/projetos/concrete-genie-port/references/medievil/packaging/windows/play.c.obj
+[277/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj
+[278/295] Building C object CMakeFiles/medievil-runtime.dir/C_/projetos/concrete-genie-port/references/medievil/src/runtime_services.c.obj
+[279/295] Linking C executable medievil-play.exe
+[280/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/avplayer/avplayer_state.cpp.obj
+[281/295] Building CXX object CMakeFiles/gow3gpu.dir/third_party/imgui/imgui_draw.cpp.obj
+[282/295] Building CXX object CMakeFiles/gow3gpu.dir/third_party/imgui/imgui_widgets.cpp.obj
+[283/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_perf_stats.cpp.obj
+[284/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/window.cpp.obj
+[285/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/avplayer/avplayer_source.cpp.obj
+[286/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/kernel/equeue.cpp.obj
+[287/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3_overlay.cpp.obj
+[288/295] Building CXX object CMakeFiles/gow3gpu.dir/third_party/imgui/imgui.cpp.obj
+[289/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/videoout/video_out.cpp.obj
+[290/295] Building CXX object CMakeFiles/gow3gpu.dir/shim/gow3gpu.cpp.obj
+[291/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/gnmdriver/gnmdriver.cpp.obj
+[292/295] Building CXX object CMakeFiles/gow3gpu.dir/shadps4/core/libraries/videoout/driver.cpp.obj
+[293/295] Linking CXX static library libgow3gpu.a
+[294/295] Linking CXX executable medievil-runtime.exe

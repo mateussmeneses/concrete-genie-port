@@ -1,0 +1,2 @@
+GPU scene scaling: NVIDIA GeForce RTX 5060 Laptop GPU supports live presets
+EXIT_CODE=0

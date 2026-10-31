@@ -1,0 +1,28 @@
+ninja: Entering directory `out/gpu'
+[0/2] Re-checking globbed directories...
+[1/17] Building C object CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_pad_map.c.obj
+[2/17] Building C object CMakeFiles/services-test.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj
+[3/17] Building C object CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj
+[4/17] Building C object CMakeFiles/services-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_services.c.obj
+[5/17] Linking C executable pad-map-test.exe
+FAILED: [code=1] pad-map-test.exe 
+C:\WINDOWS\system32\cmd.exe /C "cd . && C:\msys64\clang64\bin\clang.exe -O2 -g -DNDEBUG -mwindows CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_pad_map.c.obj CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj -o pad-map-test.exe -Wl,--out-implib,libpad-map-test.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lbcrypt  -pthread  C:/msys64/clang64/lib/libSDL3.dll.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+ld.lld: error: undefined symbol: __declspec(dllimport) timeBeginPeriod
+>>> referenced by C:/projetos/concrete-genie-port/references/medievil/src/compat_win.c:124
+>>>               CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj:(runtime_host_scheduling_init)
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[6/17] Linking C executable services-test.exe
+FAILED: [code=1] services-test.exe 
+C:\WINDOWS\system32\cmd.exe /C "cd . && C:\msys64\clang64\bin\clang.exe -O2 -g -DNDEBUG  CMakeFiles/services-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_services.c.obj CMakeFiles/services-test.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj -o services-test.exe -Wl,--out-implib,libservices-test.dll.a -Wl,--major-image-version,0,--minor-image-version,0  libatrac9.a  -lbcrypt  -pthread  C:/msys64/clang64/lib/libavformat.dll.a  C:/msys64/clang64/lib/libavcodec.dll.a  C:/msys64/clang64/lib/libswscale.dll.a  C:/msys64/clang64/lib/libswresample.dll.a  C:/msys64/clang64/lib/libavutil.dll.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+ld.lld: error: undefined symbol: __declspec(dllimport) timeBeginPeriod
+>>> referenced by C:/projetos/concrete-genie-port/references/medievil/src/compat_win.c:124
+>>>               CMakeFiles/services-test.dir/C_/projetos/concrete-genie-port/references/medievil/src/compat_win.c.obj:(runtime_host_scheduling_init)
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+[7/17] Building CXX object CMakeFiles/warmup-inbox-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_warmup_inbox.cpp.obj
+[8/17] Building CXX object CMakeFiles/depth-stencil-state-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_depth_stencil_state.cpp.obj
+[9/17] Building CXX object CMakeFiles/async-compiler-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_async_compiler.cpp.obj
+[10/17] Building CXX object CMakeFiles/aliasing-test.dir/shadps4/video_core/texture_cache/host_compatibility.cpp.obj
+[11/17] Building CXX object CMakeFiles/aliasing-test.dir/shadps4/video_core/texture_cache/aliasing.cpp.obj
+[12/17] Building CXX object CMakeFiles/aliasing-test.dir/C_/projetos/concrete-genie-port/references/medievil/tests/test_aliasing.cpp.obj
+ninja: build stopped: subcommand failed.
+COMMAND_EXIT_CODE=1

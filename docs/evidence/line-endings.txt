@@ -1,0 +1,4 @@
+i/lf    w/crlf  attr/                 	build.sh
+i/lf    w/crlf  attr/                 	gpu/patches/fsr-vulkan/0001-FSR-4-v07-provider-GOW3_FSR4_PROFILE-pass-timings-GOW3_F.patch
+i/lf    w/crlf  attr/                 	gpu/patches/fsr-vulkan/0002-ffx_vk-include-mutex-for-libc.patch
+i/lf    w/crlf  attr/                 	gpu/patches/fsr-vulkan/README.md

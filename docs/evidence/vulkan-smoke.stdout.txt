@@ -1,0 +1,1 @@
+Vulkan: NVIDIA GeForce RTX 5060 Laptop GPU; command submission + 4096-byte readback PASS
