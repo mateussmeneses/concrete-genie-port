@@ -54,9 +54,20 @@ class ServiceIsRefusedNotFaked(unittest.TestCase):
     """Core::init is a service. It may be answered, but only with a failure code."""
 
     INIT_SYMBOL = '_ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE'
+    TERM_SYMBOL = '_ZN3sce7Toolkit2NP2V24Core4termERKNS3_7Request10TermParamsE'
+    # Services may be answered only with a failure code, never with success.
+    REFUSED_SERVICES = (INIT_SYMBOL, TERM_SYMBOL)
 
-    def test_core_init_is_registered(self):
-        self.assertIn(self.INIT_SYMBOL, source())
+    def test_both_core_services_are_registered(self):
+        text = source()
+        for symbol in self.REFUSED_SERVICES:
+            self.assertIn(symbol, text, f'{symbol} must be answered explicitly')
+
+    def test_core_term_does_not_claim_success(self):
+        text = source()
+        block = text[text.index('np_core_term_refused'):]
+        self.assertIn('return NP_NOT_INITIALIZED;', block)
+        self.assertNotIn('return 0;', block.split('static const RuntimeExport')[0])
 
     def test_core_init_returns_a_failure_code_not_zero(self):
         text = source()
@@ -75,7 +86,7 @@ class ServiceIsRefusedNotFaked(unittest.TestCase):
         for name in names:
             ok = (name.endswith('C1Ev') or name.endswith('C2Ev')
                   or name.endswith('D1Ev') or name.endswith('D2Ev')
-                  or name == self.INIT_SYMBOL)
+                  or name in self.REFUSED_SERVICES)
             self.assertTrue(ok, f'{name} is neither a ctor/dtor nor the refused service')
 
     def test_resolver_is_wired_into_the_runtime(self):

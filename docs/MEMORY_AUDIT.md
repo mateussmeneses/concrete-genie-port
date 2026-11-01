@@ -9,8 +9,8 @@ os dois bloqueios resolvidos e o bloqueio atual. **Nenhum frame foi renderizado.
 |---|---|---|
 | Bloqueio | `abort` sem causa (`INT 0x44`) | `NpToolkit2::Core::init` (serviço, não construtor) |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** |
-| Threads guest | 0 | **22** (inclui `TaskGraphThreadNP 0..N` do UE4) |
-| Arquivos lidos do dump | 0 | **174 leituras, 10.107.208 bytes** |
+| Threads guest | 0 | **27** (inclui `TaskGraphThreadNP 0..N` do UE4) |
+| Arquivos lidos do dump | 0 | **1.657 leituras, 12.095.000 bytes** |
 | AppContent | não inicializado | **inicializado** (perfil offline) |
 
 ## Bloqueio 1 — resolvido: reserva fixa do pool
@@ -86,6 +86,22 @@ A primeira medição usou `rbp-0x260` como início do objeto seguinte e deu 312 
 Um teste novo (`test_size_covers_every_field_the_guest_writes`) impede que a constante volte a
 ficar menor que os campos observados. Nenhum efeito observável no boot desta execução, mas a
 medida anterior deixaria 40 bytes de campos escritos pelo guest sem inicialização.
+
+## Bloco NpToolkit2 — concluído
+
+Sete imports resolvidos em sequência, cada um com evidência própria:
+
+| Import | Tratamento | Evidência |
+|---|---|---|
+| `InitParams::InitParams()` | construtor, 352 bytes | frame do guest, próximo objeto em `rbp-0x238` |
+| `InitParams::~InitParams()` | destrutor vazio | sem recursos no agregado |
+| `TermParams::TermParams()` | construtor, 8 bytes | objeto em `rbp-0x30`, canário em `rbp-0x28` |
+| `TermParams::~TermParams()` | destrutor vazio | idem |
+| `Core::init(InitParams&)` | **recusa** `0x80550003` | guest trata falha em `0x40c791f` |
+| `Core::term(TermParams&)` | **recusa** `0x80550003` | guest **ignora** o retorno (`0x40ca601` → próxima chamada, sem `testl`) |
+
+Com o bloco inteiro resolvido, o boot atravessou toda a inicialização de PSN e saiu para
+`libSceMove` — 27 threads e 1.657 leituras (12,1 MB) contra 22 e 176 antes.
 
 ## Bloqueio 4 — decisão tomada: `Core::init` recusa
 

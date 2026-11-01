@@ -30,8 +30,7 @@ mapeamento escolhido pelo runtime — corrigido com `find_free_unhinted()`; (2) 
 ausente no pipeline. Com ambos, o boot avança para:
 
 ```
-STOP: first unsupported PS4 import: s0u30pOfi9Q#libSceNpToolkit2 (index 661)
-API: _ZN3sce7Toolkit2NP2V24Core7Request10TermParamsC1Ev
+STOP: first unsupported PS4 import: j1ITE-EoJmE#libSceMove (index 855)
 ```
 
 `runtime/src/runtime_np.c` implementa o construtor/destrutor de `InitParams` (**352 bytes**,
@@ -63,7 +62,7 @@ Os tópicos de áudio, controles, shader cache, frame pacing e captura de frame 
 | Item | Estado |
 |---|---|
 | Build + testes nativos | PASSA, exit 0 |
-| Suíte Python | PASSA, 52 testes, exit 0 |
+| Suíte Python | PASSA, 53 testes, exit 0 |
 | Boot até o bloqueio | exit 3, causa nomeada |
 | **Frame / menu / gameplay** | **NÃO EXECUTADO** |
 | Áudio, controles, GPU visual | **NÃO AUDITADOS** |

@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **52 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **53 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -72,11 +72,17 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   segue; devolver 0 faria as 79 funções acreditarem num subsistema inexistente.
 - Verificação: `NpToolkit2: Core::init refused`; boot avançou por 3 imports.
 
-**P0-5: sequência de construtores `NpToolkit2::Request` — ABERTO**
+**P0-5: bloco NpToolkit2 — RESOLVIDO**
 
-- Sintoma: `STOP: ... s0u30pOfi9Q#libSceNpToolkit2 (index 661)` = `TermParams::TermParams()`.
-- 51 construtores/destrutores de `Request`/`Response` no eboot; cada um exige o próprio tamanho
-  medido no call site. Reaproveitar o de `InitParams` seria o mesmo erro dos 312 bytes.
+- `InitParams` ctor/dtor (352 bytes medidos) e `TermParams` ctor/dtor (8 bytes, limitados pelo
+  canário em `rbp-0x28`), mais `Core::init`/`Core::term` recusando com `0x80550003`.
+- Verificação: 27 threads, 1.657 leituras (12,1 MB); boot saiu do bloco PSN.
+
+**P0-6: `libSceMove` (PS Move) — ABERTO**
+
+- Sintoma: `STOP: ... j1ITE-EoJmE#libSceMove (index 855)`.
+- O Prompt 04 mantém PS Move/PSVR/câmera fora do primeiro gate jogável, mas exige registrar os
+  imports. Falta decidir se a recusa explícita basta para o jogo seguir.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

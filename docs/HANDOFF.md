@@ -10,13 +10,13 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | construtores `NpToolkit2::Request` (51 no eboot) |
+| Bloqueio | `abort` sem causa | `libSceMove` (PS Move) |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
-| Threads guest | 0 | **22**, incluindo `TaskGraphThreadNP 0..N` (UE4) |
-| Leitura do dump | 0 arquivos | **174 leituras, 10.107.208 bytes** |
+| Threads guest | 0 | **27**, incluindo `TaskGraphThreadNP 0..N` (UE4) |
+| Leitura do dump | 0 arquivos | **1.657 leituras, 12.095.000 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
-| Testes Python | 39 | **52** |
+| Testes Python | 39 | **53** |
 
 ### Correção 1 — janela de memória do guest
 
@@ -51,10 +51,18 @@ rejeita qualquer símbolo que não seja construtor. Sem sucesso cego para servi�
 
 ## Bloqueio atual
 
+**Bloco NpToolkit2 concluído** (7 imports). O boot atravessou toda a inicialização de PSN e
+parou em:
+
 ```
-STOP: first unsupported PS4 import: s0u30pOfi9Q#libSceNpToolkit2 (index 661)
-API: _ZN3sce7Toolkit2NP2V24Core7Request10TermParamsC1Ev
+STOP: first unsupported PS4 import: j1ITE-EoJmE#libSceMove (index 855)
+API: name not resolved; see analysis.json import_name_hints
 ```
+
+`libSceMove` é **PS Move**. O Prompt 04 pede explicitamente para registrar esses imports e
+mantê-los fora do primeiro gate jogável, então o passo aqui é decidir entre registrar com
+recusa explícita ou implementar presença mínima — não há evidência ainda de que o jogo exija
+sucesso para seguir.
 
 ### Decisão tomada: `Core::init` **recusa**, não sucede
 

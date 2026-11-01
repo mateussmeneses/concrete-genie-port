@@ -33,6 +33,19 @@ static ABI void np_init_params_ctor(void *self) {
     memset(self, 0, NP_INIT_PARAMS_SIZE);
 }
 
+/* sizeof(sce::Toolkit2::NP::V2::Core::Request::TermParams) for CUSA11875 (APP_VER 01.07).
+ *
+ * Bounded by the caller's own canary rather than by a neighbouring object: the guest builds
+ * TermParams at rbp-0x30 (leaq -0x30(%rbp),%r14 at 0x40ca5ea) and its stack protector compares
+ * against rbp-0x28 (cmpq -0x28(%rbp),%rax at 0x40ca63c). The only room between the object and
+ * the canary is 8 bytes, so the constructor must not write more than that. */
+#define NP_TERM_PARAMS_SIZE 8
+
+static ABI void np_term_params_ctor(void *self) {
+    if (!self) return;
+    memset(self, 0, NP_TERM_PARAMS_SIZE);
+}
+
 /* SCE NpToolkit2 "not initialized" failure. The subsystem was never brought up, so this is the
  * truthful code; a zero here would make the remaining imports believe PSN is live. */
 #define NP_NOT_INITIALIZED ((int32_t)UINT32_C(0x80550003))
@@ -55,14 +68,33 @@ static ABI void np_init_params_dtor(void *self) {
     (void)self;
 }
 
+static ABI void np_term_params_dtor(void *self) {
+    /* Matching destructor: TermParams owns no resources in this build (the constructor zeroes a
+     * plain aggregate). Must exist or the guest stops at the import trap. */
+    (void)self;
+}
+
+static ABI int32_t np_core_term_refused(const void *params) {
+    (void)params;
+    /* The caller ignores the return value here (0x40ca601 returns straight into the next call,
+     * with no `testl %eax`), so answering is safe -- but it still must not claim success for a
+     * subsystem that was never brought up. Consistent with Core::init above. */
+    return NP_NOT_INITIALIZED;
+}
+
 static const RuntimeExport exports[] = {
     {"_ZN3sce7Toolkit2NP2V24Core7Request10InitParamsC1Ev", np_init_params_ctor},
     /* The complete-object and base-object variants share the same layout. */
     {"_ZN3sce7Toolkit2NP2V24Core7Request10InitParamsC2Ev", np_init_params_ctor},
     {"_ZN3sce7Toolkit2NP2V24Core7Request10InitParamsD1Ev", np_init_params_dtor},
     {"_ZN3sce7Toolkit2NP2V24Core7Request10InitParamsD2Ev", np_init_params_dtor},
+    {"_ZN3sce7Toolkit2NP2V24Core7Request10TermParamsC1Ev", np_term_params_ctor},
+    {"_ZN3sce7Toolkit2NP2V24Core7Request10TermParamsC2Ev", np_term_params_ctor},
+    {"_ZN3sce7Toolkit2NP2V24Core7Request10TermParamsD1Ev", np_term_params_dtor},
+    {"_ZN3sce7Toolkit2NP2V24Core7Request10TermParamsD2Ev", np_term_params_dtor},
     /* Core::init(const InitParams&) is a SERVICE: it would have to bring PSN up. */
     {"_ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE", np_core_init_refused},
+    {"_ZN3sce7Toolkit2NP2V24Core4termERKNS3_7Request10TermParamsE", np_core_term_refused},
 };
 
 uintptr_t runtime_np_resolve(const char *name) { return RUNTIME_LOOKUP(exports, name); }
