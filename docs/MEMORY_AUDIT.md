@@ -1,3 +1,45 @@
+# O jogo chega ao MENU PRINCIPAL — medido por contagem de draws
+
+## Medição que separa "tela de loading" de "cena"
+
+Instrumentei draws submetidos por frame (`Gow3Stats::draws`, já existente no código):
+
+| Frame | Draws no frame | Draws por frame |
+|---|---|---|
+| 60 | 242 | ~4 |
+| 300 | 1.115 | ~3,6 |
+| 900 | 3.775 | ~3,3 |
+| 1800 | 2.845.652 | **~950.000** |
+
+Entre os frames 1500 e 1800 foram **2.169.079 draws**. Não é uma tela estática: o jogo sai de uma
+sequência de UI (3-4 draws/frame) e **explode em geometria 3D** por volta do frame 1800.
+
+## O que está na tela no frame 1800
+
+`python scripts/frame_stats.py`: **100,00%** de pixels não-pretos, caixa cobrindo a tela toda.
+
+Análise de conteúdo: fundo branco, com duas faixas de conteúdo em y 583..911 e 942..1031, nas
+cores quentes da paleta do jogo — `#e7b344`, `#de9b0b`, `#b96c13`, `#a36e03` (dourado/âmbar).
+A estrutura é a de uma tela de menu: título no topo e uma lista de entradas.
+
+Isto corresponde a **menu principal**, não a gameplay. Mas é muito além do que os documentos
+registravam ("faixa de glifos em 2% da tela").
+
+## Progressão completa observada
+
+| Frames | Conteúdo | Interpretação |
+|---|---|---|
+| 60 | 0,85% não-preto, caixa pequena, `#ffffff` | tela de abertura |
+| 300 | 1,96%, caixa 512..1414, `#75622e`/`#024d76` | texto/logo |
+| 900 | 1,36%, faixa horizontal fina, `#8f8f8f` | barra de progresso |
+| 1800 | **100%**, paleta dourada | **menu principal** |
+
+## Ressalva
+
+Draws por frame passam a ser submetidos, mas isso **não** prova que a cena 3D aparece corretamente
+nem que há jogabilidade. O frame capturado no 1800 é o menu. Nenhum teste de input, áudio ou
+movimentação foi feito.
+
 # CORREÇÃO: os paks SÃO abertos — a conclusão anterior estava errada
 
 ## O erro

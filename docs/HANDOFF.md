@@ -10,13 +10,13 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | **conteúdo em ~2% da tela; sem cena jogável** |
+| Bloqueio | `abort` sem causa | **menu principal alcançado; gameplay não testado** |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **36** |
 | Leitura do dump | 0 arquivos | **4.654 leituras, 109.826.114 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
-| Testes Python | 39 | **72** |
+| Testes Python | 39 | **73** |
 
 ### Correção 1 — janela de memória do guest
 
@@ -81,9 +81,20 @@ Swapchain: present #300 -> Success
 não-pretos, caixa `(512, 432, 1412, 584)`, cores `#75622e`/`#024d76`, e **5,65% de pixels
 diferentes** entre os frames 300 e 1200 — ou seja, anima.
 
-**Isso não é uma cena jogável.** É uma faixa central de glifos em ~2% da tela, compatível com
-tela de título ou indicador de carregamento. Sem câmera, personagem, pintura, menu ou áudio
-verificado, o critério do Prompt 04 continua **não cumprido**.
+**O jogo chega ao MENU PRINCIPAL.** Medido por contagem de draws por frame:
+
+| Frame | Draws/frame | Tela |
+|---|---|---|
+| 60 | ~4 | abertura (0,85% não-preto) |
+| 300 | ~3,6 | texto/logo (1,96%) |
+| 900 | ~3,3 | barra de progresso (1,36%) |
+| 1800 | **~950.000** | **menu (100% não-preto, paleta dourada)** |
+
+Entre 1500 e 1800: 2.169.079 draws. O frame 1800 é 100% preenchido, fundo branco, conteúdo em duas
+faixas (y 583..911 e 942..1031) com `#e7b344`/`#de9b0b` — estrutura de menu.
+
+**Ainda não é gameplay.** Sem input, áudio, movimentação, pintura ou save/load testados. O critério
+do Prompt 04 continua **não cumprido**, mas o port passou de "tela de título" para "menu".
 
 ### Decisão tomada: `Core::init` **recusa**, não sucede
 
@@ -131,7 +142,27 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Investigar por que a cena não avança além do conteúdo parcial.
+Testar input e navegação no menu — o jogo já chega nele.
+
+O menu principal é alcançado por volta do frame 1800. O próximo passo deixa de ser diagnóstico de
+renderização e passa a ser interação: apertar um botão e ver o menu responder.
+
+1. Capturar o menu com `GOW3_FRAME_DUMP_AT` e confirmar os limites exatos das entradas.
+2. Enviar input (SDL gamepad já conectado: DualSense) e capturar de novo — a seleção mudou?
+3. Se o menu não responde, o bloqueio é input, não GPU: auditar `scePadReadState` e o caminho
+   SDL3 → estado do pad do guest.
+4. Depois do menu: áudio (`sceAudioOut`, `sceAudio3d`) e save/load.
+
+Reprodução:
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/tl3"     GOW3_FRAME_DUMP_AT=1500,1800,2100 GOW3_DUMP_SYNC=1     timeout 240 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 210
+python scripts/frame_stats.py tl3/output_001_1920x1080.raw
+```
+
+Critério de conclusão: o menu responde a input (captura antes/depois diferente na seleção) e há
+áudio. Não declarar jogável sem movimentação e pintura.
 
 **Correção importante:** eu havia concluído que o runtime não lia os paks. **Estava errado** —
 aquela conclusão veio de um log sem `GOW3_FILE_TRACE=1`. Medido agora: o diretório de paks é

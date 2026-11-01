@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **72 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **73 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -163,7 +163,17 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   estão **ausentes**; nenhum deles consta no `Manifest_NonUFSFiles_PS4.txt`.
 - Conclusão: o arquivo não existe no dump. Não é algo que o runtime possa servir.
 
-**P0-14: conteúdo renderizado cresce entre frames — ABERTO (investigação)**
+**P0-14: MENU PRINCIPAL alcançado — medido**
+
+- Draws por frame: 4 (frame 60) → 3,6 (300) → 3,3 (900) → **~950.000** (1800); 2.169.079 draws
+  entre 1500 e 1800.
+- Frame 1800: **100,00%** de pixels não-pretos, fundo branco, duas faixas de conteúdo em
+  y 583..911 e 942..1031, paleta dourada (`#e7b344`, `#de9b0b`, `#b96c13`).
+- Estrutura compatível com menu principal (título + lista de entradas).
+- Evidência: `docs/evidence/prompt04/boot-70-draws.txt`, `boot-71-scene.txt`.
+- **Não é gameplay:** sem input, áudio ou movimentação testados.
+
+**P0-15: conteúdo cresce entre frames — investigação anterior**
 
 - Frame 300: 1,96% não-preto, caixa `(512,432,1412,584)`, cores `#75622e`/`#024d76`.
 - Frame 1200: **3,71%** não-preto, caixa `(148,224,1772,736)`, cores `#ffffff` e outras.

@@ -33,13 +33,20 @@ class CaptureKnobsExist(unittest.TestCase):
 
     def test_capture_decision_uses_a_presented_frame_counter(self):
         text = source()
-        # The trigger must be compared against a counter that advances on every presented frame,
+        # The trigger must be matched against a counter that advances on every presented frame,
         # not against frame_dump_index (which only advances after a dump already happened).
-        match = re.search(r"if \(frame_dump_at > 0 && ([A-Za-z_]+)", text)
+        match = re.search(r"binary_search\(frame_dump_at\.begin\(\), frame_dump_at\.end\(\), "
+                          r"([A-Za-z_]+)\)", text)
         self.assertIsNotNone(match, "the capture trigger comparison must exist")
         assert match is not None
         self.assertEqual(match.group(1), "presented_frames",
                          "comparing against frame_dump_index is circular and never fires")
+
+    def test_capture_accepts_a_list_for_a_timeline(self):
+        # A single frame cannot show progression; one run must be able to capture several.
+        text = source()
+        self.assertIn("std::vector<int> frame_dump_at", text)
+        self.assertIn("strtol", text, "the index list is parsed from a comma-separated value")
 
     def test_presented_frames_increments_unconditionally(self):
         text = source()

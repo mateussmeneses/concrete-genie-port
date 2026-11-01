@@ -13,6 +13,7 @@
 #include "video_core/renderdoc.h"
 #include "video_core/renderer_vulkan/vk_platform.h"
 #include "gow3_overlay.h"
+#include "gow3_toggles.h"
 #include "gow3_settings.h"
 #include "gow3_graphics.h"
 #include "video_core/renderer_vulkan/vk_temporal_upscaler.h"
@@ -29,6 +30,7 @@
 #include <cmath>
 #include <csetjmp>
 #include <cstring>
+#include <cstdlib>
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
@@ -520,18 +522,44 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     // guest display buffer and presented image are written to GOW3_DUMP_DIR (default out/dump)
     // as raw 32-bit pixels (menus and movies included; the upscaler dumps scene frames only).
     static const char* frame_dump_trigger = std::getenv("GOW3_FRAME_DUMP_TRIGGER");
-    /* Direct capture without the trigger file: dump the frame with this 1-based index. The
-     * trigger-file path needs a cooperating process to touch a file mid-run, which is awkward to
-     * automate; this makes "capture a frame" a single env var. */
-    static const int frame_dump_at = [] {
+    /* Direct capture without the trigger file. A single index, or a comma-separated list so one
+     * run yields a timeline (content grows over time, and single frames cannot show that).
+     * The trigger-file path needs a cooperating process to touch a file mid-run, which is awkward
+     * to automate. */
+    static const std::vector<int> frame_dump_at = [] {
+        std::vector<int> indices;
         const char* env = std::getenv("GOW3_FRAME_DUMP_AT");
-        return env ? std::atoi(env) : 0;
+        if (!env) return indices;
+        const char* at = env;
+        while (*at) {
+            char* end = nullptr;
+            const long value = std::strtol(at, &end, 10);
+            if (end == at) break;
+            if (value > 0) indices.push_back(static_cast<int>(value));
+            at = (*end == ',') ? end + 1 : end;
+            if (*end != ',' && *end) break;
+        }
+        std::sort(indices.begin(), indices.end());
+        return indices;
     }();
     static int frame_dump_index = 0;
     /* Separate counter: frame_dump_index only advances when a dump actually happens, so using it
      * to decide WHETHER to dump would deadlock (it never leaves 0). */
     static u64 presented_frames = 0;
     ++presented_frames;
+    /* Draws submitted since the previous frame. A title screen that only draws UI shows a tiny
+     * number; a 3D scene shows hundreds. This distinguishes "the guest renders nothing 3D" from
+     * "3D is submitted but looks wrong", which are very different problems. */
+    static u64 last_draws = 0;
+    if (!frame_dump_at.empty() &&
+        std::binary_search(frame_dump_at.begin(), frame_dump_at.end(), presented_frames)) {
+        const u64 draws = Gow3Stats::draws.load();
+        std::fprintf(stderr, "Draws: frame %llu, %llu total, %llu since previous capture\n",
+                     static_cast<unsigned long long>(presented_frames),
+                     static_cast<unsigned long long>(draws),
+                     static_cast<unsigned long long>(draws - last_draws));
+        last_draws = draws;
+    }
     // gow3: GOW3_FRAME_DUMP_COUNT=N dumps N consecutive frames per trigger (flicker reports).
     static const int frame_dump_count = [] {
         const char* env = std::getenv("GOW3_FRAME_DUMP_COUNT");
@@ -549,7 +577,8 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     if (check_trigger && std::remove(frame_dump_trigger) == 0) {
         frame_dump_remaining = frame_dump_count;
     }
-    if (frame_dump_at > 0 && presented_frames == static_cast<u64>(frame_dump_at)) {
+    if (!frame_dump_at.empty() &&
+        std::binary_search(frame_dump_at.begin(), frame_dump_at.end(), presented_frames)) {
         frame_dump_remaining = 1;
     }
     const bool frame_dump = frame_dump_remaining > 0;
