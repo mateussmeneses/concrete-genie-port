@@ -142,39 +142,37 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Verificar jogabilidade na cena que agora renderiza.
+Verificar pintura — o mecanismo central do jogo, agora mensurável.
 
-**Correção aplicada e aceita nesta sessão:** o re-enfileiramento de shader foi eliminado.
+**Verificado nesta sessão: input move a câmera.**
 
-| | Antes | Depois |
-|---|---|---|
-| Traduções | 1.262.000 | **~5** |
-| FPS | 0,7 | **30,0** |
-| capture/frame | 3256 ms | 0,0 ms |
-| Frames | 2.100 | **9.900** |
-| Capturas pós-menu | pretas | **100% de conteúdo** |
+O teste que **quase** deu falso positivo: com `ly=0`, quatro capturas diferiam progressivamente
+(`9,90% / 6,35% / 9,24%`). Mas o **controle negativo sem input** também difere
+(`3,83% / 7,17% / 7,28%`) — a cena anima sozinha.
 
-Três capturas (2000/3000/4000) são todas diferentes, com ~4.900 cores distintas — cena 3D com
-gradientes, não menu.
+O teste válido compara o **mesmo frame** entre execuções:
 
-**O que ainda não foi verificado** (e por isso o Prompt 04 continua não cumprido):
-1. **Movimento** — a câmera se move com input? (o guest lê o pad; falta provar resposta)
-2. **Áudio** — o port inicializou (`audio port 0 opened, 8 ch float`), mas nenhuma saída foi
-   verificada.
-3. **Save/load** — `sceSaveDataGetParam` foi implementado; falta exercitar.
-4. **Pintura** — o mecanismo central do jogo, não testado.
+```
+frame 2600..3800: with-input vs without-input = 99.94% different (4/4)
+```
 
-Próximo passo concreto: injetar input com `GOW3_PAD_FILE` (stick esquerdo) e capturar antes/depois
-para provar movimento de câmera.
+Ambas coerentes: 6.224 cores / 80,16% não-preto (com input) vs 11.147 / 95,99% (sem input). O
+caminho `GOW3_PAD_FILE` → `runtime_pad.c` → `libScePad` → guest → câmera → GPU funciona.
+
+**Ainda não verificado:** direção do mapeamento (`ly=0` = frente?), colisão, caminhada, pintura,
+áudio de saída, save/load.
+
+Reprodução do teste de movimento (com controle):
 
 ```bash
 cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
 printf "ly=0
-" > pad.txt          # stick para frente
-env GOW3_PAD_FILE="C:/projetos/concrete-genie-port/.cg/audit/run/pad.txt"     GOW3_FRAME_STATS=1 GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/mv"     GOW3_FRAME_DUMP_AT=2500,3200,4000 GOW3_DUMP_SYNC=1     timeout 340 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 310
+" > pad.txt
+env GOW3_PAD_FILE="C:/projetos/concrete-genie-port/.cg/audit/run/pad.txt"     GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/mv"     GOW3_FRAME_DUMP_AT=2600,3000,3400,3800 GOW3_DUMP_SYNC=1     timeout 360 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 330
 ```
 
-Critério de conclusão: capturas antes/depois mostram a cena mudar de posição (não só de frame), com
+Próximo passo: R2 (pintura) com `GOW3_PAD_FILE` e captura antes/depois, comparando mesmo frame
+contra controle sem input — o mesmo método que corrigiu a medição de movimento.
 o input documentado. Depois: áudio e save/load.
 Frame stats: 0.7 FPS, worst frame 1416.3 ms
   capture 3256.1 ms, workers 1322.7 ms, GPU capture wait 3310.4 ms, 16003 pending draws

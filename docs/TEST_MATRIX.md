@@ -195,6 +195,18 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 
 **P0-22: cena 3D renderizada — OBSERVADO**
 
+**Movimento de câmera por input — VERIFICADO (com controle negativo)**
+
+- `GOW3_PAD_FILE` com `ly=0`: 4 capturas (2600/3000/3400/3800) com 10.800 frames alcançados.
+- **Controle negativo** (sem input, mesmos índices): também muda entre frames
+  (`0,00% → 3,83% → 7,17% → 7,28%`), porque a cena anima sozinha. Comparação entre frames
+  consecutivos **não** prova input.
+- **Teste correto** (mesmo frame, duas execuções): **99,94% dos pixels diferem** nos quatro índices.
+- Ambas coerentes: 6.224 cores / 80,16% não-preto (com input) vs 11.147 / 95,99% (sem input).
+- **Provado:** `GOW3_PAD_FILE` → `runtime_pad.c` → `libScePad` → guest → câmera → GPU funciona.
+- **Não provado:** direção do mapeamento, colisão, caminhada do personagem, pintura.
+- Evidência: `boot-93-movement.txt`, `boot-94-noinput-control.txt`.
+
 - Três capturas (frames 2000/3000/4000): 100% não-pretas, todas diferentes, ~4.900 cores distintas
   (gradientes contínuos). Massa iluminada central sobre fundo escuro.
 - **Não é jogabilidade**: sem câmera, input, áudio ou save/load verificados.

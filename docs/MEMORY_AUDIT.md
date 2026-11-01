@@ -1,3 +1,44 @@
+# Input verificado: o stick esquerdo move a câmera (com controle negativo)
+
+## O teste que eu quase errei
+
+Primeira medição: com `ly=0` (stick esquerdo para frente), quatro capturas deram
+`0,00% → 9,90% → 6,35% → 9,24%` de diferença. Parecia provar movimento.
+
+**Não provava.** O controle negativo — mesma execução, **sem** input — deu
+`0,00% → 3,83% → 7,17% → 7,28%`. A cena **anima sozinha**. A diferença entre frames consecutivos não
+distingue movimento de câmera de animação própria.
+
+## O teste correto: mesmo índice de frame, com e sem input
+
+Comparar o **mesmo frame** entre duas execuções:
+
+```
+frame 2600: with-input vs without-input = 99.94% different
+frame 3000: with-input vs without-input = 99.94% different
+frame 3400: with-input vs without-input = 99.94% different
+frame 3800: with-input vs without-input = 99.94% different
+```
+
+99,94% dos pixels diferem nos quatro pontos. Não é ruído nem fase de animação: é **outra vista da
+cena**.
+
+Ambas são cenas 3D ricas e coerentes:
+
+| Execução | Cores distintas (frame 3000) | Não-preto | Luminância média |
+|---|---|---|---|
+| com input | 6.224 | 80,16% | 86,0 |
+| sem input | 11.147 | 95,99% | 199,4 |
+
+## O que isso prova e o que não prova
+
+**Provado:** o caminho de input funciona de ponta a ponta — `GOW3_PAD_FILE` → `runtime_pad.c` →
+`libScePad` → guest → estado da câmera → GPU. O stick esquerdo altera a vista da cena.
+
+**Não provado:** se a direção do mapeamento está correta (`ly=0` = frente?), se há colisão, se o
+personagem anda, se a pintura responde, se o áudio sai, se save/load funciona. Movimento de câmera
+não é jogabilidade.
+
 # CORREÇÃO APLICADA: re-enfileiramento de shader eliminado — 0,7 → 30 FPS, e cena real
 
 ## Aceitação, contra os critérios que eu mesmo escrevi
