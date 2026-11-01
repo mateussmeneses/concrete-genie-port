@@ -1,3 +1,64 @@
+# Tela preta após o menu: NÃO é o input (controlado)
+
+## O controle que refutou a hipótese
+
+| Execução | Input | Frames pretos? |
+|---|---|---|
+| `boot-80` | `cross` injetado via `GOW3_PAD_FILE` | 1700: 6,55% → 2000+: **0%** |
+| `boot-82` | **nenhum input** | 2500, 3500, 5000, 8000: **todos 0%** |
+
+Sem nenhuma entrada, a tela também fica preta e permanece preta em quatro capturas ao longo de
+8000 frames. **O input não é a causa.** A hipótese anterior está refutada por experimento, e não
+foi registrada como conclusão.
+
+## O comportamento real
+
+1. O jogo carrega (frames lentos, ~17-40 fps no trecho de carga).
+2. O menu aparece por volta do frame 1700-1800 (100% de pixels não-pretos).
+3. Depois disso a tela fica **inteiramente preta** e assim permanece.
+4. O motor continua saudável: **60 FPS**, 1 draw/frame, GPU 67-97% ociosa, 39 threads,
+   12.900+ frames apresentados com `Success`.
+
+Ou seja: apresenta sem erro uma imagem que é preta. Não é travamento, não é saturação, não é input.
+
+## Hipóteses que restam
+
+- O jogo troca para um alvo de renderização que o port não apresenta (o "display" upscaled pode
+  estar apontando para uma imagem vazia).
+- Um passe de pós-processamento escreve preto por engano (filtro, gamma, ou o `SanitizeCopyLayers`
+  que clampa layers).
+- O jogo entrou num estado de espera e limpou a tela de propósito (transição).
+
+Distinguir exige comparar `display_*` com `output_*`, que já estão sendo capturados os dois.
+
+# Input scriptado: o caminho funciona, e há uma pista de mudança de estado
+
+## O que está provado
+
+`GOW3_PAD_FILE` injeta botões de verdade: o log registra
+`Runtime: pad file: buttons 0x4000` (`BTN_CROSS`). O guest continua lendo o pad durante a execução.
+
+## Observação que precisa de controle antes de virar conclusão
+
+| Execução | Frame 1700 | Desfecho |
+|---|---|---|
+| com `GOW3_PAD_FILE` (cross apertado) | 6,55% → depois **0,00%** (preto) | 13.200 frames, 51 fps |
+| sem `GOW3_PAD_FILE` | **100,00%** (menu) | parou em 1800 |
+
+Parece que o input levou a tela ao preto. **Mas isso não está estabelecido**, por duas razões:
+
+1. Os índices de frame **não são comparáveis entre execuções** — a fase de carregamento tem
+   duração variável, então "frame 1700" pode ser menu numa execução e outra coisa na seguinte.
+2. A execução sem input só chegou a 1800 frames; não vi se ela também escurece depois.
+
+Uma execução longa sem input está em andamento para resolver (2). Não vou registrar "input causa
+tela preta" até esse controle existir.
+
+## Estado do motor nesse ponto
+
+1 draw/frame, GPU ociosa (67-97%), 60 FPS, 39 threads. Ou seja: o motor continua **apresentando
+normalmente** uma imagem que é preta. Isso é diferente de travar.
+
 # CORREÇÃO 2: não há saturação — o jogo roda a 60 FPS e fica ocioso
 
 ## Duas conclusões minhas estavam erradas

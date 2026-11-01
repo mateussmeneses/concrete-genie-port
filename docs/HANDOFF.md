@@ -142,7 +142,39 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Descobrir em QUE estado o motor está esperando — não é desempenho.
+Investigar a tela preta pós-menu — o input foi refutado como causa.
+
+**Fato controlado:** o jogo carrega, mostra o menu (~frame 1700-1800, 100% de pixels), e então fica
+**inteiramente preto** e permanece. Sem nenhum input acontece igual (frames 2500/3500/5000/8000
+todos em 0,00%). Portanto **input não é a causa** — hipótese testada e refutada.
+
+`display_*` e `output_*` ficam pretos **ao mesmo tempo**, então a origem está no framebuffer do
+guest, não no caminho de apresentação.
+
+O motor continua saudável: 60 FPS, 1 draw/frame, GPU ociosa, `pad read #13801` com stick vivo.
+Não é travamento.
+
+Próximo passo — escolher entre duas medições:
+
+1. **Contar os draws que chegam ao framebuffer do guest.** 1 draw/frame com tela preta sugere que o
+   guest parou de emitir geometria; se ele emite e o preto persiste, o problema é de estado de
+   render (blend, clear, viewport).
+2. **Verificar clears.** Um `sceGnmDrawInitDefaultHardwareState`/clear preto por frame explicaria
+   tudo. Logar clears por frame é pequeno e decisivo.
+
+Descarte antes de investigar: paks (abertos), `usrdt53l` (ausente do dump, não é laço), GPU
+performance (60 FPS), input (refutado), buffer de SRT (corrigido, 4 blocos).
+
+Comando base:
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_FRAME_STATS=1 GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/nopad2"     GOW3_FRAME_DUMP_AT=2500,3500,5000 GOW3_DUMP_SYNC=1     timeout 340 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 310
+python scripts/frame_stats.py nopad2/output_002_1920x1080.raw
+```
+
+Critério de conclusão: uma captura pós-menu com conteúdo. Não declarar jogável sem movimento,
+input verificado e áudio.
 
 **Correção de medições minhas anteriores:** "950 mil draws/frame" e "saturação a 3,7 fps" estavam
 erradas (contador cumulativo e fase de carregamento, respectivamente). O estado real, com

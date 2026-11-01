@@ -182,7 +182,18 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
   `docs/evidence/prompt04/boot-77-past-savedata.txt`.
 
-**P0-16: boot estaciona no frame ~1800 — MEDIDO: é espera, não desempenho**
+**P0-18: tela preta após o menu — ABERTO (input refutado)**
+
+- Sequência: carrega → menu (~frame 1700-1800, 100% de pixels) → **tela preta permanente**.
+- **Hipótese de input refutada por controle**: sem nenhum input, frames 2500/3500/5000/8000 são
+  todos 0,00% não-pretos (`boot-82`). Com `cross` injetado, o mesmo ocorre (`boot-80`).
+- `display_*` **e** `output_*` ficam pretos: a origem está no framebuffer do guest, não na
+  apresentação.
+- O motor permanece saudável: 60 FPS, 1 draw/frame, GPU 67-97% ociosa, 12.900+ frames,
+  `pad read #13801` com valores vivos (`lx=130 ly=127 rx=131 ry=137`).
+- Evidência: `boot-80-input-test.txt`, `boot-82-long-nopad.txt`.
+
+**P0-16: espera pós-menu — MEDIDO: não é desempenho**
 
 - **Duas conclusões minhas estavam erradas.** "~950 mil draws/frame" era leitura de contador
   cumulativo; "saturação a 3,7 fps" era a fase de carregamento.
