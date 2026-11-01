@@ -1,3 +1,98 @@
+# Segundo bloqueio de GPU: buffer de SRT esgotado
+
+Depois do Bink, o jogo passa a compilar shaders de verdade — e **todos falham**:
+
+```
+GPU [Render.Vulkan] <Error> vk_pipeline_cache.cpp:515 QueueShader:
+  gow3: shader 0x.../93 capture failed: code is too big
+```
+
+208 submissões, 199 shaders únicos, 208 falhas. Medido, não inferido.
+
+## O que a medição mostrou
+
+Primeira instrumentação leu `getSize()` achando que era capacidade: reportou **83 bytes** e
+parecia absurdo. Em xbyak, `getSize()` é o tamanho **usado** (`CodeArray::size_`); a capacidade é
+`maxSize_`. Corrigida a leitura, a série de uso aparece:
+
+```
+Srt: capacity 33554432 bytes, used 83 after a generated SRT walker
+Srt: 1049098 of 33554432 bytes used (3.1%)
+Srt: 2099270 of 33554432 bytes used (6.3%)
+Srt: 3148607 of 33554432 bytes used (9.4%)
+```
+
+Crescimento de **~1 MB por shader**. Um único bloco de 32 MB acaba por volta do 32º shader; daí
+em diante todo shader falha com `ERR_CODE_IS_TOO_BIG` (xbyak.h:1776, quando `size_ >= maxSize_`).
+
+## Por que não AutoGrow
+
+`Xbyak::AutoGrow` moveria o bloco ao crescer, invalidando **todos** os ponteiros já entregues a
+shaders compilados (`info.srt_info.walker_func`). Por isso a correção usa uma **cadeia de blocos**:
+o código novo vai para o bloco que ainda tem espaço, e ponteiros para blocos antigos continuam
+válidos durante todo o processo.
+
+O handler de sinal do SRT também precisou mudar: antes comparava com um único range
+(`start..start+getSize()`), agora verifica se o RIP cai em **qualquer** bloco.
+
+# Bink resolvido: o boot passou do import layer e atingiu os shaders
+
+## Resultado medido
+
+```
+resolved: 23 / 23      (Dlsym trace)
+Bink: plugin path set to "/app0/concretegenie/content/bink" (no video loaded)
+BOOT=124               (timeout — o jogo continuou rodando)
+Fault: 0
+```
+
+O `RHIThread` **não falha mais**. O jogo roda até o timeout e passa a compilar e submeter
+shaders — o pipeline Gnm→Vulkan está ativo.
+
+## Dois defeitos reais, ambos meus
+
+**1. `sceKernelDlsym` estava ligado a `not_found(void)`** — assinatura errada, o parâmetro de
+saída nunca era escrito.
+
+**2. `runtime_lookup()` não compara nomes.** A macro `RUNTIME_LOOKUP` chama `runtime_lookup()`,
+que **primeiro** resolve um NID pela tabela de import-names e só então compara. Um nome puro
+(`"BinkPluginInit"`) não é NID, resolve para nada, e a função retorna 0 **antes** de qualquer
+comparação. Foi preciso um `strcmp` direto (`lookup_by_name` em `runtime_bink.c`).
+
+## A traço que decidiu tudo
+
+Instrumentar o `dlsym` provou o que o guest realmente pede — 23 nomes, `handle=0`:
+
+```
+Dlsym: handle=0 name="BinkPluginSetPerFrameInfo" slot=000000080618f7a0
+```
+
+O slot do fault (`0x618f7a0`) é exatamente `BinkPluginSetPerFrameInfo`, chamado de
+`0x4142b6c` sem teste de nulo. Antes disso a hipótese era "o módulo não liga"; a medição mostrou
+que ligava (`Starting linked module 2 ... 0x6540000`) e que o problema era a resolução por nome.
+
+## Por que não foi pelo NID
+
+As 23 strings estão no `.rodata` do eboot e são passadas **por nome**. O módulo exporta **NIDs**
+(32 em `BinkPluginPS4`). Tentei reproduzir a conversão e falhei de forma reprodutível:
+
+| Tentativa | Resultado |
+|---|---|
+| SHA1[:8] base64 (PS4 `+-` e padrão `+/`), com e sem NUL | 0/60 |
+| SHA256/MD5/SHA512, cabeça e cauda, 60 pares reais | 0 |
+| 5 prefixos de lib × 5 separadores × 5 versões × 3 terminadores | 0/6 |
+| Validação contra pares do próprio módulo (`sceGnmAddEqEvent`→`b0xyllnVY-I`) | 0/4 |
+
+O encoder foi verificado contra o `base64` do Python (idêntico), então o erro não era meu. Os
+NIDs são atribuídos pela Sony, não derivados. Implementar a API diretamente é o caminho honesto.
+
+## Semântica implementada (não é stub cego)
+
+`runtime/src/runtime_bink.c` responde os 23 nomes com o significado de **"nenhum vídeo"**:
+`Open` recusa e registra no log; `ProcessBinks`/`Draw`/`ScheduleToTexture` reportam sem vídeo;
+`AllScheduled` responde 1 (verdade: nada pendente); setters de estado são no-op registrados.
+Nada devolve sucesso para um pedido de reprodução real.
+
 # Bink: módulo ligado, falta a resolução nome→NID
 
 ## O que foi feito e verificado

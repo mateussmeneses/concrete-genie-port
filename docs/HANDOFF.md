@@ -10,13 +10,13 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | fault em `RHIThread` durante init de RHI |
+| Bloqueio | `abort` sem causa | **nenhum frame apresentado** (pipeline Vulkan ativo) |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **36** |
 | Leitura do dump | 0 arquivos | **4.654 leituras, 109.826.114 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
-| Testes Python | 39 | **53** |
+| Testes Python | 39 | **66** |
 
 ### Correção 1 — janela de memória do guest
 
@@ -51,21 +51,25 @@ rejeita qualquer símbolo que não seja construtor. Sem sucesso cego para servi�
 
 ## Bloqueio atual
 
-**Todos os subsistemas de sensor foram resolvidos** e o boot saiu da camada de imports. Estado
-atual:
+**O boot não falha mais.** Roda até o timeout (exit 124), sem fault, com o pipeline Gnm→Vulkan
+ativo:
 
 ```
-Fault: execute access to 0000000000000000 at 0000000000000000
-  thread name: RHIThread
-  #0 guest offset 0x14d6aec
+resolved: 23 / 23                                    (Bink, por nome)
+Bink: plugin path set to "/app0/concretegenie/content/bink" (no video loaded)
+Barriers: 6145 image barriers in one batch (largest so far)
+GPU [Render.Vulkan] <Warning> emit_spirv.cpp:516 Float64 denorm preserving is not supported
 ```
 
-O jogo chegou à **inicialização de RHI do UE4** e configura GPU Vulkan 1.4.357, resolução
-1920x1080, um DualSense e 12 sondagens de formato. A falha é `callq *0x8(%rsi)` com `rsi` nulo
-em `0x14d6ae9`, seguida de `0x14d6aec`. Determinístico em duas execuções.
+Duas causas foram encontradas e corrigidas nesta sessão (ambas medidas, ver `docs/MEMORY_AUDIT.md`):
 
-Nenhum frame foi renderizado. `RHIThread` falhar **dentro** da inicialização não é cena, menu
-nem intro.
+1. **`sceKernelDlsym`** — ligado a `not_found(void)`, assinatura errada; e `runtime_lookup()`
+   resolve NID antes de comparar, então um nome puro (`"BinkPluginInit"`) nunca casava. Foi
+   preciso `strcmp` direto.
+2. **Buffer de SRT** — um único bloco de 32 MB recebia ~1 MB por shader e esgotava no ~32º,
+   derrubando 208 de 208 submissões com `code is too big`. Corrigido com cadeia de blocos.
+
+**Nenhum frame foi apresentado.** O pipeline roda, mas "pipeline ativo" não é "cena visível".
 
 ### Decisão tomada: `Core::init` **recusa**, não sucede
 
@@ -113,20 +117,20 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Resolver a conversão nome→NID para `sceKernelDlsym`.
+Obter o primeiro frame apresentado.
 
-O módulo já está ligado e inicializado (`prx/binkpluginps4.prx@0x6540000`, `module_start` rodou),
-e o boot estendido G3PROBE6 já carrega a tabela de exports. Falta apenas casar o nome que o guest
-passa (`"BinkPluginGoto"`) com o NID exportado pelo módulo.
+O boot roda estável até o timeout, com o pipeline Vulkan ativo e zero falhas de shader. O próximo
+passo é descobrir por que nada chega à tela:
 
-1. Obter o algoritmo de NID do PS4 a partir de fonte primária (não por tentativa): os exports do
-   próprio módulo dão pares de validação (`b0xyllnVY-I` = `sceGnmAddEqEvent`, etc.), então
-   qualquer implementação pode ser conferida antes de ser usada.
-2. Alternativa: localizar no eboot a tabela nome→NID, se o jogo a contiver.
-3. Só então preencher os slots.
+1. Procurar no log por `vkAcquireNextImageKHR` / `vkQueuePresentKHR` — se nunca são chamados, o
+   caminho de apresentação não é percorrido; se são, medir o que retorna.
+2. Verificar se o guest chega ao primeiro `sceGnmSubmitAndFlipCommandBuffers` e quantos draws
+   são emitidos por frame (telemetria pequena, contador por frame).
+3. Confirmar se o problema é ausência de frames do guest ou apresentação quebrada — são causas
+   diferentes e a correção difere.
 
-Critério de conclusão: `runtime_linked_symbol()` devolve endereço não nulo para os 14 nomes
-`BinkPlugin*`, e o fault em `RHIThread` muda de lugar. Não preencher com stubs vazios.
+Critério de conclusão: uma captura de frame não vazia (`--frame-dump` ou equivalente) e um log
+que mostre o número de apresentações. Não declarar cena sem isso.
 
 A causa do fault já está medida (`docs/MEMORY_AUDIT.md`): o jogo resolve 8 funções do plugin Bink
 por `sceKernelDlsym` para slots em `.bss` e as chama sem testar nulo; o módulo existe em

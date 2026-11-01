@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <mutex>
+#include <memory>
+#include <vector>
 #include <unordered_map>
 #include <boost/container/flat_map.hpp>
 #include <queue>
@@ -28,8 +30,33 @@
 
 using namespace Xbyak::util;
 
-static Xbyak::CodeGenerator g_srt_codegen(32_MB);
+/* The SRT walker buffer is appended to once per shader and never rewound, because compiled
+ * shaders keep pointers into it. One 32 MB block is not enough: a UE4 title emits far more than
+ * 32 shaders and each walker consumes about a megabyte, so the block is exhausted and every
+ * later shader fails with xbyak's "code is too big" (measured: 208 failures in one run).
+ *
+ * Growing a single block would move it and invalidate every pointer already handed to a compiled
+ * shader. Instead the code lives in a list of blocks; a pointer into any earlier block stays
+ * valid for the whole process. */
+static constexpr size_t SRT_BLOCK_BYTES = 32ull * 1024 * 1024;
+/* First emitted walker's address, used to register the SRT signal handler exactly once. */
 static const u8* g_srt_codegen_start = nullptr;
+static std::vector<std::unique_ptr<Xbyak::CodeGenerator>> g_srt_blocks;
+static Xbyak::CodeGenerator* g_srt_current = nullptr;
+static std::mutex g_srt_block_mutex;
+
+static Xbyak::CodeGenerator& SrtBlockWithRoom(size_t need) {
+    std::scoped_lock lock{g_srt_block_mutex};
+    if (g_srt_current == nullptr ||
+        static_cast<size_t>(g_srt_current->getSize()) + need + 64 > SRT_BLOCK_BYTES) {
+        g_srt_blocks.push_back(std::make_unique<Xbyak::CodeGenerator>(SRT_BLOCK_BYTES));
+        g_srt_current = g_srt_blocks.back().get();
+        if (g_srt_blocks.size() > 1) {
+            fprintf(stderr, "Srt: opened block %zu (previous one was full)\n", g_srt_blocks.size());
+        }
+    }
+    return *g_srt_current;
+}
 // gow3: the shader compiler and the background cache warm-up append walkers from different
 // threads.
 static std::mutex g_srt_codegen_mutex;
@@ -38,9 +65,10 @@ namespace Shader {
 
 PFN_SrtWalker RegisterWalkerCode(const u8* ptr, size_t size) {
     std::scoped_lock lock{g_srt_codegen_mutex};
-    const auto func_addr = (PFN_SrtWalker)g_srt_codegen.getCurr();
-    g_srt_codegen.db(ptr, size);
-    g_srt_codegen.ready();
+    Xbyak::CodeGenerator& c = SrtBlockWithRoom(size);
+    const auto func_addr = (PFN_SrtWalker)c.getCurr();
+    c.db(ptr, size);
+    c.ready();
     return func_addr;
 }
 
@@ -74,12 +102,23 @@ static void DumpSrtProgram(const Shader::Info& info, const u8* code, size_t code
 }
 
 static bool SrtWalkerSignalHandler(void* context, void* fault_address) {
-    // Only handle if the fault address is within the SRT code range
-    const u8* code_start = g_srt_codegen_start;
-    const u8* code_end = code_start + g_srt_codegen.getSize();
+    // Only handle faults inside SRT code. The code now spans several blocks, so ask whether the
+    // faulting instruction lies in any of them instead of comparing against one range.
     const void* code = Common::GetRip(context);
-    if (code < code_start || code >= code_end) {
-        return false; // Not in SRT code range
+    {
+        std::scoped_lock lock{g_srt_block_mutex};
+        bool inside = false;
+        for (const auto& block : g_srt_blocks) {
+            const u8* start = block->getCode();
+            const u8* end = start + block->getSize();
+            if (code >= static_cast<const void*>(start) && code < static_cast<const void*>(end)) {
+                inside = true;
+                break;
+            }
+        }
+        if (!inside) {
+            return false; // Not in SRT code range
+        }
     }
 
     // Patch instruction to zero register
@@ -639,12 +678,13 @@ static void VisitPointer(const IR::Value& off_dw, IR::Inst* subtree, PassInfo& p
 }
 
 static void GenerateSrtProgram(Info& info, PassInfo& pass_info) {
-    Xbyak::CodeGenerator& c = g_srt_codegen;
-
     if (pass_info.srt_roots.empty()) {
         return;
     }
     std::scoped_lock lock{g_srt_codegen_mutex};
+    /* Code is appended to whichever block still has room; a walker already emitted into an
+     * earlier block keeps pointing into that block, which stays alive for the whole process. */
+    Xbyak::CodeGenerator& c = SrtBlockWithRoom(4096);
 
     // Register the signal handler for SRT walker, if not already registered
     if (g_srt_codegen_start == nullptr) {

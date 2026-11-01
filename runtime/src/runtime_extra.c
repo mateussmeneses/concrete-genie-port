@@ -194,16 +194,19 @@ static ABI int32_t not_found(void) { return ERR(E_SRCH); }
  * the out-parameter is cleared first, so a caller that ignores the error code at least gets a
  * defined null rather than whatever the stack happened to hold. */
 static ABI int32_t kernel_dlsym(int32_t handle, const char *name, void **out) {
-    (void)handle;
     if (!out) return ERR(E_INVAL);
     *out = NULL;
     if (name) {
-        /* The PS4 linker answers dlsym from a loaded module's export table, keyed by NID. The
-         * guest passes a plain name ("BinkPluginGoto"), so try the name first, then treat it as
-         * a NID against the freshly linked modules. */
-        uintptr_t symbol = runtime_resolve(name, 0);
+        /* Diagnostic: record exactly what the guest asks for. The names in .rodata are only
+         * candidates until a log proves which string reaches this call. */
+        fprintf(stderr, "Dlsym: handle=%d name=\"%s\" slot=%p\n", handle, name, (void *)out);
+        /* Plain names (dlsym arguments) are not NIDs, so check the name tables directly
+         * before falling back to the NID-keyed chain. runtime_resolve expects a NID. */
+        uintptr_t symbol = runtime_bink_resolve(name);
+        if (!symbol) symbol = runtime_resolve(name, 0);
         if (!symbol) symbol = runtime_linked_symbol(name);
-        if (symbol) { *out = (void *)symbol; return 0; }
+        if (symbol) { *out = (void *)symbol; fprintf(stderr, "Dlsym:   resolved -> %p\n", (void *)symbol); return 0; }
+        fprintf(stderr, "Dlsym:   not found\n");
     }
     return ERR(E_SRCH);
 }

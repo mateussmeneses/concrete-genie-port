@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **58 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **66 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -104,7 +104,27 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   caíram de 105 para 100.
 - **Bloqueio atual:** `sceKernelDlsym` recebe nomes (`BinkPluginGoto`), mas os 32 exports do
   módulo são NIDs. O algoritmo nome→NID não foi reproduzido (4 variantes testadas, 0/4).
-- Nenhum slot preenchido; fault inalterado.
+- **RESOLVIDO.** Os 23 nomes resolvem (`resolved: 23 / 23`). Dois defeitos: `sceKernelDlsym`
+  estava ligado a `not_found(void)` (parâmetro de saída nunca escrito) e `runtime_lookup()`
+  resolve NID antes de comparar, então nome puro nunca casava.
+- O `RHIThread` **não falha mais**. Boot roda até o timeout (exit 124), sem fault.
+
+**P0-8: buffer de SRT esgotado (shaders) — RESOLVIDO**
+
+- Sintoma: 208 de 208 submissões falhavam com `capture failed: code is too big`.
+- Causa medida: um único bloco de 32 MB recebe ~1 MB por shader e esgota no ~32º shader
+  (`Srt: 1049098 of 33554432 bytes used (3.1%)` por shader).
+- Correção: cadeia de blocos (`SrtBlockWithRoom`) em vez de `AutoGrow`, porque crescer moveria a
+  memória e invalidaria ponteiros já entregues a shaders compilados. O handler de sinal passou a
+  testar todos os blocos.
+- Verificação: **0** erros `code is too big` (antes 208), 4 blocos abertos, nenhum fault.
+  Evidência: `docs/evidence/prompt04/boot-45-srt-blocks.txt`.
+
+**P0-9: nenhum frame apresentado — ABERTO**
+
+- O pipeline Gnm→Vulkan roda (6145 image barriers num batch, imagens criadas, SPIR-V emitido,
+  shaders compilando sem falha), mas nenhum frame foi apresentado.
+- Detalhe: `docs/MEMORY_AUDIT.md`.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

@@ -268,6 +268,8 @@ uintptr_t runtime_resolve(const char *name, int is_data) {
     if (cam) return cam;
     uintptr_t vr = runtime_vr_resolve(name);
     if (vr) return vr;
+    uintptr_t bink = runtime_bink_resolve(name);
+    if (bink) return bink;
     return gow3gpu_resolve(name);
 }
 static const struct { const char *nid, *symbol; } import_names[]={
