@@ -1,3 +1,67 @@
+# Sensores de movimento: implementados e ativos; a pintura continua não aparecendo
+
+## Dois achados antes de mexer em código
+
+**1. O `.uproject` não estaba no filesystem e estava dentro do pak.** O guest loga
+`Project file not found: ../../../ConcreteGenie/ConcreteGenie.uproject`. Extraí o arquivo do offset
+53 do pak (1004 bytes de JSON íntegro) e o coloquei em `gamedump/CUSA11875/ConcreteGenie/`. O aviso
+desapareceu (`Project file not found` 1 → 0). Ele declara os plugins reais do jogo:
+
+```
+SlateRemote(false), WinDualShock, OnlineSubsystem, OnlineSubsystemPS4,
+OnlineSubsystemNull, Morpheus (PSVR), MoveController (PS Move)
+```
+
+**Não existe plugin de pintura por analógico direito.** Confirma o que o Prompt 04 descreve: pintura
+é por sensor, e o analógico é alternativa.
+
+**2. O runtime entregava orientação identidade e sensores zerados.**
+
+```c
+d->orientation[3]=1.0f;      /* e acceleration/angular_velocity nunca preenchidos */
+```
+
+`PadData` tem o layout Orbis correto (120 bytes, campos de orientação/accel/gyro), mas
+`sample_host` deixava tudo em zero. Para um jogo que pinta com sensor, isso diz ao guest "o controle
+nunca se move".
+
+## O que implementei
+
+- `SDL_SetGamepadSensorEnabled(GYRO/ACCEL)` na abertura do gamepad, com log do que existe.
+- `sample_host` lê os sensores com conversão de unidade correta: accel `m/s² → g`, gyro `rad/s → deg/s`
+  (as unidades do `OrbisPadData`). Só usa um pad que realmente tenha o sensor, então sessão de
+  teclado mantém a orientação identidade.
+- Injeção por arquivo (`GOW3_PAD_FILE`) com `gx= gy= gz=` e `ax= ay= az=`, para testar pintura por
+  movimento sem mexer fisicamente o controle.
+
+**Medido:** `Runtime: gamepad motion sensors: gyro=1 accel=1` — o DualSense expõe ambos, e o runtime
+agora os lê.
+
+## O que a pintura mostrou depois disso
+
+Com sensor ativo e R2 mantido:
+
+```
+colours 3043 -> 3047; new=339, maior 0,003% da tela
+```
+
+**Continua não aparecendo tinta.** Nem com sensor, nem com R2+stick. O sinal de cor nova permanece em
+0,003–0,005% da tela, que é ruído de antialiasing, não traço.
+
+## Honestidade sobre o limite
+
+Não afirmo que "pintura funciona". O que está provado:
+
+| Item | Estado |
+|---|---|
+| Sensores lidos e entregues no layout Orbis | **implementado, medido** (`gyro=1 accel=1`) |
+| `.uproject` presente, plugins reais conhecidos | **verificado** |
+| Plugins: Morpheus, MoveController, WinDualShock | **lido do jogo** |
+| Pintura renderizada | **não observada**, em nenhuma das 3 abordagens |
+
+O próximo passo continua sendo descobrir se a cena alcançada é o gameplay de pintura — sem isso, a
+ausência de tinta é ambígua entre "o mapeamento não pinta" e "esta cena não é a de pintura".
+
 # Pintura: R2 NÃO pinta — três testes, resultado negativo conclusivo
 
 ## O que testei e o que cada teste mostrou

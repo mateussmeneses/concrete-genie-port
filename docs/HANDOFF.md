@@ -142,31 +142,31 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Decidir se a cena alcançada é o gameplay de pintura, ou se a pintura exige outra condição.
+Determinar se a cena alcançada é o gameplay de pintura.
 
-**Pintura: refutada para o mapeamento mouse→analógico direito.** Três testes, o último decisivo:
+**Feito nesta sessão (sensores + configuração real do jogo):**
 
-1. Câmera congelada + R2 (`0x4200`, sticks 128): R2 vs controle indistinguíveis — sem movimento do
-   stick não há traço.
-2. R2 + stick movendo: mudança ~13.600 vs ~5.100 células, overlap até 78% — sinal forte.
-3. **Decisivo (cor nova aparece e cresce?):** cores quantizadas **diminuíram** 1602 → 1582; 259 cores
-   novas, a maior com **0,004% da tela**; maior crescimento 125 de 129.600 células.
+1. **`.uproject` recuperado do pak** (offset 53) → `gamedump/CUSA11875/ConcreteGenie/`. O aviso
+   `Project file not found` desapareceu. Ele lista os plugins do jogo: **`Morpheus`, `MoveController`,
+   `WinDualShock`**. Não existe plugin de pintura por analógico — pintura é por sensor, analógico é
+   alternativa, exatamente como o Prompt 04 descreve.
+2. **Gap real corrigido:** `sample_host` entregava `acceleration`/`angular_velocity` zerados. Agora lê
+   o sensor com `SDL_SetGamepadSensorEnabled` e converte para as unidades do `OrbisPadData`
+   (`m/s²→g`, `rad/s→deg/s`). Medido: `gamepad motion sensors: gyro=1 accel=1`.
+3. Injeção de sensor por `GOW3_PAD_FILE` (`gx= gy= gz= ax= ay= az=`) para teste reprodutível.
 
-**Nenhuma tinta.** Os 51.836 células alteradas são ~90% da tela — movimento de câmera no mesmo
-enquadramento, não deposição. Overlap alto com área de 90% da tela engana; a cor não.
+**Pintura ainda não observada** com nenhuma das abordagens: R2 parado, R2+stick, R2+sensor. Cores
+novas permanecem em 0,003–0,005% da tela (ruído), não traço.
 
-**O que isso significa para o Prompt 04:** ele pede justamente o fallback mouse→analógico direito, e
-esse caminho **não pinta** neste estado. Duas hipóteses verificáveis, nenhuma confirmada:
+**A ambiguidade que resta:** não se sabe se a cena alcançada é o gameplay de pintura. Enquanto isso
+não for resolvido, a ausência de tinta é ambígua entre "o mapeamento não pinta" e "esta cena não é a
+de pintura".
 
-1. O jogo exige **sensor de movimento / PS Move** para pintar, e o analógico direito depende de uma
-   opção de configuração que não foi ativada.
-2. A cena alcançada **não é o gameplay de pintura** — é exploração/intro, e R2 ali tem outra função.
+**Próximo passo único:** encontrar evidência de qual cena o jogo está exibindo. O `.uproject` e o log
+de níveis do engine (nomes de mapa carregados) são o caminho — procurar no log por nomes de level/map
+e comparar com os nomes de asset do pak.
 
-**Próximo passo único:** determinar o que a cena alcançada é. Rastrear no log do guest menção a modo
-de pintura / tutorial, e verificar se existe opção de controle de pintura no menu do jogo. Enquanto
-não se souber se esta cena sequer é a de pintura, nenhum teste de R2 é interpretável.
-
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

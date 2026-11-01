@@ -117,6 +117,12 @@ static int current_gamepads(void) {
         if (SDL_GetGamepadFromID(ids[i])) continue;
         SDL_Gamepad *g=SDL_OpenGamepad(ids[i]);
         if (!g) { printf("Runtime: gamepad %s could not be opened: %s\n",SDL_GetGamepadNameForID(ids[i]),SDL_GetError()); continue; }
+        /* SDL delivers no sensor data until the sensor is explicitly enabled, and an enabled sensor
+         * also tells us up front whether this pad has one at all. */
+        const bool has_gyro=SDL_SetGamepadSensorEnabled(g,SDL_SENSOR_GYRO,true);
+        const bool has_accel=SDL_SetGamepadSensorEnabled(g,SDL_SENSOR_ACCEL,true);
+        if (has_gyro || has_accel)
+            printf("Runtime: gamepad motion sensors: gyro=%d accel=%d\n",has_gyro,has_accel);
         gamepads[gamepad_count++]=g;
         ++connected_count;
         printf("Runtime: gamepad connected: %s (USB %04x:%04x, %d open)\n",SDL_GetGamepadName(g),
@@ -250,6 +256,7 @@ static uint8_t gamepad_trigger(SDL_GamepadAxis which) {
     }
     return value;
 }
+static struct { uint32_t buttons; int stick[4]; int touch_side; float gyro[3], accel[3]; int has_sensor; } injected={0,{-1,-1,-1,-1},-1,{0,0,0},{0,0,0},0};
 static void sample_host(PadData *d) {
     memset(d,0,sizeof(*d));
     d->left_x=d->left_y=d->right_x=d->right_y=128;
@@ -258,6 +265,43 @@ static void sample_host(PadData *d) {
     d->timestamp=now_us();
     const int pads=current_gamepads();
     if (gow3gpu_overlay_captures_input()) return; /* settings menu open: neutral input */
+    /* Motion sensors. Concrete Genie paints with the motion sensor and offers the right stick as an
+     * alternative, so leaving acceleration/angular velocity at zero told the game the controller
+     * never moves. SDL reports gyro in rad/s and accel in m/s^2; OrbisPadData carries g and deg/s,
+     * which is what the guest's sensor reads expect. Only a pad that actually has the sensor is
+     * used, so a keyboard-only session keeps the neutral identity orientation. */
+    if (pads) {
+        for (int p=0;p<pads;++p) {
+            SDL_Gamepad *g=gamepads[p];
+            float accel[3], gyro[3];
+            int have=0;
+            if (SDL_GamepadHasSensor(g, SDL_SENSOR_ACCEL) &&
+                SDL_GetGamepadSensorData(g, SDL_SENSOR_ACCEL, accel, 3)) {
+                const float k=1.0f/9.80665f;   /* m/s^2 -> g */
+                d->acceleration[0]=accel[0]*k;
+                d->acceleration[1]=accel[1]*k;
+                d->acceleration[2]=accel[2]*k;
+                have=1;
+            }
+            if (SDL_GamepadHasSensor(g, SDL_SENSOR_GYRO) &&
+                SDL_GetGamepadSensorData(g, SDL_SENSOR_GYRO, gyro, 3)) {
+                const float k=57.29578f;       /* rad/s -> deg/s, the unit OrbisPadData uses */
+                d->angular_velocity[0]=gyro[0]*k;
+                d->angular_velocity[1]=gyro[1]*k;
+                d->angular_velocity[2]=gyro[2]*k;
+                have=1;
+            }
+            if (have) break;
+        }
+    }
+    /* An injected sensor value overrides the hardware, so motion painting can be tested
+     * reproducibly with the pad sitting still. */
+    if (injected.has_sensor) {
+        for (int i=0;i<3;++i) {
+            d->acceleration[i]=injected.accel[i];
+            d->angular_velocity[i]=injected.gyro[i];
+        }
+    }
     const bool *k=SDL_WasInit(SDL_INIT_VIDEO) ? SDL_GetKeyboardState(NULL) : NULL;
     load_button_maps();
     if (pads) {
@@ -306,7 +350,6 @@ static void sample_host(PadData *d) {
  * options touchpad touchpad_left touchpad_right up down left right) are held while listed;
  * touchpad defaults to a left-side click; lx= ly= rx= ry= (0..255) override
  * the sticks. An empty file releases everything. */
-static struct { uint32_t buttons; int stick[4]; int touch_side; } injected={0,{-1,-1,-1,-1},-1};
 static int replay_armed;      /* 1 while a GOW3_PAD_REPLAY recording plays, 2 once it ended */
 static uint64_t replay_start; /* 0: (re)start at the next sample */
 static void read_inject(void) {
@@ -331,6 +374,10 @@ static void read_inject(void) {
     static const char *sticks[]={"lx=","ly=","rx=","ry="};
     injected.buttons=0;
     injected.touch_side=-1;
+    /* Sensor injection, so motion painting can be exercised without physically moving a pad:
+     * gx= gy= gz= (deg/s, angular velocity) and ax= ay= az= (g, acceleration). */
+    for (int i=0;i<3;++i) { injected.gyro[i]=0.0f; injected.accel[i]=0.0f; }
+    injected.has_sensor=0;
     for (int i=0;i<4;++i) injected.stick[i]=-1;
     char token[64];
     while (fscanf(f,"%63s",token)==1) {
@@ -341,6 +388,12 @@ static void read_inject(void) {
         }
         for (size_t i=0;i<sizeof(ps_names)/sizeof(*ps_names);++i) if (!strcmp(token,ps_names[i].name)) injected.buttons|=ps_names[i].ps;
         for (int i=0;i<4;++i) if (!strncmp(token,sticks[i],3)) { int v=atoi(token+3); injected.stick[i]=v<0 ? 0 : v>255 ? 255 : v; }
+        static const char *gyro_keys[]={"gx=","gy=","gz="};
+        static const char *accel_keys[]={"ax=","ay=","az="};
+        for (int i=0;i<3;++i) {
+            if (!strncmp(token,gyro_keys[i],3)) { injected.gyro[i]=(float)atof(token+3); injected.has_sensor=1; }
+            if (!strncmp(token,accel_keys[i],3)) { injected.accel[i]=(float)atof(token+3); injected.has_sensor=1; }
+        }
     }
     fclose(f);
     printf("Runtime: pad file: buttons 0x%x sticks %d %d %d %d\n",injected.buttons,

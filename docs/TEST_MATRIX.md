@@ -193,7 +193,20 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-32: pintura — R2 NÃO pinta (três testes, negativo conclusivo)**
+**P0-33: sensores de movimento — implementados e ativos; pintura ainda não observada**
+
+- **`.uproject` extraído do pak** (offset 53, 1004 bytes) para `gamedump/CUSA11875/ConcreteGenie/`;
+  `Project file not found` 1 → 0. Declara os plugins reais: `Morpheus`, `MoveController`,
+  `WinDualShock`, `OnlineSubsystem*`. **Não há plugin de pintura por analógico** — confirma que
+  pintura é por sensor com analógico como alternativa.
+- **Gap real encontrado:** `sample_host` deixava `acceleration`/`angular_velocity` zerados e
+  `orientation[3]=1.0f`. Implementado `SDL_SetGamepadSensorEnabled` + leitura com conversão
+  (`m/s²→g`, `rad/s→deg/s`). Medido: `gamepad motion sensors: gyro=1 accel=1`.
+- Injeção de sensor por `GOW3_PAD_FILE` (`gx= gy= gz= ax= ay= az=`) para teste reprodutível.
+- **Pintura continua não observada:** com sensor + R2, cores novas seguem em 0,003% da tela.
+- Evidência: `boot-123-uproject.txt`, `boot-124-motion.txt`, `boot-125-motion-injected.txt`.
+
+**P0-32: pintura — R2 NÃO pinta (histórico)**
 
 - Teste 1 (câmera congelada, `0x4200`, sticks 128): R2 vs controle indistinguíveis
   (5.748 vs 5.581 células, overlap 43–50%). Negativo.
