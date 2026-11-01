@@ -193,6 +193,24 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
+**P0-30: R2 muda o estado do jogo — VERIFICADO (não é prova de pintura)**
+
+- **Teste 1 (inválido):** pintura vs "sem input" deu 100,00% de diferença, mas o controle era uma
+  **tela branca estática** (sha idêntico nos 4 frames, 94,07% `#ffffff`). Variava duas coisas.
+- **Teste 2 (válido):** mesmos frames, mesma câmera `rx=200`, só R2 difere:
+
+  | Execução | Entrada | Resultado |
+  |---|---|---|
+  | `p2` | `r2` + `rx=200` | 71,60% não-preto, **3 frames distintos** |
+  | `p2c` | `rx=200` | **100% branco, sha idêntico** |
+
+  Ambas saudáveis (8.100–8.400 presents, ~30 fps).
+- **Provado:** R2 altera o comportamento; o caminho `GOW3_PAD_FILE` → `libScePad` → R2 → guest
+  funciona e o guest reage.
+- **Não provado:** que R2 *pinta*. A tela branca sem R2 parece ser um prompt de UI, não a mecânica.
+- Evidência: `boot-108-paint.txt`, `boot-109-paint-control.txt`, `boot-110-paint-r2.txt`,
+  `boot-111-paint-rxonly.txt`.
+
 **P0-29: áudio — todas as camadas do runtime verificadas corretas (silêncio vem do motor)**
 
 - Eliminação por medição: saída (`938 buffers/5s`, `starved 0`), ganho (1.0), remap (identidade),

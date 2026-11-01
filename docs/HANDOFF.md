@@ -142,40 +142,30 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Retomar a jogabilidade (pintura/save) em vez do áudio: não há defeito de runtime de áudio a corrigir.
+Identificar a UI de pintura: R2 já se provou necessário, falta saber se pinta.
 
-**Medido nesta sessão — `sceAjmInstanceCreate` nunca é chamado.** Com `GOW3_AUDIO_TRACE=1` (já
-existente), a contagem de `Audio trace` foi **0**. O motor não cria decodificador, não abre `.at9`, e
-entrega buffers zerados.
+**Resultado do teste de pintura (R2):** R2 muda o estado do jogo, medido com controle de uma variável.
 
-**Tabela de eliminação do áudio** (tudo medido, nada suposto):
+| Execução | Entrada | Resultado |
+|---|---|---|
+| `p2`  | `r2` + `rx=200` | **71,60% não-preto, 3 frames distintos** |
+| `p2c` | `rx=200`       | **100% branco, sha idêntico nos 3 frames** |
 
-| Camada | Estado |
-|---|---|
-| Saída/pacing | `938 buffers/5s (expected 937)`, `starved 0`, gap 6.4 ms |
-| Ganho | `volume=32768`/`VOLUME_0DB=32768` → 1.0 |
-| Remap de canal | identidade |
-| Estado do port | `output=0x01`, canais corretos |
-| Init do AudioOut | `call 1 -> 0` (uma vez, sucesso) |
-| User event do driver | **corrigido** (`EVENT QUEUE FULL` 4 → 0) |
-| Instância Ajm | **nunca criada** |
-| Asset `.at9` | **nenhum aberto** (130 aberturas de arquivo) |
-| Assets no pak | **existem**: 1.358 `.at9` + 417 `.bnk`, ATRAC9 = `codec=1` |
-| NGS2 | 0 chamadas |
-| Buffer do guest | `raw_peak 0.0000` |
+Ambas saudáveis (8.100–8.400 presents, ~30 fps). Sem R2 o jogo fica numa tela de UI estática (94,07%
+`#ffffff` com um elemento dourado) — provavelmente um prompt. Com R2 a cena 3D renderiza e anima.
 
-**Conclusão:** o runtime de áudio está correto em todas as camadas que controla. O silêncio é o motor
-não tocando nada. Corrigir exigiria rastrear código do guest em execução — não é um patch de import, e
-inventar um seria pior que registrar o limite.
+**Provado:** `GOW3_PAD_FILE` → `runtime_pad.c` → `libScePad` → R2 → guest funciona e o guest reage.
+**Não provado:** que R2 *pinta*.
 
-**Decisão:** parar de investir no áudio por ora e voltar ao critério do Prompt 04, que é jogabilidade.
-O áudio está auditado e documentado; falta conteúdo do motor, não infraestrutura.
+**Erro meu registrado:** o primeiro teste comparou pintura contra "sem input" e deu 100,00% de
+diferença — mas o controle estava numa tela branca estática. Variava duas coisas (R2 e estado do
+jogo). O número espetacular era artefato. O controle precisa diferir em **uma** variável.
 
-**Próximo passo único:** pintura (R2) — o mecanismo central do jogo. Usar `GOW3_PAD_FILE` com R2 e
-comparar **o mesmo índice de frame** contra controle sem input (o método que revelou o movimento de
-câmera; diff entre frames consecutivos não serve porque a cena anima sozinha).
+**Próximo passo único:** descobrir o que a tela branca espera. Se for um prompt de tutorial, avançar
+por ele (cross/options) e então repetir o teste de pintura já dentro do gameplay, comparando mesmo
+frame com e sem R2. Enquanto o jogo estiver em tela de UI, nenhum teste de pintura é válido.
 
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

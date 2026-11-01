@@ -1,3 +1,48 @@
+# R2 no controle muda o estado do jogo — e meu primeiro controle era inválido
+
+## Teste 1, inválido: comparação pintura vs sem input
+
+Rodei `r2 + rx=200` e depois "controle sem input", comparando o mesmo índice de frame. Resultado:
+**100,00% dos pixels diferentes em todos os frames.**
+
+Isso não prova nada. O controle tinha ficado numa **tela branca estática**:
+
+```
+paintc display sha: ['7aaff933c4', '7aaff933c4', '7aaff933c4', '7aaff933c4']  <- idêntico
+paint  display sha: ['e6343e20f0', '9549bc6964', '5beef3687c', '6d7d6ada77']  <- 4 distintos
+```
+
+94,07% de branco puro (`#ffffff`) com um elemento dourado pequeno (`#b66b14`, `#e9ba58`): é uma **tela
+de UI com prompt**, não a cena 3D. Comparar pintura contra um estado diferente do jogo mede diferença
+de estado, não pintura.
+
+## Teste 2, válido: mesmo eixo, só R2 difere
+
+Mesmos frames (3000/3400/3800), **mesma entrada de câmera `rx=200`** nos dois, variando apenas R2:
+
+| Execução | Entrada | Resultado |
+|---|---|---|
+| `p2` | `r2` + `rx=200` | **71,60% não-preto, 3 frames distintos** |
+| `p2c` | `rx=200` | **100% branco, sha idêntico nos 3 frames** |
+
+Ambas saudáveis: 8.100–8.400 presents, ~30 fps. A única diferença é R2.
+
+## O que isso prova e o que não prova
+
+**Provado:** R2 altera o comportamento do jogo de forma mensurável — sem R2 o jogo fica numa tela de UI
+estática (94% branco); com R2 a cena 3D renderiza e anima (71,60%, frames distintos). O caminho
+`GOW3_PAD_FILE` → `runtime_pad.c` → `libScePad` → R2 → guest funciona, e o guest reage.
+
+**Não provado:** que R2 *pinta*. A tela branca sem R2 sugere que o jogo espera R2 para prosseguir —
+pode ser um prompt de tutorial, não a mecânica de pintura. Para afirmar pintura seria preciso
+identificar a UI de pintura e ver traços aparecerem na geometria, não apenas a cena mudar.
+
+## Lição de método
+
+O controle tem de diferir em **uma** variável. Meu primeiro teste variou duas (R2 e estado do jogo), e
+o número espetacular (100,00%) era artefato disso. O segundo teste, variando só R2, deu um resultado
+modesto e verificável.
+
 # Áudio: cada camada do runtime verificada correta — o silêncio vem do conteúdo do motor
 
 ## Eliminação completa, uma camada por vez
