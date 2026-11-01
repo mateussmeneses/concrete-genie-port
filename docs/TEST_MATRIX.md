@@ -182,12 +182,18 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
   `docs/evidence/prompt04/boot-77-past-savedata.txt`.
 
-**P0-16: boot estaciona no frame ~1800 — ABERTO**
+**P0-16: boot estaciona no frame ~1800 — MEDIDO: é espera, não desempenho**
 
-- Sem fault e sem erro; o processo para de apresentar em ~1800.
-- Suspeitas: espera de save/IO, diálogo modal, ou saturação ao entrar em geometria 3D
-  (2,8 M draws num único frame).
-- Bloqueia a próxima etapa (gameplay).
+- **Duas conclusões minhas estavam erradas.** "~950 mil draws/frame" era leitura de contador
+  cumulativo; "saturação a 3,7 fps" era a fase de carregamento.
+- Com `GOW3_FRAME_STATS=1`: **60,0 FPS estável**, pior frame 18 ms, **1-6 draws/frame**,
+  0 compilações de shader após o startup, **GPU idle ~100%**.
+- Áudio inicializado: `audio port 0 opened (type 0, 8 ch, float, 256 frames)`.
+- 39 threads guest, incluindo `FAsyncLoadingThread` e `FSaveLoadWorker`.
+- `CheckPoint1` montado duas vezes; `usrdt53l` não é laço (para na linha 436 de 1671).
+- Leitura correta: o motor está num **estado de espera** com apresentação saudável. A investigação
+  é de progressão de estado, não de renderização.
+- Evidência: `docs/evidence/prompt04/boot-79-frame-stats.txt`.
 
 **P0-17: conteúdo cresce entre frames — investigação anterior**
 

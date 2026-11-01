@@ -1,3 +1,100 @@
+# CORREÇÃO 2: não há saturação — o jogo roda a 60 FPS e fica ocioso
+
+## Duas conclusões minhas estavam erradas
+
+**Erro 1 — "~950.000 draws por frame".** Falso. Eu li um contador **cumulativo** de uma janela de
+300 frames e dividi errado. O número real, com `GOW3_FRAME_STATS=1`:
+
+```
+Frame stats: 60.0 FPS, worst frame 18.4 ms (vblank 60 Hz); 0 shader/pipeline compiles;
+  GPU thread 0.00 us/draw, 6 draws/frame, idle 0.1%
+Frame stats: 60.0 FPS, worst frame 17.9 ms; 1 draws/frame, idle 0.2%
+```
+
+**1 a 6 draws por frame.** Não 950 mil. A GPU fica **100% ociosa**.
+
+**Erro 2 — "saturação, ~3,7 fps".** Falso também. Os frames lentos que medi (81 s para 300 frames)
+eram a **fase de carregamento**, não um regime permanente. Em regime, o jogo sustenta **60,0 FPS com
+pior frame de 18 ms**.
+
+## O que o jogo está realmente fazendo
+
+Está **ocioso, esperando algo**, numa tela estática:
+
+| Métrica | Valor |
+|---|---|
+| FPS | 60,0 estável |
+| Pior frame | 17,9-18,4 ms |
+| Draws/frame | 1 a 6 |
+| Compilações de shader | 0 (após o startup) |
+| GPU idle | 99,9-100,8% |
+| Recorder syncs | ~300 por 5 s |
+| Write faults | 57-60/s, 0 hot pages |
+
+O áudio também inicializou:
+
+```
+Runtime: audio port 0 opened (type 0, 8 ch, float, 256 frames, downmixed to stereo)
+```
+
+E há uma thread de câmera: `guest thread 'FPS4Tracker::CameraThread'`.
+
+## Conclusão corrigida
+
+Não é problema de desempenho nem de GPU. O motor está **parado num estado de espera** com
+apresentação saudável a 60 FPS e poucos draws. Isso é consistente com: tela de carregamento
+aguardando IO, ou um estado de jogo esperando um evento (input, save, ou uma thread).
+
+A investigação correta é sobre **progresso de estado**, não sobre renderização.
+
+# Frame 1800+: não é travamento, é saturação — e o jogo estava carregando um checkpoint
+
+## A instrumentação que separou as duas hipóteses
+
+Tempo por apresentação (não só contagem):
+
+```
+Swapchain: present #1500 at  27166 ms (55.22 fps avg) -> Success
+Swapchain: present #1800 at  44867 ms (40.12 fps avg) -> Success
+Swapchain: present #2100 at  59651 ms (35.20 fps avg) -> Success
+Swapchain: present #2400 at 140987 ms (17.02 fps avg) -> Success
+```
+
+O jogo **continua apresentando**. Não há deadlock: de 1800 a 2400 foram 300 frames em **81
+segundos** (~3,7 fps no trecho). É saturação, não travamento.
+
+Correção de uma leitura anterior minha: eu havia dito "para de apresentar em ~1800". O que ocorre é
+que cada frame passa a custar muito mais, então uma janela de `timeout` fixa cobre cada vez menos
+frames. A conclusão correta é **desempenho**, não bloqueio.
+
+## O que a tela mostra nesse trecho
+
+Capturas em 1900 e 2200 têm **estatísticas idênticas** (6,55% não-preto, caixa
+`516,584..1872,1032`) mas sha256 diferente — mesmo layout, pixels mudando devagar. O conteúdo é
+UI com arte renderizada num canto inferior. Entre as duas capturas o contador registrou
+**2.169.064 draws**: muito trabalho submetido para uma imagem que quase não muda.
+
+## O jogo estava carregando um checkpoint
+
+```
+Runtime: save data 'SystemSave'   mounted at /savedata0 (existing, read-only)
+Runtime: save data 'SharedSave'   mounted at /savedata0 (existing, read-only)
+Runtime: save data 'CheckPoint1'  mounted at /savedata0 (existing, read-only)
+Runtime: save data 'CheckPoint1'  mounted at /savedata0 (existing, read-only)
+```
+
+`CheckPoint1` é montado **duas vezes**. E o pad continua sendo lido (`pad read #1801`,
+`lx=128 ly=119 rx=125 ry=124`) — o loop de input está vivo.
+
+## Duas questões abertas, agora separadas
+
+1. **Desempenho**: ~1,1 M draws por 100 frames numa tela quase estática. Onde esse trabalho é
+   gasto? (shaders recompilando? passes redundantes? o buffer de SRT já foi corrigido, mas abriu
+   5+ blocos.)
+2. **Progressão**: o jogo monta `CheckPoint1` duas vezes. É reentrada legítima ou um laço?
+
+Nenhuma das duas é "fault" ou "deadlock". Ambas precisam de contadores, não de suposição.
+
 # `sceSaveDataGetParam`: import faltante que barrava a progressão
 
 ## O que aconteceu

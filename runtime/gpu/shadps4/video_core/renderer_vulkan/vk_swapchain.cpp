@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <limits>
 #include "common/assert.h"
@@ -144,10 +145,19 @@ bool Swapchain::Present() {
      * shows something". A frame can be prepared and never presented. */
     {
         static std::atomic<u64> presented{0};
+        static const auto started = std::chrono::steady_clock::now();
         const u64 n = ++presented;
         if (n <= 3 || (n % 300) == 0 || result != vk::Result::eSuccess) {
-            std::fprintf(stderr, "Swapchain: present #%llu -> %s\n",
-                         static_cast<unsigned long long>(n), vk::to_string(result).c_str());
+            /* Elapsed time tells a hang apart from slow frames: a stop that keeps making progress
+             * with large gaps is saturation, while no further line at all is a deadlock. */
+            const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::steady_clock::now() - started)
+                                .count();
+            std::fprintf(stderr, "Swapchain: present #%llu at %lld ms (%.2f fps avg) -> %s\n",
+                         static_cast<unsigned long long>(n), static_cast<long long>(ms),
+                         ms ? 1000.0 * static_cast<double>(n) / static_cast<double>(ms) : 0.0,
+                         vk::to_string(result).c_str());
+            std::fflush(stderr);
         }
     }
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {

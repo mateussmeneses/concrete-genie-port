@@ -10,7 +10,7 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | **boot estaciona no frame ~1800 (pós-menu)** |
+| Bloqueio | `abort` sem causa | **motor em estado de espera pós-menu (60 FPS ocioso)** |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **36** |
 | Leitura do dump | 0 arquivos | **4.654 leituras, 109.826.114 bytes** |
@@ -142,7 +142,39 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Descobrir por que o boot estaciona no frame ~1800.
+Descobrir em QUE estado o motor está esperando — não é desempenho.
+
+**Correção de medições minhas anteriores:** "950 mil draws/frame" e "saturação a 3,7 fps" estavam
+erradas (contador cumulativo e fase de carregamento, respectivamente). O estado real, com
+`GOW3_FRAME_STATS=1`:
+
+```
+Frame stats: 60.0 FPS, worst frame 18.4 ms (vblank 60 Hz); 0 shader compiles;
+  GPU thread 0.00 us/draw, 1-6 draws/frame, idle 0.1%
+```
+
+60 FPS estável, GPU ociosa, 1-6 draws/frame. O áudio inicializou
+(`audio port 0 opened, 8 ch float`). 39 threads guest, incluindo `FAsyncLoadingThread` e
+`FSaveLoadWorker`.
+
+Próximo passo — identificar o estado, não otimizar:
+
+1. `CheckPoint1` é montado duas vezes. Verificar se a segunda é reentrada legítima ou laço:
+   adicionar contador em `save_mount` por nome.
+2. `FAsyncLoadingThread` existe: contar pacotes de carga concluídos por segundo. Se for 0, a carga
+   travou e o problema está no IO; se >0, está progredindo e só precisa de mais tempo.
+3. Se ambos estiverem parados, o bloqueio é um evento de jogo (input/diálogo): enviar input via
+   `GOW3_PAD_FILE` e ver se o estado muda — o guest lê o pad 1800+ vezes com valores reais.
+
+Comando base (note `env`, obrigatório):
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_FRAME_STATS=1 GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/tlB"     GOW3_FRAME_DUMP_AT=1900 GOW3_DUMP_SYNC=1     timeout 200 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 170
+```
+
+Critério de conclusão: o estado muda (novo conteúdo na captura) e o motivo da espera está nomeado
+num log. Não otimizar FPS: já são 60.
 
 O avanço desta sessão: `sceSaveDataGetParam` era o import que barrava; implementado, o boot saiu de
 `exit 20` (frame 1200) para `exit 124` (frame 1800). Agora ele **para de apresentar** em ~1800 sem

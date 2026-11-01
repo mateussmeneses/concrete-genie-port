@@ -19,79 +19,79 @@ CMake Deprecation Warning at third_party/miniz/CMakeLists.txt:1 (cmake_minimum_r
   to work with policies introduced by <max> or earlier.
 
 
--- Configuring done (9.2s)
--- Generating done (1.0s)
+-- Configuring done (2.9s)
+-- Generating done (1.5s)
 -- Build files have been written to: C:/projetos/concrete-genie-port/runtime/out/gpu
 == Build ==
 ninja: Entering directory `runtime/out/gpu'
 [0/2] Re-checking globbed directories...
 [1/52] Linking CXX static library third_party\fsr-vulkan\libffx_vulkan_fsr3_host_1_1_4.a
-[2/52] Generating include/video_core/host_shaders/ms_image_blit_frag.h
+[2/52] Generating include/video_core/host_shaders/depth_resample_frag.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/depth_resample.frag
+[3/52] Generating include/video_core/host_shaders/ms_image_blit_frag.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/ms_image_blit.frag
-[3/52] Generating include/video_core/host_shaders/tiling_micro_16_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[4/52] Generating include/video_core/host_shaders/tiling_macro_128_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[5/52] Generating include/video_core/host_shaders/tiling_macro_16_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[6/52] Generating include/video_core/host_shaders/taa_comp.h
+[4/52] Generating include/video_core/host_shaders/depth_stencil_bits_frag.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/depth_resample.frag
+[5/52] Generating include/video_core/host_shaders/depth_stencil_resample_frag.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/depth_resample.frag
+[6/52] Generating include/video_core/host_shaders/ms_image_blit_msaa_frag.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/ms_image_blit.frag
+[7/52] Generating include/video_core/host_shaders/taa_comp.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/taa.comp
-[7/52] Generating include/video_core/host_shaders/depth_stencil_bits_frag.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/depth_resample.frag
-[8/52] Generating include/video_core/host_shaders/buffer_multi_copy_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/buffer_multi_copy.comp
-[9/52] Generating include/video_core/host_shaders/tiling_micro_32_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[10/52] Generating include/video_core/host_shaders/tiling_macro_32_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[11/52] Generating include/video_core/host_shaders/tiling_macro_8_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[12/52] Generating include/video_core/host_shaders/tiling_macro_96_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[13/52] Generating include/video_core/host_shaders/tiling_micro_128_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[14/52] Generating include/video_core/host_shaders/post_process_frag.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/post_process.frag
-[15/52] Generating include/video_core/host_shaders/fs_tri_vert.h
+[8/52] Generating include/video_core/host_shaders/fs_tri_vert.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/fs_tri.vert
-[16/52] Generating include/video_core/host_shaders/ms_image_blit_msaa_frag.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/ms_image_blit.frag
-[17/52] Generating include/video_core/host_shaders/camera_motion_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/camera_motion.comp
-[18/52] Generating include/video_core/host_shaders/depth_resample_frag.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/depth_resample.frag
-[19/52] Generating include/video_core/host_shaders/camera_motion_debug_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/camera_motion.comp
-[20/52] Generating include/video_core/host_shaders/tiling_macro_64_comp.h
+[9/52] Generating include/video_core/host_shaders/taa_sharpen_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/taa_sharpen.comp
+[10/52] Generating include/video_core/host_shaders/taa_sharpen_ldr_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/taa_sharpen.comp
+[11/52] Generating include/video_core/host_shaders/fsr_easu_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/fsr.comp
+[12/52] Generating include/video_core/host_shaders/fsr_rcas_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/fsr.comp
+[13/52] Generating include/video_core/host_shaders/post_process_frag.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/post_process.frag
+[14/52] Generating include/video_core/host_shaders/tiling_micro_32_comp.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[21/52] Generating include/video_core/host_shaders/color_to_ms_depth_frag.h
+[15/52] Generating include/video_core/host_shaders/tiling_macro_8_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[16/52] Generating include/video_core/host_shaders/tiling_macro_96_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[17/52] Generating include/video_core/host_shaders/tiling_micro_16_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[18/52] Generating include/video_core/host_shaders/tiling_macro_16_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[19/52] Generating include/video_core/host_shaders/tiling_macro_32_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[20/52] Generating include/video_core/host_shaders/color_to_ms_depth_frag.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/color_to_ms_depth.frag
-[22/52] Generating include/video_core/host_shaders/taa_sharpen_ldr_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/taa_sharpen.comp
-[23/52] Generating include/video_core/host_shaders/fsr_easu_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/fsr.comp
-[24/52] Generating include/video_core/host_shaders/taa_sharpen_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/taa_sharpen.comp
-[25/52] Generating include/video_core/host_shaders/fsr_rcas_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/fsr.comp
-[26/52] Generating include/video_core/host_shaders/fault_buffer_process_comp.h
+[21/52] Generating include/video_core/host_shaders/camera_motion_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/camera_motion.comp
+[22/52] Generating include/video_core/host_shaders/tiling_macro_64_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[23/52] Generating include/video_core/host_shaders/buffer_multi_copy_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/buffer_multi_copy.comp
+[24/52] Generating include/video_core/host_shaders/tiling_macro_128_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[25/52] Generating include/video_core/host_shaders/tiling_micro_128_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[26/52] Generating include/video_core/host_shaders/camera_motion_debug_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/camera_motion.comp
+[27/52] Generating include/video_core/host_shaders/fault_buffer_process_comp.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/fault_buffer_process.comp
-[27/52] Generating include/video_core/host_shaders/depth_stencil_resample_frag.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/depth_resample.frag
 [28/52] Generating include/video_core/host_shaders/tiling_micro_8_comp.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[29/52] Generating include/video_core/host_shaders/tiling_micro_64_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[30/52] Generating include/video_core/host_shaders/upscale_merge_comp.h
+[29/52] Generating include/video_core/host_shaders/upscale_merge_comp.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/upscale_merge.comp
+[30/52] Generating include/video_core/host_shaders/upscale_reactive_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/upscale_reactive.comp
 [31/52] Generating include/video_core/host_shaders/tiling_micro_96_comp.h
 C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
-[32/52] Linking C static library third_party\fsr-vulkan\libffx_vulkan_fsr4_v07_assets.a
-[33/52] Generating include/video_core/host_shaders/upscale_reactive_comp.h
-C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/upscale_reactive.comp
+[32/52] Generating include/video_core/host_shaders/tiling_micro_64_comp.h
+C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/tiling.comp
+[33/52] Linking C executable cg-gpu-check.exe
 [34/52] Linking C static library third_party\miniz\libminiz.a
-[35/52] Linking C static library third_party\fsr-vulkan\libffx_vulkan_fsr4_v07_vulkan.a
-[36/52] Linking C executable cg-gpu-check.exe
+[35/52] Linking C static library third_party\fsr-vulkan\libffx_vulkan_fsr4_v07_assets.a
+[36/52] Linking C static library third_party\fsr-vulkan\libffx_vulkan_fsr4_v07_vulkan.a
 [37/52] Linking CXX static library third_party\sirit\src\libsirit.a
 [38/52] Linking C static library libatrac9.a
 [39/52] Linking CXX static library third_party\fsr-vulkan\libffx_vulkan_fsr3_vk_backend_1_1_4.a
@@ -110,9 +110,7 @@ C:/projetos/concrete-genie-port/runtime/gpu/shadps4/video_core/host_shaders/upsc
 == Native tests ==
 ninja: Entering directory `runtime/out/gpu'
 [0/2] Re-checking globbed directories...
-[1/4] Linking C executable services-test.exe
-[2/4] Building C object CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/runtime/tests/test_pad_map.c.obj
-[3/4] Linking C executable pad-map-test.exe
+[1/2] Linking C executable services-test.exe
 RUN services-test
 Runtime: MsgDialog opened; completed immediately (no dialog UI yet)
 Runtime: MsgDialog progress bar opened (runs until closed)
