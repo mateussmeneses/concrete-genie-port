@@ -263,6 +263,18 @@ static int64_t do_open(const char *guest,int flags,int mode) {
     }
     return fd;
 }
+static int64_t do_close(int fd);
+/* Fios file handles are opened through the same mount table as the POSIX calls, so the guest gets
+ * a descriptor backed by a real file rather than a fabricated number. Exposed for runtime_late.c,
+ * which implements the Fios entry points that were previously unnamed. */
+int runtime_file_open_descriptor(const char *guest_path, int flags) {
+    const int64_t fd = do_open(guest_path, flags, 0);
+    return fd < 0 ? -1 : (int)fd;
+}
+int runtime_file_close_descriptor(int fd) {
+    const int64_t r = do_close(fd);
+    return r < 0 ? -1 : 0;
+}
 static int64_t do_close(int fd) {
     if (fd>=0 && fd<3) return 0;
     pthread_mutex_lock(&lock);

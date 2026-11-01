@@ -1,3 +1,59 @@
+# Áudio: a cadeia abriu, o mixer roda, e o que falta é conteúdo decodificado
+
+## Dois defeitos reais encontrados medindo, não supondo
+
+**Defeito 1 — o port 3D era sempre recusado.** `runtime_audio3d.c` devolvia `A3D_NO_PORT` em
+`PortOpen`, sob a suposição registrada de que "o jogo cai para o caminho estéreo". A medição
+refutou: o guest logou
+
+```
+brbDriverBase::Initialize3D(): FAILED TO OPEN 3D AUDIO PORT!
+```
+
+e **nunca chamou `sceAudioOutOutput`**. Recusar o port não degradou o áudio — silenciou o jogo
+inteiro. Agora o port é entregue de verdade, os objetos são misturados sem posicionamento
+(renderização espacial continua indisponível e não é fingida).
+
+**Defeito 2 — 31 imports sem nome.** Com o port 3D funcionando, o guest avançou e parou em
+`STOP: first unsupported PS4 import: bkRHEYG6lEM#libSceAjm`. A tabela `runtime/tools/aerolib.inl`
+já auditada no repositório tinha o nome: `sceAjmMemoryRegister`. Varrendo os 988 imports contra
+essa tabela, **31 nomes** estavam ausentes. Todos identificados por essa tabela, nenhum por palpite,
+e implementados em `runtime/src/runtime_late.c`.
+
+## O estado medido agora
+
+```
+Runtime: audio backend wasapi
+Runtime: audio port 0 opened (type 0, 8 ch, float, 256 frames, downmixed to stereo)
+Audio3d: subsystem ready; ports mix to stereo without positional rendering
+brbDriver::Initialize(): NUM CHANNELS ( 8 ) CLAMPED TO 2.
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.76 ms,
+                    min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+```
+
+| O que funciona | O que não funciona |
+|---|---|
+| Port aberto, WASAPI real | **`peak 0.0000`, `0/938 loud`** — todos os buffers são zeros |
+| 938 buffers/5s de 937 esperados | nenhum batch Ajm submetido |
+| `starved 0`, gap máximo 6,76 ms | `Ajm batches` nunca é impresso: o guest não decodifica |
+| driver próprio do jogo inicializou | — |
+
+**Diagnóstico:** o mixer roda com pacing correto e recebe silêncio porque **nada foi decodificado**.
+Não é um bug de saída de áudio; é ausência de conteúdo. `peak`/`loud` foram adicionados justamente
+porque "buffers entregues" e "buffers com som" são medições diferentes — uma porta alimentada com
+zeros reporta pacing perfeito.
+
+## O que isso corrige nas conclusões anteriores
+
+"Depende de cena visível" estava errado como razão para o áudio não ser auditado: o áudio estava
+silencioso por um defeito concreto (port 3D recusado) mais 31 imports sem nome, ambos independentes
+da cena. A cena inclusive renderiza: 4 capturas, 100% não-pretas, 8.100 frames alcançados.
+
+## Próximo passo
+
+Descobrir por que o guest não submete batches Ajm: rastrear quem chama `sceAjmBatchStartBuffer` e se
+o codec foi registrado (`sceAjmModuleRegister`), com o log de `jobs`/`frames_decoded` por janela.
+
 # Input verificado: o stick esquerdo move a câmera (com controle negativo)
 
 ## O teste que eu quase errei

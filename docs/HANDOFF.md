@@ -142,7 +142,38 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Verificar pintura — o mecanismo central do jogo, agora mensurável.
+Descobrir por que o guest não submete batches Ajm (áudio roda mas sai silêncio).
+
+**Feito nesta sessão (áudio):** dois defeitos reais, ambos medidos.
+
+1. `runtime_audio3d.c` recusava todo `PortOpen`, assumindo que o jogo cairia para estéreo. Ele não
+   cai: loga `brbDriverBase::Initialize3D(): FAILED TO OPEN 3D AUDIO PORT!` e nunca chama
+   `sceAudioOutOutput`. Recusar silenciava o jogo inteiro. Corrigido: port entregue, mistura sem
+   posicionamento.
+2. **31 imports sem nome** (não só Ajm) travavam o boot em `STOP: first unsupported PS4 import`.
+   Todos identificados pela tabela auditada `runtime/tools/aerolib.inl` — nenhum por palpite — e
+   implementados em `runtime/src/runtime_late.c`.
+
+**Estado medido do áudio:**
+
+```
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.76 ms,
+                    min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+brbDriver::Initialize(): NUM CHANNELS ( 8 ) CLAMPED TO 2.
+```
+
+Pacing correto, `starved 0`, mas **todos os buffers são zeros**. `Ajm batches` nunca é impresso: o
+guest não decodifica nada. O silêncio é ausência de conteúdo, não falha de saída.
+
+Adicionei `peak`/`loud` ao stats porque "buffers entregues" e "buffers com som" são medições
+diferentes — uma porta alimentada com zeros reporta pacing perfeito.
+
+**Próximo passo único:** rastrear quem chama `sceAjmBatchStartBuffer` e se
+`sceAjmModuleRegister` recebeu o codec, imprimindo `jobs`/`frames_decoded` por janela. Se o guest
+nunca chama, o problema está antes (registro de codec ou falta de arquivo de áudio); se chama e
+`frames_decoded` fica 0, o defeito está no decodificador.
+
+**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
 
 **Verificado nesta sessão: input move a câmera.**
 

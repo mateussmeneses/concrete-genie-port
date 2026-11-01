@@ -193,6 +193,23 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
+**P0-24: áudio — cadeia aberta, mixer rodando, conteúdo ausente**
+
+- Defeito corrigido: `runtime_audio3d.c` recusava todo `PortOpen`. O guest não caía para estéreo —
+  logava `brbDriverBase::Initialize3D(): FAILED TO OPEN 3D AUDIO PORT!` e nunca chamava
+  `sceAudioOutOutput`. Recusar silenciava o jogo. Agora o port é entregue e mistura sem
+  posicionamento.
+- Defeito corrigido: **31 imports** sem nome (não só Ajm). Identificados via
+  `runtime/tools/aerolib.inl` e implementados em `runtime/src/runtime_late.c`. `STOP: first
+  unsupported PS4 import` desapareceu.
+- Medido: `938 buffers/5s (expected 937)`, `max gap 6.76 ms`, `starved 0`,
+  **`peak 0.0000`, `0/938 loud`** → o mixer roda e recebe zeros.
+- `Ajm batches` nunca é impresso: o guest não submete batch de decodificação. É ausência de
+  conteúdo, não falha de saída.
+- `brbDriver::Initialize(): NUM CHANNELS ( 8 ) CLAMPED TO 2.` — driver do jogo inicializou.
+- Evidência: `boot-95-audio-peak.txt`, `boot-96-audio-fixed.txt`, `boot-97-ajm-named.txt`,
+  `boot-98-late-imports.txt`.
+
 **P0-22: cena 3D renderizada — OBSERVADO**
 
 **Movimento de câmera por input — VERIFICADO (com controle negativo)**

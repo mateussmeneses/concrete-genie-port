@@ -13,6 +13,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <time.h>
+#include <math.h>
 #include <SDL3/SDL.h>
 
 #define PORTS 25
@@ -42,6 +43,8 @@ typedef struct {
     int stats;
     uint64_t stat_start_ns, stat_last_ns, stat_max_gap_ns; /* GOW3_AUDIO_STATS */
     unsigned stat_starved, stat_buffers; int stat_min_queued;
+    float stat_peak;                /* loudest sample seen, to tell silence from sound */
+    unsigned stat_loud, stat_total; /* buffers carrying signal vs buffers submitted */
 } Port;
 typedef struct { uint16_t output; uint8_t channel, reserved; int16_t volume; uint16_t reroute; uint64_t flag, reserved64[2]; } PortState;
 _Static_assert(sizeof(PortState)==32,"AudioOut port state layout");
@@ -209,6 +212,20 @@ static int32_t output_port(int32_t handle, const void *data, int pace) {
             else { int16_t v; memcpy(&v,(const char *)data+from*2,2); v=(int16_t)((float)v*gain); memcpy(converted+to*2,&v,2); }
         }
         if (p->dump) fwrite(converted,1,bytes,p->dump);
+        /* Buffers per second and starvation say the stream is being fed, not that anything is
+         * audible: a port fed pure zeros reports perfect timing. Peak amplitude is the measurement
+         * that separates "the game is quiet" from "the game is producing sound". */
+        {
+            float peak=0.0f;
+            if (p->is_float) {
+                for (size_t i=0;i<samples;++i) { float v; memcpy(&v,converted+i*4,4); float a=fabsf(v); if (a>peak) peak=a; }
+            } else {
+                for (size_t i=0;i<samples;++i) { int16_t v; memcpy(&v,converted+i*2,2); float a=fabsf((float)v/32768.0f); if (a>peak) peak=a; }
+            }
+            if (peak>p->stat_peak) p->stat_peak=peak;
+            if (peak>0.0001f) ++p->stat_loud;
+            ++p->stat_total;
+        }
         if (p->stats) {
             uint64_t now=now_ns();
             if (!p->stat_start_ns) { p->stat_start_ns=now; p->stat_min_queued=1<<30; }
@@ -220,10 +237,11 @@ static int32_t output_port(int32_t handle, const void *data, int pace) {
                 if (queued==0) ++p->stat_starved;
             }
             if (now-p->stat_start_ns>=5000000000u) {
-                printf("Audio stats port %d: %u buffers/5s (expected %u), max gap %.2f ms, min queued %d bytes, starved %u\n",
+                printf("Audio stats port %d: %u buffers/5s (expected %u), max gap %.2f ms, min queued %d bytes, starved %u, peak %.4f, %u/%u loud\n",
                        (int)(p-ports),p->stat_buffers,(unsigned)(5u*48000u/(unsigned)p->frames),p->stat_max_gap_ns/1e6,
-                       p->stat_min_queued,p->stat_starved);
+                       p->stat_min_queued,p->stat_starved,p->stat_peak,p->stat_loud,p->stat_total);
                 p->stat_start_ns=now; p->stat_max_gap_ns=0; p->stat_starved=0; p->stat_buffers=0; p->stat_min_queued=1<<30;
+                p->stat_peak=0.0f; p->stat_loud=p->stat_total=0;
             }
         }
         if (pace) {

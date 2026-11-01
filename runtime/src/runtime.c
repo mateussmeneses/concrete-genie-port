@@ -270,6 +270,8 @@ uintptr_t runtime_resolve(const char *name, int is_data) {
     if (vr) return vr;
     uintptr_t bink = runtime_bink_resolve(name);
     if (bink) return bink;
+    uintptr_t late = runtime_late_resolve(name);
+    if (late) return late;
     return gow3gpu_resolve(name);
 }
 static const struct { const char *nid, *symbol; } import_names[]={
