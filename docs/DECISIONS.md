@@ -134,3 +134,11 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
   `libSceNpToolkit2` passariam a operar sobre um subsistema nunca inicializado, e a falha
   apareceria longe da causa. A decisão de política offline (recusar com erro tratado vs.
   implementar PSN local com estado) precisa ser tomada e registrada antes de codificar.
+- **Decisão tomada: recusar `Core::init` com `0x80550003`.** O ramo de falha do guest
+  (`0x40c791f`) destrói o objeto, revalida o canário e retorna limpo — recusar é caminho
+  tratado, e o jogo continuou (22 threads, 176 leituras). Escolha registrada para que a próxima
+  sessão não "conserte" isso devolvendo zero.
+- **Tamanho de `InitParams` corrigido de 312 para 352 bytes na mesma sessão.** A primeira
+  medida confundiu `rbp-0x260` (um campo interno) com o início do objeto seguinte, que é
+  `rbp-0x238`. Teste novo impede regressão. Lição: medir a extensão pelos campos que o guest
+  escreve e pelo próximo objeto construído, não por um único `leaq` vizinho.

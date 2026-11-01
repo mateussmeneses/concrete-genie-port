@@ -17,11 +17,14 @@ def source():
 
 
 class ConstructorSize(unittest.TestCase):
-    # Measured at eboot 0x40c762a: leaq -0x398(%rbp),%rbx ; mov %rbx,%rdi ; call ctor
-    # and at eboot 0x40c76c1: leaq -0x260(%rbp),%rdi  (next object).
+    # Measured at eboot 0x40c762a: leaq -0x398(%rbp),%rbx ; mov %rbx,%rdi ; call ctor.
+    # The guest fills fields down to rbp-0x320 and the NEXT object it constructs starts at
+    # rbp-0x238 (leaq -0x238(%rbp),%rdi at 0x40c782d). An earlier reading mistook rbp-0x260
+    # for the next object and under-sized the struct by 40 bytes.
     INIT_PARAMS_BASE = 0x398
-    NEXT_OBJECT_BASE = 0x260
-    EXPECTED_SIZE = 0x138          # 312 bytes
+    NEXT_OBJECT_BASE = 0x238
+    EXPECTED_SIZE = 0x160          # 352 bytes
+    LAST_FIELD_WRITTEN = 0x320     # movl $0x0,-0x268 / movq to -0x320 and below
 
     def test_measured_size_matches_the_constant(self):
         match = re.search(r'#define NP_INIT_PARAMS_SIZE (\d+)', source())
@@ -33,10 +36,13 @@ class ConstructorSize(unittest.TestCase):
         self.assertEqual(self.INIT_PARAMS_BASE - self.NEXT_OBJECT_BASE, self.EXPECTED_SIZE)
 
     def test_object_stays_clear_of_the_stack_canary(self):
-        # Canary lives at rbp-0x30; the object ends at rbp-0x260, i.e. 560 bytes below it.
+        # Canary lives at rbp-0x30; the object ends at rbp-0x238, i.e. 520 bytes below it.
         canary_offset = 0x30
-        self.assertGreater(self.NEXT_OBJECT_BASE - canary_offset, 0)
-        self.assertEqual(self.NEXT_OBJECT_BASE - canary_offset, 560)
+        self.assertEqual(self.NEXT_OBJECT_BASE - canary_offset, 520)
+
+    def test_size_covers_every_field_the_guest_writes(self):
+        # The object must be at least as large as the furthest field the guest touches.
+        self.assertGreaterEqual(self.EXPECTED_SIZE, self.INIT_PARAMS_BASE - self.LAST_FIELD_WRITTEN)
 
     def test_constructor_rejects_a_null_object(self):
         text = source()
@@ -44,20 +50,33 @@ class ConstructorSize(unittest.TestCase):
         self.assertIn('memset(self, 0, NP_INIT_PARAMS_SIZE)', text)
 
 
-class OnlyConstructorsAreProvided(unittest.TestCase):
-    """A service that needs a real answer must still reach the unresolved trap."""
+class ServiceIsRefusedNotFaked(unittest.TestCase):
+    """Core::init is a service. It may be answered, but only with a failure code."""
 
-    def test_no_service_entry_is_registered(self):
+    INIT_SYMBOL = '_ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE'
+
+    def test_core_init_is_registered(self):
+        self.assertIn(self.INIT_SYMBOL, source())
+
+    def test_core_init_returns_a_failure_code_not_zero(self):
         text = source()
-        # Core::init is a service, not a constructor: it must not be answered blindly.
-        self.assertNotIn('4Core4initE', text)
+        # The guest accepts 0 as "PSN is up". Returning 0 would make the remaining imports
+        # believe a subsystem exists that was never created, so the code must be non-zero.
+        self.assertIn('NP_NOT_INITIALIZED', text)
+        self.assertIn('return NP_NOT_INITIALIZED;', text)
+        match = re.search(r'#define NP_NOT_INITIALIZED \(\(int32_t\)UINT32_C\(0x([0-9a-fA-F]+)\)\)', text)
+        if match is None:
+            self.fail('NP_NOT_INITIALIZED must keep its explicit hex value')
+        self.assertNotEqual(int(match.group(1), 16), 0)
 
-    def test_exports_are_constructor_symbols_only(self):
+    def test_every_export_is_a_ctor_dtor_or_the_refused_init(self):
         names = re.findall(r'\{"(_Z[^"]+)"', source())
         self.assertTrue(names, 'the export table must not be empty')
         for name in names:
-            self.assertTrue(name.endswith('C1Ev') or name.endswith('C2Ev'),
-                            f'{name} is not a constructor symbol')
+            ok = (name.endswith('C1Ev') or name.endswith('C2Ev')
+                  or name.endswith('D1Ev') or name.endswith('D2Ev')
+                  or name == self.INIT_SYMBOL)
+            self.assertTrue(ok, f'{name} is neither a ctor/dtor nor the refused service')
 
     def test_resolver_is_wired_into_the_runtime(self):
         runtime = (ROOT / 'runtime' / 'src' / 'runtime.c').read_text(encoding='utf-8', errors='replace')

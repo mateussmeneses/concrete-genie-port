@@ -76,7 +76,33 @@ Tamanho medido no próprio frame do guest, sem adivinhação:
 Implementado em `runtime/src/runtime_np.c`: **somente construtores**. O guest trata o retorno
 por `testl %eax,%eax; je <continua>`, e o objeto é um agregado que o chamador preenche depois.
 
-## Bloqueio 4 — ABERTO: `NpToolkit2::Core::init`
+## Correção do tamanho de `InitParams` (revisão)
+
+A primeira medição usou `rbp-0x260` como início do objeto seguinte e deu 312 bytes. Estava
+**errada**: o guest escreve campos em `-0x390`, `-0x378`, `-0x358`, `-0x350`, `-0x338`,
+`-0x330`, `-0x328`, `-0x320`, e o objeto seguinte só começa em `-0x238`
+(`leaq -0x238(%rbp),%rdi` em `0x40c782d`). Tamanho correto: `0x398-0x238` = `0x160` = **352**.
+
+Um teste novo (`test_size_covers_every_field_the_guest_writes`) impede que a constante volte a
+ficar menor que os campos observados. Nenhum efeito observável no boot desta execução, mas a
+medida anterior deixaria 40 bytes de campos escritos pelo guest sem inicialização.
+
+## Bloqueio 4 — decisão tomada: `Core::init` recusa
+
+```
+NpToolkit2: Core::init refused (0x80550003); no local PSN in this build
+```
+
+`Core::init` é **serviço**, não construtor. Resposta escolhida: recusar com
+`0x80550003` (NpToolkit2 "não inicializado") em vez de devolver 0. O call site do guest é
+`testl %eax,%eax; je <continua>`, e seu ramo de falha (`0x40c791f`) destrói o objeto, revalida
+o canário e retorna limpo — recusar é um caminho tratado, não um crash.
+
+O jogo aceitou a recusa e **continuou** (22 threads, 11 arquivos, 176 leituras), parando no
+próximo import da sequência. Devolver 0 teria feito as 79 funções de NpToolkit2 acreditarem num
+subsistema inexistente.
+
+## Bloqueio 4 (histórico) — `NpToolkit2::Core::init`
 
 ```
 STOP: first unsupported PS4 import: LLdnqVnnNBQ#libSceNpToolkit2 (index 657)

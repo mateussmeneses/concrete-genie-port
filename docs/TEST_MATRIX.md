@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **50 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **52 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -65,13 +65,18 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   abaixo do canário. `runtime/src/runtime_np.c` implementa só construtores.
 - Verificação: o `STOP` do construtor desapareceu; boot avançou para `Core::init`.
 
-**P0-4: `NpToolkit2::Core::init` (serviço) não implementado — ABERTO**
+**P0-4: `NpToolkit2::Core::init` recusado com código real — RESOLVIDO**
 
 - Sintoma: `STOP: ... LLdnqVnnNBQ#libSceNpToolkit2 (index 657)`, exit 20.
-- É o serviço que inicializa o PSN. O guest faz `testl %eax,%eax; je <continua>`, então
-  devolver 0 o faria tratar o PSN como pronto.
-- Não respondido: exigiria que as 79 funções de NpToolkit2 operassem sobre um subsistema que
-  nunca foi inicializado. Precisa de decisão de arquitetura registrada.
+- Resposta: `0x80550003` (NpToolkit2 "não inicializado"), não 0. O guest trata como falha e
+  segue; devolver 0 faria as 79 funções acreditarem num subsistema inexistente.
+- Verificação: `NpToolkit2: Core::init refused`; boot avançou por 3 imports.
+
+**P0-5: sequência de construtores `NpToolkit2::Request` — ABERTO**
+
+- Sintoma: `STOP: ... s0u30pOfi9Q#libSceNpToolkit2 (index 661)` = `TermParams::TermParams()`.
+- 51 construtores/destrutores de `Request`/`Response` no eboot; cada um exige o próprio tamanho
+  medido no call site. Reaproveitar o de `InitParams` seria o mesmo erro dos 312 bytes.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

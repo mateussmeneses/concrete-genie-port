@@ -10,13 +10,13 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | `NpToolkit2::Core::init` (serviço) |
+| Bloqueio | `abort` sem causa | construtores `NpToolkit2::Request` (51 no eboot) |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **22**, incluindo `TaskGraphThreadNP 0..N` (UE4) |
 | Leitura do dump | 0 arquivos | **174 leituras, 10.107.208 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
-| Testes Python | 39 | **50** |
+| Testes Python | 39 | **52** |
 
 ### Correção 1 — janela de memória do guest
 
@@ -52,17 +52,32 @@ rejeita qualquer símbolo que não seja construtor. Sem sucesso cego para servi�
 ## Bloqueio atual
 
 ```
-STOP: first unsupported PS4 import: LLdnqVnnNBQ#libSceNpToolkit2 (index 657)
-API: _ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE
+STOP: first unsupported PS4 import: s0u30pOfi9Q#libSceNpToolkit2 (index 661)
+API: _ZN3sce7Toolkit2NP2V24Core7Request10TermParamsC1Ev
 ```
 
-`Core::init` é o **serviço** que inicializa o subsistema PSN, não um construtor. O guest faz
-`testl %eax,%eax; je <continua>` e, com 0, passaria a tratar o PSN como inicializado.
+### Decisão tomada: `Core::init` **recusa**, não sucede
 
-**Não foi respondido por decisão.** As 79 funções de `libSceNpToolkit2` incluiriam caminhos que
-acreditariam num subsistema nunca inicializado, e a falha apareceria muito depois. Falta uma
-decisão de arquitetura registrada: recusar com erro tratado, ou implementar um PSN local mínimo
-com estado.
+Resolvido nesta sessão. `Core::init` retorna `0x80550003` (NpToolkit2 "não inicializado") em vez
+de 0. O call site faz `testl %eax,%eax; je <continua>`, e o ramo de falha do guest (`0x40c791f`)
+destrói o objeto, revalida o canário e retorna limpo — recusar é caminho tratado.
+
+O jogo **aceitou a recusa** e continuou (22 threads, 11 arquivos, 176 leituras), avançando pelo
+construtor e destrutor de `InitParams` até `TermParams`. Devolver 0 teria feito as 79 funções de
+NpToolkit2 acreditarem num subsistema inexistente.
+
+### Tamanho de `InitParams` corrigido: 312 → 352
+
+A primeira medida usou `rbp-0x260` como objeto seguinte; o guest escreve campos até `-0x320` e o
+objeto seguinte começa em `-0x238`. Correto: **352 bytes**. Teste novo garante que a constante
+nunca fique menor que os campos observados.
+
+### Bloqueio atual: sequência de construtores `Request`
+
+Há **51** construtores/destrutores de `Request`/`Response` do NpToolkit2 neste eboot
+(`docs/evidence/prompt04/`). Cada um precisa do próprio tamanho medido no seu call site —
+`TermParams` sai de outro ponto (`0x40ca5f6`, objeto em `rbp-0x30`). Escalar sem medir cada um
+repetiria o erro dos 312 bytes.
 
 ## Meia-verdade corrigida nesta sessão
 
@@ -87,15 +102,16 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Decidir e registrar a política de PSN offline para `Core::init`:
+Implementar os construtores/destrutores de `Request`/`Response` do NpToolkit2, **medindo cada
+tamanho no próprio call site** (não reaproveitando o de `InitParams`):
 
-1. Avaliar o que o guest faz no ramo de falha (`0x40c791f`) — se degrada para modo offline
-   legítimo, recusar com erro é a resposta correta e barata.
-2. Se o jogo exige sucesso, implementar um PSN local mínimo **com estado** (init cria um
-   contexto; as chamadas seguintes validam contra ele e falham com código real, não com zero).
+1. Para cada construtor que bloqueia, localizar o `leaq <base>(%rbp)` que o precede e o próximo
+   objeto construído no mesmo frame; a diferença é o tamanho.
+2. Registrar o tamanho e a evidência (offset da chamada) na tabela de `runtime_np.c`.
+3. Nunca estimar: 312 bytes foi um erro corrigido para 352 na mesma sessão.
 
-Critério de conclusão: o `STOP` desaparece, o boot avança para um estágio novo e nomeado, e o
-subsistema responde com códigos coerentes — não com sucesso cego.
+Critério de conclusão: o `STOP` desaparece e o boot avança para um estágio novo e nomeado.
+Construtores não recebem sucesso cego; serviços continuam recusando com código real.
 
 ## Reprodução
 
