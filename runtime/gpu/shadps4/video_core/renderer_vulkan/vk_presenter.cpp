@@ -447,6 +447,123 @@ static void SaveScreenshot(const Instance& instance, Scheduler& scheduler, vk::C
     });
 }
 
+/* gow3: readback buffer for a whole frame, shared by the raw dumps and the per-frame state probe.
+ * Both need the same thing: a host-visible copy of the presented image once the GPU is done. */
+struct FrameReadback {
+    VkBuffer buffer{};
+    VmaAllocation allocation{};
+    VmaAllocationInfo info{};
+    VkDeviceSize size{};
+    bool valid{false};
+};
+
+static FrameReadback BeginFrameReadback(const Instance& instance, vk::CommandBuffer cmdbuf,
+                                        vk::Image image, vk::ImageLayout layout, u32 w, u32 h) {
+    FrameReadback out{};
+    const VkBufferCreateInfo buffer_ci{.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+                                       .size = VkDeviceSize(w) * h * 4,
+                                       .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT};
+    const VmaAllocationCreateInfo alloc_ci{
+        .flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST};
+    if (vmaCreateBuffer(instance.GetAllocator(), &buffer_ci, &alloc_ci, &out.buffer,
+                        &out.allocation, &out.info) != VK_SUCCESS) {
+        return out;
+    }
+    cmdbuf.copyImageToBuffer(image, layout, out.buffer,
+                             vk::BufferImageCopy{.imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+                                                 .imageExtent = {w, h, 1}});
+    out.size = buffer_ci.size;
+    out.valid = true;
+    return out;
+}
+
+/* Per-frame state probe (GOW3_FRAME_MAP): a 3x3 luminance grid of the presented image plus the
+ * submits/draws since the previous frame. The grid is the same measure the paint/pause tests used
+ * by hand, so a frame classified here is directly comparable with those runs.
+ *
+ * Cost matters: this runs on every presented frame, and the presentation thread already stalls
+ * the game when it waits. The copy is 8.3 MB at 1080p, so the pass is only armed when asked for:
+ * the probe amortises by reading every Nth frame, and its own cost is reported so it can be
+ * proven not to disturb the state it is measuring. */
+namespace FrameMap {
+
+/// Per-cell mean of (r+g+b)/3, sampled every kGridStride pixels, clamped to the screen.
+struct Grid {
+    float cell[3][3]{};
+    int count[3][3]{};
+};
+
+/// Decode one pixel to 8-bit RGB for whichever format the frame image holds.
+static inline void DecodePixel(u32 p, bool bgra, bool a2r10, u8& r, u8& g, u8& b) {
+    if (a2r10) {
+        r = u8(((p >> 20) & 0x3ff) >> 2);
+        g = u8(((p >> 10) & 0x3ff) >> 2);
+        b = u8((p & 0x3ff) >> 2);
+    } else if (bgra) {
+        b = u8(p);
+        g = u8(p >> 8);
+        r = u8(p >> 16);
+    } else {
+        r = u8(p);
+        g = u8(p >> 8);
+        b = u8(p >> 16);
+    }
+}
+
+static constexpr int kGridStride = 8;
+
+static Grid SampleGrid(const u8* base, u32 w, u32 h, bool bgra, bool a2r10) {
+    Grid grid{};
+    const auto* pixels = reinterpret_cast<const u32*>(base);
+    for (u32 y = 0; y < h; y += kGridStride) {
+        const int cy = std::min(2, int((u64(y) * 3) / h));
+        const u32 row = y * w;
+        for (u32 x = 0; x < w; x += kGridStride) {
+            const int cx = std::min(2, int((u64(x) * 3) / w));
+            u8 r, g, b;
+            DecodePixel(pixels[row + x], bgra, a2r10, r, g, b);
+            grid.cell[cy][cx] += float(r + g + b) / 3.0f;
+            ++grid.count[cy][cx];
+        }
+    }
+    for (int cy = 0; cy < 3; ++cy) {
+        for (int cx = 0; cx < 3; ++cx) {
+            if (grid.count[cy][cx]) {
+                grid.cell[cy][cx] /= float(grid.count[cy][cx]);
+            }
+        }
+    }
+    return grid;
+}
+
+struct Config {
+    bool enabled{false};
+    int every{0};    ///< 0 = every presented frame
+    int stop_after{0}; ///< 0 = never stop
+};
+
+static const Config& GetConfig() {
+    static const Config config = [] {
+        Config c{};
+        const char* env = std::getenv("GOW3_FRAME_MAP");
+        if (!env || !*env || env[0] == '0') {
+            return c;
+        }
+        c.enabled = true;
+        if (const char* every = std::getenv("GOW3_FRAME_MAP_EVERY")) {
+            c.every = std::max(0, std::atoi(every));
+        }
+        if (const char* stop = std::getenv("GOW3_FRAME_MAP_STOP")) {
+            c.stop_after = std::max(0, std::atoi(stop));
+        }
+        return c;
+    }();
+    return config;
+}
+
+} // namespace FrameMap
+
 // gow3: raw copy of an image for GOW3_FRAME_DUMP_TRIGGER, written once the GPU is done.
 static void DumpRaw(const Instance& instance, Scheduler& scheduler, vk::CommandBuffer cmdbuf,
                     vk::Image image, vk::ImageLayout layout, u32 w, u32 h, const char* name,
@@ -736,6 +853,79 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     pp_settings.srgb_input =
         attribute.attrib.pixel_format == Libraries::VideoOut::PixelFormat::A2R10G10B10Srgb;
     pp_pass.Render(cmdbuf, image_view, image_size, *frame, pp_settings);
+
+    /* Per-frame state map (GOW3_FRAME_MAP). Placed after the post pass, so the grid describes the
+     * exact image the swapchain shows - the same one the offline captures measured. */
+    if (FrameMap::GetConfig().enabled) {
+        static const FrameMap::Config& map_config = FrameMap::GetConfig();
+        static u64 map_next = 0;
+        static u64 map_lines = 0;
+        static u64 last_map_draws = 0;
+        static auto map_time_total = std::chrono::steady_clock::duration{0};
+        const bool exhausted = map_config.stop_after > 0 && map_lines >= u64(map_config.stop_after);
+        /* The deadline must only move when a sample is actually taken. Advancing it on every
+         * presented frame keeps it permanently ahead of the counter and samples exactly once. */
+        if (!exhausted && presented_frames >= map_next) {
+            const auto started = std::chrono::steady_clock::now();
+            const vk::MemoryBarrier2 done{
+                .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+                .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite,
+                .dstStageMask = vk::PipelineStageFlagBits2::eTransfer,
+                .dstAccessMask = vk::AccessFlagBits2::eTransferRead};
+            cmdbuf.pipelineBarrier2({.memoryBarrierCount = 1, .pMemoryBarriers = &done});
+            FrameReadback readback = BeginFrameReadback(instance, cmdbuf, frame->image,
+                                                        vk::ImageLayout::eGeneral, frame->width,
+                                                        frame->height);
+            if (!readback.valid) {
+                std::fprintf(stderr, "FrameMap: frame %llu readback buffer allocation failed\n",
+                             static_cast<unsigned long long>(presented_frames));
+            }
+            if (readback.valid) {
+                /* The readback is finished here on purpose: a deferred read would report the grid
+                 * of an older frame under this frame's number, which is the exact confusion the
+                 * map exists to remove. */
+                draw_scheduler.Flush();
+                draw_scheduler.Finish();
+                vmaInvalidateAllocation(instance.GetAllocator(), readback.allocation, 0,
+                                        VK_WHOLE_SIZE);
+                const bool bgra = swapchain.GetSurfaceFormat().format == vk::Format::eB8G8R8A8Unorm ||
+                                  swapchain.GetSurfaceFormat().format == vk::Format::eB8G8R8A8Srgb;
+                const bool a2r10 = swapchain.GetSurfaceFormat().format ==
+                                   vk::Format::eA2R10G10B10UnormPack32;
+                const FrameMap::Grid grid = FrameMap::SampleGrid(
+                    static_cast<const u8*>(readback.info.pMappedData), frame->width, frame->height,
+                    bgra, a2r10);
+                const u64 draws = Gow3Stats::draws.load();
+                const u64 subs = Gow3Stats::submissions.load();
+                std::fprintf(stderr,
+                             "FrameMap: frame %llu grid=[[%.1f,%.1f,%.1f],[%.1f,%.1f,%.1f],"
+                             "[%.1f,%.1f,%.1f]] draws=%llu submissions=%llu\n",
+                             static_cast<unsigned long long>(presented_frames),
+                             grid.cell[0][0], grid.cell[0][1], grid.cell[0][2],
+                             grid.cell[1][0], grid.cell[1][1], grid.cell[1][2],
+                             grid.cell[2][0], grid.cell[2][1], grid.cell[2][2],
+                             static_cast<unsigned long long>(draws - last_map_draws),
+                             static_cast<unsigned long long>(subs));
+                last_map_draws = draws;
+                ++map_lines;
+                const auto spent = std::chrono::steady_clock::now() - started;
+                map_time_total += spent;
+                /* The probe's own cost, reported with the line: if a state boundary lines up with
+                 * a long frame, this is how to tell the measurement from the measured. */
+                if ((map_lines % 60) == 0) {
+                    std::fprintf(stderr,
+                                 "FrameMap: %llu samples, mean cost %.2f ms/sample (readback included)\n",
+                                 static_cast<unsigned long long>(map_lines),
+                                 std::chrono::duration<double, std::milli>(map_time_total).count() /
+                                     double(map_lines));
+                }
+                vmaDestroyBuffer(instance.GetAllocator(), readback.buffer, readback.allocation);
+            }
+            map_next = map_config.every > 0 ? presented_frames + u64(map_config.every)
+                                            : presented_frames + 1;
+        }
+    }
+
     if (frame_dump) {
         // The presented image as the swapchain blit reads it (General after the pass).
         const vk::MemoryBarrier2 done{.srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,

@@ -193,7 +193,24 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-34: instabilidade de estado — o mesmo input cai em cenas diferentes**
+**P0-36: pausa — OPTIONS não pausa (não observado, não é bug declarado)**
+
+- OPTIONS mantido a partir do frame 3000 (`buttons=0x4008` confirmado no log de leitura do pad).
+- Cena continua mudando **~5% por frame** depois disso (3200: 5,26%, 3600: 5,79%, 4400: 5,17%);
+  cores constantes (776–781); sem congelamento nem menu.
+- **Provado:** o input chega ao guest; o efeito de pausa não ocorre nesta cena.
+- **Não provado:** que a pausa esteja quebrada — pode ser cena sem pausa, ou outro botão.
+- Evidência: `boot-132-pause-gameplay.txt`.
+
+**P0-35: mapa de estado — cena estável em 13 amostras / 4.800 frames**
+
+- `cross` mantido, 12.000 frames, 13 capturas: **71,2% não-preto, ~760 cores, top #000000 6,5%**
+  em todas. Sem alternância UI↔3D.
+- Corrige minha conclusão anterior de "instabilidade": a variação entre runs vem do **ponto de parada
+  de cada run**, não do jogo oscilando.
+- Evidência: `boot-131-statemap.txt`.
+
+**P0-34: instabilidade de estado (REFUTADO — ver P0-35)**
 
 - Grade de luminância 3×3 no mesmo frame entre execuções: `up/mo/rel/s1/s0` = **78/163/50** (cena 3D),
   `ms` = **247/200/103** (cena clara), `pz` com OPTIONS = **254,5/254,9/246** (**92,6% branco, UI**).

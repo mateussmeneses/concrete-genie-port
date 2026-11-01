@@ -1,3 +1,83 @@
+# Pausa: OPTIONS não pausa a cena
+
+## O teste, agora na faixa correta
+
+OPTIONS mantido a partir do frame 3000 (confirmado: `pad file: buttons 0x4008` na linha que
+corresponde ao present #3000).
+
+| frame | não-preto | cores | mudança vs anterior |
+|---|---|---|---|
+| 2800 (antes) | 80,56% | 781 | — |
+| 3000 (OPTIONS aplica) | 80,58% | 779 | 4,43% |
+| 3200 | 80,56% | 778 | 5,26% |
+| 3600 | 80,57% | 776 | 5,79% |
+| 4000 | 80,56% | 777 | 4,96% |
+| 4400 | 80,56% | 777 | 5,17% |
+
+**A cena continua mudando ~5% por frame depois de OPTIONS.** Sem congelamento, sem menu, contagem de
+cores constante (776–781).
+
+## Interpretação
+
+OPTIONS **não pausa** esta cena. Duas leituras possíveis, e a medição não distingue:
+
+1. O jogo está num estado em que pausa não se aplica (cutscene, transição, tutorial sem controle).
+2. O botão de pausa é outro, ou o pause exige segurar.
+
+O que **está** provado: `0x4008` (cross+options) chega ao guest — `buttons=0x4008` no log de leitura do
+pad — e não produz congelamento de frame. O caminho de input funciona; o efeito de pausa não ocorre.
+
+## O que não é verdade
+
+Não posso afirmar "pausa quebrada". Seria preciso saber qual botão o jogo usa para pausar nesta cena,
+e não há evidência disso ainda. Registrar como **não observado**, não como bug.
+
+# CORREÇÃO 5: não há "instabilidade" — há um estado estável e eu amostrei mal
+
+## O que eu tinha concluído, e por que estava errado
+
+Eu registrei "o mesmo script de input cai em estados diferentes" comparando grade de luminância entre
+execuções. A conclusão estava **errada na causa**: eu atribuí a variação a instabilidade do jogo, sem
+testar a hipótese mais simples — que cada run simplesmente **para em ponto diferente da sequência de
+boot**.
+
+## O que a medição com 13 pontos mostrou
+
+Uma execução só, `cross` mantido, 12.000 frames, capturas a cada ~400 frames:
+
+| frame | não-preto | cores | cor dominante |
+|---|---|---|---|
+| 600 | 71,21% | 664 | #000000 6,5% |
+| 1800 | 71,23% | 773 | #000000 6,5% |
+| 3000 | 71,24% | 758 | #000000 6,5% |
+| 4200 | 71,22% | 768 | #000000 6,5% |
+| 5400 | 71,24% | 763 | #000000 6,5% |
+
+**Estado constante em 13 amostras ao longo de 4.800 frames.** Sem alternância UI↔3D. A cena tem
+71,2% de conteúdo, ~760 cores e geometria estruturada (massa iluminada central sobre fundo escuro).
+
+## A causa real da variação entre execuções
+
+Cada run chegava a um ponto diferente da sequência antes do timeout. Runs curtos capturavam UI de
+carregamento; runs longos capturavam a cena. **Não é o jogo oscilando — é a minha amostragem que
+parava em lugares distintos.**
+
+Isso é a mesma classe de erro que cometi antes com "tela preta": eu interpretei captura-precoce como
+estado-do-jogo.
+
+## O que permanece válido
+
+Os testes de pintura nos cinco runs com grade 78/163/50 continuam válidos: todos estavam na mesma cena
+3D, e neles a pintura é negativa por três caminhos.
+
+O teste de OPTIONS (`pz`) **não** invalida nada sobre pausa — ele simplesmente foi capturado durante
+a fase de UI, antes do gameplay.
+
+## Próximo passo
+
+Refazer o teste de pausa com os frames que agora sei serem gameplay (a partir de ~600 e estáveis até
+5400+). E repetir pintura nessa faixa com `cross` mantido, agora que o estado é previsível.
+
 # Instabilidade de estado: o mesmo input cai em cenas diferentes
 
 ## A descoberta que reorganiza a interpretação de tudo

@@ -142,38 +142,30 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Mapear as faixas de frame que são gameplay, para que os testes seguintes caiam no estado certo.
+Descobrir qual input o jogo usa para pausar nesta cena, ou registrar pausa como não observada.
 
-**Descoberta que reorganiza tudo:** o mesmo script de input cai em estados diferentes conforme o
-timing. Grade de luminância 3×3 no mesmo frame:
+**Feito nesta sessão (mapa de estado + pausa):**
 
-| Execução | Grade (topo) | Estado |
-|---|---|---|
-| `up`, `mo`, `rel`, `s1`, `s0` | 78 / 163 / 50 | cena 3D escura |
-| `ms` | 247 / 200 / 103 | cena clara |
-| `pz` (OPTIONS) | **254,5 / 254,9 / 246** | **92,6% branco — UI** |
+1. **Mapa de estado:** `cross` mantido, 12.000 frames, 13 capturas — **71,2% não-preto, ~760 cores,
+   top `#000000` 6,5% em todas as amostras**. Cena estável, sem alternância UI↔3D.
+   Isso **corrige** minha conclusão anterior de "instabilidade": a variação entre execuções vinha do
+   ponto de parada de cada run, não do jogo oscilando. Mesma classe de erro que a "tela preta".
 
-Isso explica duas falhas minhas: o teste de OPTIONS não pausou gameplay (nos frames 900–1800 o jogo
-estava em UI) e o teste de sensor `ms` não era comparável.
+2. **Pausa com OPTIONS:** aplicado no frame 3000 (`buttons=0x4008` confirmado). A cena continua
+   mudando **~5% por frame** depois (`3200: 5,26%`, `3600: 5,79%`, `4400: 5,17%`), cores constantes,
+   sem congelamento nem menu.
 
-**Pintura — veredito consolidado nos cinco runs comparáveis (grade 78/163/50):**
+**Provado:** o input chega ao guest. **Não provado:** que pausa esteja quebrada — pode ser cena sem
+pausa, ou outro botão. Registrado como **não observado**, não como bug.
 
-| Abordagem | Resultado |
-|---|---|
-| R2 parado | indistinguível do controle |
-| R2 + stick | 99,20% de cena muda, **sem cor nova** |
-| R2 + sensor (gz=40, `gyro=1 accel=1`) | **0,002%** de cor nova |
+**Pintura — veredito consolidado (inalterado):** negativa por três caminhos na cena 3D comparável —
+R2 parado, R2+stick, R2+sensor verificado ativo.
 
-**Nenhuma pintura** por nenhum dos três caminhos. Também implementado nesta sessão: leitura dos
-sensores do gamepad (`m/s²→g`, `rad/s→deg/s`), injeção de sensor por `GOW3_PAD_FILE`
-(`gx= gy= gz= ax= ay= az=`), e recuperação do `.uproject` do pak.
+**Próximo passo único:** identificar o botão de pausa. Se OPTIONS não pausa, testar touchpad e
+triangle, e verificar se a cena tem menu de pausa por outro gatilho. Sem isso, pausa fica como
+"não observada" honestamente.
 
-**Próximo passo único:** instrumentar por frame a **grade de luminância e a contagem de draws**, para
-produzir um mapa de quais faixas de frame são gameplay e quais são UI. Todo teste seguinte (pintura,
-pausa, save/load) depende disso — hoje qualquer captura pode cair em UI e o resultado ser mal
-interpretado, como já aconteceu duas vezes.
-
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs
