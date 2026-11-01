@@ -18,7 +18,27 @@ from prepare import sfo
 # so the build stays unregistered and no patches may run.
 CANDIDATES = {
     "CUSA11834": {"name": "Concrete Genie", "region": "US", "builds": {}},
-    "CUSA11875": {"name": "Concrete Genie", "region": "EU", "builds": {}},
+    # Audited on 2026-10-31 with scripts/audit_game.py. The build is now IDENTIFIED
+    # (fields, hash, imports and modules are recorded in docs/evidence/prompt03/), and the
+    # first boot attempt was logged. It stays out of `builds` on purpose: the game faults
+    # inside libc abort() at guest 0x62c1264 before any frame, so it is not a supported
+    # build and no patch may run. Registering it here would unlock preparation + saves for
+    # a build that has never reached the menu.
+    "CUSA11875": {
+        "name": "Concrete Genie",
+        "region": "EU",
+        "audited": {
+            "app_ver": "01.07",
+            "content_id": "EP9000-CUSA11875_00-CONCRETEGENIE000",
+            "eboot_sha256": "06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51",
+            "eboot_size": 108601759,
+            "imports": 988,
+            "imports_resolved_with_gpu": 811,
+            "first_blocker": "libc abort() -> INT 0x44 at guest 0x62c1264",
+            "stage_reached": "guest code executed; no frame",
+        },
+        "builds": {},
+    },
 }
 # Backwards-compatible alias: earlier tooling and tests refer to PROFILES.
 PROFILES = CANDIDATES

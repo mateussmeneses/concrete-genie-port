@@ -1,0 +1,66 @@
+== Submodules ==
+== Third-party patches (idempotent) ==
+Already applied: runtime/gpu/patches/fsr-vulkan/0001-FSR-4-v07-provider-GOW3_FSR4_PROFILE-pass-timings-GOW3_F.patch
+Already applied: runtime/gpu/patches/fsr-vulkan/0002-ffx_vk-include-mutex-for-libc.patch
+== Configure ==
+CMake Warning (dev) at CMakeLists.txt:45 (find_package):
+  Policy CMP0167 is not set: The FindBoost module is removed.  Run "cmake
+  --help-policy CMP0167" for policy details.  Use the cmake_policy command to
+  set the policy and suppress this warning.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Deprecation Warning at third_party/miniz/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- Configuring done (0.6s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/projetos/concrete-genie-port/runtime/out/gpu
+== Build ==
+ninja: Entering directory `runtime/out/gpu'
+[0/2] Re-checking globbed directories...
+ninja: no work to do.
+== Native tests ==
+ninja: Entering directory `runtime/out/gpu'
+[0/2] Re-checking globbed directories...
+[1/7] Linking C executable pad-map-test.exe
+[2/7] Linking C executable services-test.exe
+[3/7] Linking CXX executable aliasing-test.exe
+[4/7] Linking CXX executable depth-stencil-state-test.exe
+[5/7] Linking CXX executable async-compiler-test.exe
+[6/7] Linking CXX executable warmup-inbox-test.exe
+RUN services-test
+Runtime: MsgDialog opened; completed immediately (no dialog UI yet)
+Runtime: MsgDialog progress bar opened (runs until closed)
+Runtime: SaveDataDialog progress bar opened (runs until closed)
+Runtime: SaveDataDialog opened; completed immediately (no dialog UI yet)
+Runtime: SaveDataDialog list (Load game): 3 entries shown
+Runtime: SaveDataDialog list: chose SAVE0002
+Runtime: SaveDataDialog list (Load game): 3 entries shown
+Runtime: SaveDataDialog list: chose new save
+Runtime: SaveDataDialog list (Load game): 3 entries shown
+Runtime: SaveDataDialog list: cancelled
+Runtime: PlayGo initialized; 1 chunks, all installed locally
+services test: ok
+RUN pad-map-test
+Runtime: pad map: ignored 'bogus=Q'
+Runtime: pad map: ignored 'cross=NotAKey'
+Runtime: pad map: ignored 'circle' (expected button=name)
+Runtime: pad map: ignored '=Q'
+Runtime: pad map: ignored 'square='
+Runtime: pad map: ignored 'cross=Space'
+PASS: pad and key maps
+RUN aliasing-test
+aliasing-test: OK
+RUN depth-stencil-state-test
+depth-stencil-state-test: OK
+RUN async-compiler-test
+RUN warmup-inbox-test
+PASS: warm-up inbox
+Built C:/projetos/concrete-genie-port/runtime/out/gpu/cg-runtime.exe

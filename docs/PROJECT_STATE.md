@@ -1,74 +1,96 @@
 # Estado do projeto
 
-Atualizado: 2026-10-31 UTC. **PROMPT 02 concluído; nenhum boot de Concrete Genie foi
-demonstrado.** A build local foi identificada, não validada.
+Atualizado: 2026-11-01 UTC. **PROMPT 03 concluído até o primeiro bloqueio observável.**
+O código guest do jogo executou; nenhum frame foi renderizado.
 
-## O que existe agora
+## Onde o port está
 
-- Repositório independente na branch `bootstrap/windows`, com o runtime auditado de MediEvil
-  vendorizado em `runtime/` (base `424f3ea8dbdcb02754a31e5225ef42e2f77f8e94`). O upstream não
-  foi sobrescrito nem reorganizado; `references/medievil` preserva o checkout original.
-- Build Windows CLANG64 reproduzível: `bash build.sh` (submódulos, patches idempotentes,
-  `cg-runtime`, `cg-gpu-check`) e `bash build.sh --test` (seis alvos nativos). Exit 0
-  registrado em `docs/evidence/bootstrap/`. Detalhes em BASELINE.
-- Pipeline independente de dump: `--help`, `--check-config`, mensagem acionável sem jogo,
-  `--audit-runtime` e `--vulkan-smoke` rodam sem nenhum arquivo comercial.
-- Perfis fail-closed por TITLE_ID: `CUSA11834` (US) e `CUSA11875` (EU) são candidatos com
-  `builds: {}`. Título desconhecido, build não registrada, SFO inválido e módulo ausente param
-  o pipeline antes de qualquer escrita.
-- Prefixo de configuração do projeto (`CG_*`), JSON validado, dados isolados em `.cg/`,
-  saves por TITLE_ID separados de cache por SHA-256 do eboot.
-- Nomenclatura genérica onde é seguro (`cg-runtime`, `cg-gpu-check`, `concrete-genie.ini`,
-  `runtime.manifest`, identidade `cg.runtime`). Hooks e patches de MediEvil foram **removidos**
-  do runtime genérico, não promovidos.
+- Repositório independente na branch `bootstrap/windows`, runtime do MediEvil vendorizado em
+  `runtime/` (base `424f3ea`). Upstream não sobrescrito nem reorganizado.
+- Build Windows CLANG64 reproduzível (`bash build.sh`, `bash build.sh --test`), exit 0.
+- Pipeline sem dump funcionando: `--help`, `--check-config`, falta-de-jogo acionável,
+  `--audit-runtime`, `--vulkan-smoke`. 29 testes Python verdes.
+- `scripts/audit_game.py` gera manifesto JSON somente-leitura do dump.
+- AI Workbench integrado como ferramenta externa: skills em `.agents/`, `.claude/`,
+  `.openclaude/`; `.ai-workbench/` fora do Git; `AGENTS.md`/`CLAUDE.md` preservados com
+  bloco gerenciado anexado.
 
-## Dump local identificado (não validado)
+## Dump identificado e pipeline executado
 
-`gamedump/CUSA11875`, 25 GB, fora do controle de versão (ignorado pelo `.gitignore`).
+`gamedump/CUSA11875` (edição europeia, 25 GB, ignorado pelo Git).
 
 | Campo | Valor |
 |---|---|
-| `TITLE_ID` | `CUSA11875` (edição europeia) |
-| `TITLE` | `Concrete Genie` |
-| `APP_VER` / `VERSION` | `01.07` / `01.00` |
+| `TITLE_ID` / `APP_VER` | `CUSA11875` / `01.07` |
 | `CONTENT_ID` | `EP9000-CUSA11875_00-CONCRETEGENIE000` |
-| `eboot.bin` | 108.601.759 bytes, SELF (`4F 15 3D 1D`) |
-| `eboot.bin` SHA-256 | `06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51` |
-| Engine | Unreal Engine 4 (`ConcreteGenie.uproject`) + Bink 2 |
+| `TITLE` | `Concrete Genie` |
+| `eboot.bin` | 108.601.759 bytes, SELF `0x0480` (não cifrado, não comprimido) |
+| SHA-256 | `06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51` |
+| Entry point | `0x37d58d0` |
+| Engine | Unreal Engine 4 + Bink 2 + `libSceAjm` |
 
-Identificar a build não é validá-la. `CUSA11875` **não** foi registrada em `builds` e
-nenhum patch foi habilitado.
+Pipeline real, com exit codes:
+
+1. `prepare` (SELF→ELF): 103.382.639 bytes, 988 imports, 463.753 relocations, 64 módulos — exit 0.
+2. `link` (`libc.prx`, `libSceFios2.prx`): 209 native bindings — exit 0.
+3. `--check-imports`: **811/988 imports resolvidos** (com shim GPU), 177 faltando — exit 1.
+4. Boot: Vulkan inicializado, 106 MB mapeados, 465.785 relocations aplicadas — **exit 3**.
+
+## Primeiro bloqueio observável
+
+`guest offset 0x62c1264` = `libc.prx+0x21264`, função `abort`. Bytes reais:
+
+```
+55 4889e5 cd44 bacccccccc b90b0002a0 90 0f0b
+   push rbp; mov rbp,rsp; INT 0x44; ... ; ud2
+```
+
+O runtime não implementa o gate de syscall PS4 `INT 0x44`; a chamada nunca retorna e a
+execução cai no `ud2`. `abort` é exportado pela própria libc, não um import pendente.
+
+Como o abort acontece, **a razão original da chamada se perde. Descobri-la é a próxima ação.**
+
+Correção desta etapa (diagnóstico, não bypass): `is_ps4_syscall_gate()` em `probe.c` nomeia
+o bloqueio em vez de reportar "read access to ffffffff".
+
+## Cobertura de imports (medida, não estimada)
+
+| Modo | Resolvidos | Faltando |
+|---|---|---|
+| `--cpu-only` | 679 / 988 | 309 |
+| com shim GPU | **811 / 988** | **177** |
+
+Gaps concentrados em `libSceNpToolkit2` (79), `libSceHmd` (22), `libSceAudio3d` (14),
+`libSceVrTracker` (11), `libSceSocialScreen` (7), `libSceCamera` (7), `libSceHmdSetupDialog` (6),
+`libSceVrServiceDialog` (5), `libSceMove` (5). Tabela em `docs/evidence/prompt03/`.
 
 ## Estado de verificação
 
 | Item | Estado |
 |---|---|
-| Build nativo (`cg-runtime`, `cg-gpu-check`) | PASSA, exit 0 |
-| `build.sh --test`, seis testes nativos | PASSA, exit 0 |
-| Suíte Python do projeto (`tests/`) | PASSA, 14 testes, exit 0 |
-| `--help`, `--check-config`, falta de jogo | PASSA, respostas válidas sem dump |
-| Auditoria de runtime e smoke Vulkan | PASSA (NVIDIA RTX 5060) |
-| Pipeline contra o dump real | exit 1, recusa fail-closed com o hash correto |
-| Suíte herdada `runtime/tests` | NÃO VERDE, exit 1 (herdada; fora do escopo) |
-| **Boot / menu / gameplay / áudio / saves** | **NÃO EXECUTADO** |
+| Build nativo + testes nativos | PASSA, exit 0 |
+| Suíte Python (`tests/`) | PASSA, 29 testes, exit 0 |
+| `audit_game.py` no dump real | PASSA, manifesto escrito |
+| Smoke sem dump (help/config/audit/vulkan) | PASSA |
+| Código guest executado | **SIM** — módulos ligados, relocations aplicadas |
+| **Primeiro frame** | **NÃO** — bloqueio em `int 0x44` dentro de `abort` |
+| Menu, intro, gameplay | NÃO EXECUTADO |
+| Áudio, saves, câmera/gyro/Move/PSVR | NÃO EXECUTADO (apenas imports presentes) |
+| Flicker, iluminação, VRAM, frame pacing | NÃO EXECUTADO |
 
 ## Limites conhecidos
 
-- `eboot.bin` é SELF: descriptografia/descompressão, relocations e imports reais nunca foram
-  processados. Loader não executou conteúdo comercial.
-- `sce_module/` inclui `libSceNpToolkit2`, `libSceFios2` e quatro módulos de rastreamento
-  (face/hand/head tracker) ligados a câmera/PSVR. Nenhum contrato implementado ou verificado.
-- `runtime/launcher/medievil_launcher.py` e `packaging/windows/package.sh` ainda carregam
-  branding, updater e ícones de MediEvil; não são o ponto de entrada suportado. A entrada
-  neutra é `Launch Concrete Genie.cmd` → `run.py`.
-- A suíte herdada continua vermelha por expectativas de GoW/MediEvil; não foi filtrada.
-- Distribuição Windows limpa, frame pacing, VRAM, flicker e iluminação: não medidos.
+- Não se sabe por que `abort` foi chamado; o `INT 0x44` é sintoma, não causa.
+- 177 imports sem implementação; nenhum foi stubbado com retorno de sucesso cego.
+- `CUSA11834` (US) nunca foi vista em dump; permanece candidata do playbook.
+- `runtime/launcher/medievil_launcher.py` e `package.sh` ainda têm branding de MediEvil e
+  não são ponto de entrada suportado.
+- Suíte herdada `runtime/tests` segue vermelha por expectativas de GoW/MediEvil; não foi
+  "consertada" para parecer verde.
+- `profiles.py` mantém `CUSA11875` com `builds: {}`: a build foi identificada, não suportada.
 
 ## Próxima ação
 
-PROMPT 03 — auditoria do dump: `scripts/audit_game.py` gerando manifesto JSON local com
-`TITLE_ID`, `APP_VER`, `CONTENT_ID`, SHA-256, imports/NIDs, módulos, codecs e sinais de UE4,
-validado contra `gamedump/CUSA11875` e com fixtures sintéticas. Critério em HANDOFF.
-
-HEAD de partida desta etapa: `60f0aa7a626b6d224f96c510accafc5e88954d13`. Commits desta
-etapa são locais; **sem merge automático**.
+Instrumentar `runtime_resolve` para registrar os últimos imports servidos e seus valores de
+retorno por thread, e dumpá-los no bloqueio. Isso nomeia o serviço cuja resposta levou ao
+`abort`. Critério completo em `docs/HANDOFF.md`.

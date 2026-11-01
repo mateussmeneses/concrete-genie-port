@@ -113,13 +113,28 @@ static void describe_address(char *out, size_t size, uintptr_t address) {
     snprintf(out,size,"%p",(void *)address);
 }
 static int fatal_reported;
+/* PS4 syscalls leave guest code through `int 0x44`. The runtime implements no such gate, so
+ * Windows raises PRIV_INSTRUCTION on the instruction itself. Detecting it turns an opaque
+ * crash into a named blocker, which is what the dump audit needs to report. */
+static int is_ps4_syscall_gate(const CONTEXT *c) {
+    unsigned char opcode[2];
+    SIZE_T got=0;
+    if (!ReadProcessMemory(GetCurrentProcess(),(void *)c->Rip,opcode,sizeof(opcode),&got) || got!=sizeof(opcode))
+        return 0;
+    return opcode[0]==0xcd && opcode[1]==0x44;
+}
 static LONG fatal_exception(EXCEPTION_POINTERS *info) {
     if (__atomic_exchange_n(&fatal_reported,1,__ATOMIC_ACQ_REL)) { Sleep(INFINITE); }
     const EXCEPTION_RECORD *record=info->ExceptionRecord;
     const CONTEXT *c=info->ContextRecord;
     char where[MAX_PATH+64];
     describe_address(where,sizeof(where),(uintptr_t)c->Rip);
-    if (record->ExceptionCode==EXCEPTION_ACCESS_VIOLATION && record->NumberParameters>=2)
+    if (is_ps4_syscall_gate(c))
+        fprintf(stderr,"Blocker: guest executed a PS4 syscall gate (int 0x44) at %s\n"
+                       "  The runtime implements no int 0x44 handler, so the syscall cannot be\n"
+                       "  serviced and no return value exists. Identify the calling import instead\n"
+                       "  of assuming the fault is a memory error.\n",where);
+    else if (record->ExceptionCode==EXCEPTION_ACCESS_VIOLATION && record->NumberParameters>=2)
         fprintf(stderr,"Fault: %s access to %p at %s (thread %lu)\n",
                 record->ExceptionInformation[0]==1 ? "write" : record->ExceptionInformation[0]==8 ? "execute" : "read",
                 (void *)record->ExceptionInformation[1],where,GetCurrentThreadId());

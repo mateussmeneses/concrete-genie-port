@@ -70,3 +70,33 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
 - **`CANDIDATES` é o nome canônico; `PROFILES` fica como alias.** Motivo: o termo deixou de
   ser "perfil de jogo suportado" e passou a ser "título candidato"; manter o alias evita
   quebrar a suíte existente sem renomear tudo de uma vez.
+
+## 2026-11-01 — PROMPT 03: AI Workbench e auditoria do dump
+
+- **AI Workbench entra como ferramenta externa, não dependência do runtime.** `aiwh init`
+  anexa um bloco gerenciado por marcadores (`<!-- AIWH:BEGIN -->`) e copia skills para
+  `.agents/`, `.claude/`, `.openclaude/`. O conteúdo do Prompt 02 foi preservado (verificado
+  por diff semântico). `.ai-workbench/` fica no `.gitignore`. Nenhum MCP/plugin instalado e
+  nenhuma automação global ativada. Reversão: remover `.agents`, `.claude`, `.openclaude`,
+  `AI-WORKBENCH.md` e o bloco marcado em `AGENTS.md`/`CLAUDE.md`.
+- **O dry-run foi inspecionado antes de aplicar**, porque ele indicava `update` em `AGENTS.md`
+  e `CLAUDE.md`. Ler `src/aiwh/workbench.py:managed_text` mostrou que a escrita é restrita à
+  seção marcada e idempotente, o que tornou a aplicação segura. Sem essa leitura o `update`
+  teria sido recusado.
+- **`CUSA11875` é registrada como auditada, não como suportada.** O bloco `audited` guarda
+  fatos verificados (APP_VER, SHA-256, contagem de imports, primeiro bloqueio), mas `builds`
+  continua vazio. Motivo: registrar a build desbloquearia preparação e saves para um dump que
+  nunca chegou ao menu. Reversão: remover o bloco; o comportamento fail-closed não muda.
+- **Não se cria stub para `abort` nem para o `INT 0x44`.** O gate de syscall não tem
+  semântica conhecida nesta build, e devolver sucesso cego esconderia a causa. A escolha foi
+  **diagnosticar** (`is_ps4_syscall_gate()` em `probe.c`) e registrar a investigação como
+  próxima ação. Reversão: remover a função e a mensagem.
+- **`scripts/audit_game.py` reaproveita os parsers do upstream** (`prepare.parse_self`,
+  `prepare.sfo`, `link_modules.module`) em vez de duplicar SELF/ELF/SFO. Motivo: uma correção
+  de parser serve os dois caminhos. Contrapartida: o script depende de `runtime/scripts` no
+  `sys.path`, o que é intencional e está documentado no cabeçalho.
+- **Manifesto somente leitura.** `audit_game.py` não copia binários e não escreve no dump;
+  apenas lê e reporta. Verificado: SHA-256 do eboot recalculado depois da execução não mudou.
+- **A avaliação automática do Workbench foi confrontada com a evidência.** `GAME_PORT_PLAN.md`
+  afirma "No executable bytes inspected" e `CONTEXT.md` afirma "No TODO items located";
+  ambas são falsas aqui. As recomendações foram tratadas como sugestão, não como resultado.

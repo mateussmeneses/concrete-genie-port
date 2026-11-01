@@ -78,3 +78,6 @@ Desktop.ini
 .DS_Store
 *.swp
 *~
+
+# AI Workbench private local context
+.ai-workbench/
