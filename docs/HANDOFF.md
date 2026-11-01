@@ -142,32 +142,32 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Descobrir por que o `AudioThread` do motor entrega buffers zerados (o user event já foi corrigido).
+Instrumentar `sceAjmInstanceCreate` para saber se o motor chega a criar instância de decodificação.
 
-**Corrigido nesta sessão: `sceKernelAddUserEvent`.** Eu o havia implementado devolvendo
-`K_EINVAL`, achando inofensivo. A instrumentação mostrou o guest chamando **195 vezes com o mesmo id
-`262147`** em loop de retentativa, e a cada recusa o driver de áudio logava
-`BRB DRIVER: ! EVENT QUEUE FULL -> CLIENT THREAD FALLING BEHIND !`.
+**Estabelecido nesta sessão, por medição:**
 
-| Métrica | Antes | Depois |
-|---|---|---|
-| `AddUserEvent` chamado | 195 | **0** |
-| `EVENT QUEUE FULL` | 4 | **0** |
-| `BRB WARNING REPORT` | 4 | **1** |
+| Camada | Estado |
+|---|---|
+| Port WASAPI 8ch→stereo | correto (`938 buffers/5s`, `starved 0`) |
+| Ganho / remap | correto (neutro) |
+| Buffer do guest | **zeros** (`raw_peak 0.0000` antes de converter) |
+| User event do driver | **corrigido** (`EVENT QUEUE FULL` 4 → 0) |
+| Pak do jogo | **aberto** (`concretegenie-ps4_0_p.pak`) |
+| Assets de áudio | **existem**: 1.358 `.at9` + 417 `.bnk` |
+| Threads de áudio | `snd_stream_parsing_thread`, `snd_stream_reader_thread`, `AudioThread` |
 
-**Mas o áudio continua silencioso:** `peak 0.0000`, `0/938 loud`. São dois problemas distintos —
-este está resolvido, o outro não.
+O jogo usa áudio **em streaming**, não sintetizado — por isso NGS2 nunca é chamado. Os assets são
+ATRAC9, exatamente o codec que o Ajm registrou (`codec=1`). O formato fecha.
 
-**Estado medido do áudio:** o runtime está correto ponta a ponta (`938 buffers/5s`, `starved 0`,
-ganho neutro, remap identidade), e o buffer chega zerado **do guest** (`raw_peak 0.0000` medido antes
-de qualquer conversão). NGS2 nunca é chamado (0 em quatro entradas); Ajm só responde
-`STATISTICS_INSTANCE`.
+**O defeito:** o guest **nunca abre um `.at9`**, apesar de 130 aberturas de arquivo (i18n, binários,
+pak). Não é o decodificador, nem a saída, nem os dados — é o motor decidindo que não há nada para
+tocar.
 
-**Próximo passo único:** rastrear qual código do guest preenche o buffer de `sceAudioOutOutput` e por
-que sai zero — provavelmente o subsistema de som do motor não carregou conteúdo. Instrumentar as
-chamadas de leitura de assets de áudio do engine e verificar se alguma falha.
+**Próximo passo único:** instrumentar `sceAjmInstanceCreate` para verificar se alguma instância de
+decodificação é criada. Se nenhuma é, o motor nunca decidiu tocar; a causa está acima do Ajm. Se
+alguma é criada mas nenhum `.at9` é aberto, a falha está na resolução do stream.
 
-**Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

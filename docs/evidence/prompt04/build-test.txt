@@ -19,7 +19,7 @@ CMake Deprecation Warning at third_party/miniz/CMakeLists.txt:1 (cmake_minimum_r
   to work with policies introduced by <max> or earlier.
 
 
--- Configuring done (0.6s)
+-- Configuring done (0.7s)
 -- Generating done (0.2s)
 -- Build files have been written to: C:/projetos/concrete-genie-port/runtime/out/gpu
 == Build ==
@@ -29,10 +29,7 @@ ninja: no work to do.
 == Native tests ==
 ninja: Entering directory `runtime/out/gpu'
 [0/2] Re-checking globbed directories...
-[1/5] Building C object CMakeFiles/pad-map-test.dir/C_/projetos/concrete-genie-port/runtime/tests/test_pad_map.c.obj
-[2/5] Linking C executable pad-map-test.exe
-[3/5] Building C object CMakeFiles/services-test.dir/C_/projetos/concrete-genie-port/runtime/tests/test_services.c.obj
-[4/5] Linking C executable services-test.exe
+ninja: no work to do.
 RUN services-test
 Runtime: MsgDialog opened; completed immediately (no dialog UI yet)
 Runtime: MsgDialog progress bar opened (runs until closed)

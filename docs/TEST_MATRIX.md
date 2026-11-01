@@ -193,7 +193,19 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-27: `sceKernelAddUserEvent` recusado — RESOLVIDO (áudio ainda silencioso)**
+**P0-28: áudio — infraestrutura completa, assets existem, guest nunca os pede**
+
+- Pak **aberto**: `open(.../concretegenie-ps4_0_p.pak)`.
+- Assets **existem** no índice: **1.358 `.at9`** + 417 `.bnk`:
+  `Content/Audio/Streams/{_brushchimes,_cutscenes,_music,_musicVR,<idiomas>}` — todos ATRAC9, o
+  mesmo codec que o Ajm registrou (`codec=1`).
+- Threads do guest criadas: `snd_stream_parsing_thread`, `snd_stream_reader_thread`, `AudioThread`
+  → áudio **em streaming**, não sintetizado (explica NGS2 com 0 chamadas).
+- **Nenhum `.at9` é aberto** em 130 aberturas de arquivo. O defeito está na decisão do motor de não
+  tocar nada, não no decodificador, saída ou dados.
+- Evidência: `boot-104-userevent-fixed.txt`, `boot-105-pak-reads.txt`.
+
+**P0-27: `sceKernelAddUserEvent` recusado — RESOLVIDO**
 
 - Implementado devolvendo `K_EINVAL`; o guest chamava **195 vezes com o mesmo id `262147`** (loop de
   retentativa) e a cada recusa o driver logava

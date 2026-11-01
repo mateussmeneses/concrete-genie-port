@@ -1,3 +1,54 @@
+# Áudio: infraestrutura completa, assets existem, e o guest nunca os pede
+
+## O que está estabelecido por medição
+
+| Camada | Estado | Evidência |
+|---|---|---|
+| Port WASAPI 8ch→stereo | correto | `938 buffers/5s (expected 937)`, `starved 0` |
+| Ganho / remap de canal | correto (neutro) | `volume=32768` / `VOLUME_0DB=32768` → 1.0 |
+| Buffer entregue pelo guest | **zeros** | `raw_peak 0.0000` medido antes de converter |
+| User event do driver | corrigido | `EVENT QUEUE FULL` 4 → 0 |
+| Pak do jogo | **aberto com sucesso** | `open(.../concretegenie-ps4_0_p.pak)` |
+| Assets de áudio | **existem** | 1.358 `.at9` + 417 `.bnk` no índice do pak |
+| Threads de áudio do guest | criadas | `snd_stream_parsing_thread`, `snd_stream_reader_thread`, `AudioThread` |
+| NGS2 | não usado | 0 chamadas em 4 entradas |
+| Ajm | só estatística | 94 jobs `STATISTICS_INSTANCE` |
+
+## O layout de áudio que existe no dump
+
+```
+ConcreteGenie/Content/Audio/Streams/_brushchimes   <- som da mecânica de pintura
+ConcreteGenie/Content/Audio/Streams/_cutscenes
+ConcreteGenie/Content/Audio/Streams/_music
+ConcreteGenie/Content/Audio/Streams/_musicVR
+ConcreteGenie/Content/Audio/Streams/{ar,cs,de,en,es,es-419,fr,it,...}  <- diálogo por idioma
+```
+
+Todos **ATRAC9**, que é exatamente o codec que o Ajm registrou (`codec=1`). O formato fecha.
+
+## Onde o silêncio está, agora com precisão
+
+O jogo usa áudio **em streaming** (`snd_stream_reader_thread`), não sintetizado. O pak está aberto, os
+assets existem no formato certo, e o guest **nunca abre um `.at9`** — não há uma única chamada de
+abertura de asset de áudio no log, enquanto há 130 aberturas de i18n/binários.
+
+Logo o defeito não está no decodificador, nem na saída, nem nos dados: está em **o que faz o motor
+decidir que não há nada para tocar** — provavelmente o subsistema de som do motor não inicializou
+por completo, ou o evento que dispara o stream nunca chega.
+
+## O que isso refuta definitivamente
+
+- "o mixer é NGS2" — 0 chamadas.
+- "áudio não pode ser auditado sem cena visível" — a cena renderiza a 30 FPS e o áudio foi auditado
+  até a camada onde o defeito está.
+- "faltam assets" — existem, 1.358 `.at9`, no formato que o Ajm registrou.
+
+## Próximo passo
+
+Rastrear a decisão do guest: instrumentar `sceAjmInstanceCreate` (que já existe) para ver se alguma
+instância de decodificação é criada, e verificar por que o `snd_stream_reader_thread` não produz
+requisições. Se nenhuma instância Ajm é criada, o motor nunca decidiu tocar nada.
+
 # BUG CORRIGIDO: `sceKernelAddUserEvent` recusava e travava o driver de áudio do jogo
 
 ## O defeito
