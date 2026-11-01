@@ -371,6 +371,20 @@ static uintptr_t find_free(uintptr_t hint, uint64_t size, uint64_t alignment) {
     }
     return 0;
 }
+/* The guest reserves its main memory pool with a fixed 8 GiB request at USER_MIN
+ * (sceKernelMemoryPoolReserve(0x1000000000, 0x200000000, MAP_FIXED|MAP_NO_OVERWRITE)).
+ * Placements where the guest passed no address hint (hint 0) must therefore not consume the
+ * start of the user range, or that fixed request collides with the runtime's own choice. */
+#define GUEST_POOL_WINDOW (UINT64_C(8) * 1024 * 1024 * 1024)
+static uintptr_t find_free_unhinted(uintptr_t size, uint64_t alignment) {
+    uintptr_t floor=USER_MIN+GUEST_POOL_WINDOW;
+    uintptr_t at=align_up(floor,alignment);
+    for (size_t i=vma_index(at); at+size<=USER_MAX; ++i) {
+        if (i==vma_count || vmas[i].start>=at+size) return at;
+        at=align_up(vmas[i].end,alignment);
+    }
+    return 0;
+}
 static void drop_range(uintptr_t start, uintptr_t end) {
     int error; size_t i=carve(start,end,&error), n=0;
     while (i+n<vma_count && vmas[i+n].end<=end && vmas[i+n].start>=start) {
@@ -390,7 +404,9 @@ static int32_t place(void **inout, uint64_t size, int prot, int flags, uint64_t 
         if (!address || address%PAGE) return INVALID;
         if ((flags & MAP_NO_OVERWRITE) && overlaps(address,address+size,1)) return NO_MEMORY;
     } else {
-        address=find_free(address,size,alignment);
+        /* A zero hint means the guest left placement to us: keep the pool window clear so its
+         * later fixed reservation at USER_MIN still fits. */
+        address=(uintptr_t)*inout ? find_free(address,size,alignment) : find_free_unhinted(size,alignment);
         if (!address) {
             printf("Runtime: place NO_MEMORY (no free run) size=%" PRIu64 " align=0x%" PRIx64 " hint=%p kind=%d\n",
                    size,alignment,(void *)(uintptr_t)*inout,kind);
@@ -472,11 +488,16 @@ static int32_t map_direct_locked(void **out, uint64_t size, int prot, int flags,
     return result;
 }
 static ABI int32_t direct_map(void **out, uint64_t size, int prot, int flags, int64_t physical, uint64_t alignment) {
+    /* The incoming *out is the guest's address hint: 0 means "place it anywhere", a value means
+     * the guest demands that address. Recording it separates a runtime layout choice from a
+     * guest requirement when a later reservation collides. */
+    void *hint=out ? *out : NULL;
     write_lock();
     int32_t result=map_direct_locked(out,size,prot,flags,physical,alignment);
     write_unlock();
     flush_hooks();
-    if (!result) printf("Runtime: mapped direct memory %p, size=%" PRIu64 ", prot=0x%x\n", *out, size, prot);
+    if (!result) printf("Runtime: mapped direct memory %p, size=%" PRIu64 ", prot=0x%x (guest hint %p, flags 0x%x)\n",
+                        *out, size, prot, hint, (unsigned)flags);
     else printf("Runtime: direct_map FAILED size=%" PRIu64 " prot=0x%x phys=0x%" PRIx64 " align=0x%" PRIx64 " -> 0x%08x\n",
                 size, prot, (uint64_t)physical, alignment, (unsigned)result);
     return result;
@@ -731,8 +752,13 @@ static ABI int32_t pool_reserve(void *address, uint64_t size, uint64_t alignment
     if (!out) return INVALID;
     *out=address;
     int32_t r=reserve_range(out,size,flags,alignment ? alignment : 64*1024);
-    if (r) printf("Runtime: pool_reserve(address=%p, size=%" PRIu64 ", align=0x%" PRIx64 ", flags=0x%x) -> 0x%08x\n",
-                  address,size,alignment,(unsigned)flags,(unsigned)r);
+    if (r) {
+        /* Log the raw argument as received plus where the guest called from: the address in
+         * the message may be the guest's request or a value the runtime already chose. */
+        uintptr_t ra=(uintptr_t)__builtin_return_address(0);
+        printf("Runtime: pool_reserve(addr=%p size=%" PRIu64 " align=0x%" PRIx64 " flags=0x%x) -> 0x%08x; guest ra=0x%" PRIxPTR "\n",
+               address,size,alignment,(unsigned)flags,(unsigned)r,ra-(uintptr_t)runtime_image_base());
+    }
     return r;
 }
 /* Longest free run (at most want pages) in the pool; marks it used. */

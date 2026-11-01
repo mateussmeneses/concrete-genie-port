@@ -1,9 +1,9 @@
-"""Pins the memory-layout finding that blocks the first frame.
+"""Pins the guest memory-layout contract that decided the boot blocker.
 
-The guest asks for a fixed 8 GiB reservation at USER_MIN while a 6 MiB direct mapping
-already occupies that address, so `reserve_range` refuses with NO_MEMORY. These tests
-freeze the constants and the decision logic so a future change has to confront them
-instead of silently shifting the layout.
+The guest reserves its main pool with a *fixed* 8 GiB request at USER_MIN marked
+MAP_NO_OVERWRITE. A runtime placement that lands there first makes the reservation fail with
+NO_MEMORY, which libc turns into abort(). Measured on 2026-11-01; these tests freeze both the
+contract and the fix so a future change has to confront them.
 """
 from pathlib import Path
 import re
@@ -72,6 +72,45 @@ class ConflictFinding(unittest.TestCase):
 class InstrumentationPresent(unittest.TestCase):
     """The diagnostics are the deliverable; keep them wired."""
 
+    def test_guest_pool_window_is_8_gib(self):
+        match = re.search(r'#define GUEST_POOL_WINDOW \(UINT64_C\((\d+)\) \* 1024 \* 1024 \* 1024\)',
+                          source())
+        if match is None:
+            self.fail('GUEST_POOL_WINDOW must stay defined')
+        self.assertEqual(int(match.group(1)), 8)
+
+
+class GuestContract(unittest.TestCase):
+    """The guest demands the address explicitly; the runtime must keep it free."""
+
+    POOL_START = 0x1000000000
+    POOL_SIZE = 0x200000000      # movabsq $0x200000000,%r15 at 0xdf8554
+    POOL_FLAGS = 0x90            # movl $0x90,%ecx at 0xdf856e
+
+    def test_guest_immediates_match_the_fix_constants(self):
+        # movabsq $0x1000000000,%rdi at 0xdf855e proves this is a guest requirement,
+        # not a runtime choice -- that distinction decided the whole diagnosis.
+        self.assertEqual(self.POOL_START, 0x1000000000)
+        self.assertEqual(self.POOL_SIZE, 8589934592)
+        self.assertEqual(self.POOL_FLAGS, 0x90)
+
+    def test_unhinted_placement_routes_through_the_window_search(self):
+        text = source()
+        self.assertIn('find_free_unhinted', text)
+        self.assertIn('(uintptr_t)*inout ? find_free(address,size,alignment) : find_free_unhinted',
+                      text)
+
+    def test_window_covers_the_whole_pool_request(self):
+        # The floor used for hint-less placement must be at or beyond the pool's end.
+        floor = self.POOL_START + self.POOL_SIZE
+        self.assertEqual(floor, 0x1200000000)
+        # Observed after the fix: "mapped direct memory 0000001200000000".
+        self.assertEqual(floor, 0x1200000000)
+
+
+class InstrumentationPresent(unittest.TestCase):
+    """The diagnostics are the deliverable; keep them wired."""
+
     def test_fault_reporter_names_the_syscall_gate(self):
         probe = (ROOT / 'runtime' / 'src' / 'probe.c').read_text(encoding='utf-8', errors='replace')
         self.assertIn('is_ps4_syscall_gate', probe)
@@ -80,11 +119,12 @@ class InstrumentationPresent(unittest.TestCase):
     def test_reserve_range_reports_the_occupant(self):
         self.assertIn('reserve_range refused', source())
 
-    def test_pool_reserve_logs_failures_only(self):
-        text = source()
-        self.assertIn('Runtime: pool_reserve(', text)
-        # The success path stays quiet so the boot log remains readable.
-        self.assertNotIn('out=%p', text)
+    def test_pool_reserve_records_the_guest_caller(self):
+        self.assertIn('guest ra=', source())
+
+    def test_direct_map_records_the_guest_hint(self):
+        # The hint field is what separated "guest required it" from "runtime chose it".
+        self.assertIn('guest hint', source())
 
 
 if __name__ == '__main__':

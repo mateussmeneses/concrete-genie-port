@@ -1,84 +1,95 @@
-# Auditoria da memória — conflito de reserva no boot
+# Auditoria da memória e do primeiro boot
 
-Data: 2026-11-01 UTC. Dump `CUSA11875`. Este documento registra o bloqueio atual do
-primeiro frame, medido com instrumentação própria. **Nenhum frame foi renderizado.**
+Data: 2026-11-01 UTC. Dump `CUSA11875`. Este documento registra a cadeia completa do boot,
+os dois bloqueios resolvidos e o bloqueio atual. **Nenhum frame foi renderizado.**
 
-## Resumo
+## Resumo do avanço
 
-O código guest executa, o GPU/Vulkan inicializa, 465.785 relocations são aplicadas e os
-módulos ligam. A execução para quando o guest pede a reserva do pool de memória virtual:
+| Etapa | Antes desta sessão | Agora |
+|---|---|---|
+| Bloqueio | `abort` sem causa (`INT 0x44`) | import `NpToolkit2` não implementado |
+| Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** |
+| Threads guest | 0 | **22** (inclui `TaskGraphThreadNP 0..N` do UE4) |
+| Arquivos lidos do dump | 0 | **174 leituras, 10.107.208 bytes** |
+| AppContent | não inicializado | **inicializado** (perfil offline) |
 
-```
-Runtime: pool_reserve(address=0000001000000000, size=8589934592, align=0x0, flags=0x90) -> 0x8002000c
-Runtime: reserve_range refused 0000001000000000+8589934592 (flags 0x90);
-         VMA at 0000001000000000+6291456 kind=2 prot=0x2
-```
+## Bloqueio 1 — resolvido: reserva fixa do pool
 
-- `size` = 8.589.934.592 = **8 GiB**
-- `flags` = `0x90` = `MAP_FIXED (0x10) | MAP_NO_OVERWRITE (0x80)`
-- `kind=2` = `KIND_DIRECT`; `prot=0x2` = leitura
-- `0x8002000c` = `NO_MEMORY`
-
-## Cadeia causal completa (verificada no disassembly)
-
-1. `libc+0x21264` (`abort`, NID `L1SBTkC+Cvw`) executa `INT 0x44`.
-2. O chamador é `libc+0x2240b`, que faz `call *GOT` e valida o retorno:
-   `testl %eax,%eax; jne <abort path>`.
-3. O valor observado em `rax` no fault é `0x8002000c` = `NO_MEMORY`.
-4. Quem retorna esse código é `pool_reserve` → `reserve_range` → `overlaps(..., 0)`.
-
-O `INT 0x44` continua não atendido pelo runtime; o que mudou nesta etapa é que a causa
-passou a ser nomeada em vez de aparecer como "read access to ffffffff".
-
-## O conflito de layout
-
-O runtime reserva todo `[USER_MIN, USER_MAX)` com placeholders antes de qualquer outra
-coisa (`runtime_memory_reserve`, `runtime_memory.c:155`). `USER_MIN = 0x1000000000`.
-
-Antes da reserva do pool, um mapeamento direto de 6 MiB já ocupa exatamente o início desse
-endereço:
+O guest exige o endereço explicitamente (disassembly em `0xdf855e`):
 
 ```
-Runtime: mapped direct memory 0000001000000000, size=6291456, prot=0x2
+movabsq $0x1000000000, %rdi     ; endereço exigido
+movabsq $0x200000000,  %r15     ; 8 GiB
+movl    $0x90, %ecx             ; MAP_FIXED | MAP_NO_OVERWRITE
+callq   sceKernelMemoryPoolReserve
 ```
 
-Como o pedido do guest é **fixo** (`MAP_FIXED`) e **sem sobrescrita** (`MAP_NO_OVERWRITE`),
-`overlaps()` encontra o mapeamento de 6 MiB e recusa. Não é falta de memória física: é
-colisão de endereço entre a reserva do pool e um mapeamento anterior na mesma base.
+O runtime colocava ali, primeiro, um mapeamento direto de 6 MiB **escolhido por ele**
+(`guest hint 0x0, flags 0x0`). Como o pedido do guest é fixo e sem sobrescrita, a reserva
+falhava com `0x8002000c` (`NO_MEMORY`), e a libc abortava.
 
-## O que foi testado e refutado
+Correção: `find_free_unhinted()` em `runtime_memory.c`. Colocações **sem hint do guest**
+começam em `USER_MIN + 8 GiB`, deixando a janela do pool livre. Colocações **com hint**
+continuam honrando o endereço pedido.
+
+```
+Antes:  mapped direct memory 0000001000000000   (colide)
+Depois: mapped direct memory 0000001200000000   (janela respeitada)
+        reserved virtual range 0000001000000000, size=8589934592
+        reserved virtual range 0000002000000000, size=8589934592
+        reserved virtual range 0000003000000000, size=1073741824
+```
+
+Determinístico em duas execuções.
+
+## Bloqueio 2 — resolvido: perfil de conteúdo ausente
+
+Com a memória liberada, o boot passou a parar em:
+
+```
+STOP: AppContent needs --content-profile
+```
+
+O pipeline tinha rodado `prepare` e `link`, mas não `content_profile.prepare`. Gerado o
+`content.bin` (SKU `full`, perfil base offline, sem add-ons) e passado com
+`--content-profile`, o AppContent inicializa:
+
+```
+Runtime: AppContent host provider loaded; references=1
+Runtime: AppContent initialized; offline base-game profile, no mounted add-ons
+```
+
+## Bloqueio atual — `NpToolkit2::Request::InitParams`
+
+```
+STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)
+API: _ZN3sce7Toolkit2NP2V24Core7Request10InitParamsC1Ev
+Caller return offset: 0x40c7639; first argument: 0x15fd0b8
+```
+
+É o construtor C++ `InitParams()`, chamado na inicialização de PSN do UE4 mesmo em modo
+offline. O argumento é uma struct na pilha do guest (`rbp-0x398`, frame de `0x398` bytes).
+
+**Não foi implementado**, por uma razão concreta: o construtor precisa inicializar a struct
+com o **tamanho exato** de `InitParams`, e esse tamanho não está disponível no repositório —
+não há implementação de referência de `NpToolkit2` em `runtime/gpu/`, e o guest só revela os
+campos que escreve **depois** da chamada (até o offset `0x150`+16). Escrever um tamanho
+adivinhado poderia atingir o canário em `rbp-0x30` e trocar um bloqueio nomeado por corrupção
+de pilha — exatamente o erro que esta sessão já corrigiu uma vez.
+
+## Hipóteses testadas e refutadas
 
 | Hipótese | Teste | Resultado |
 |---|---|---|
-| Pool de memória esgotado | `GOW3_DMEM_MB=8192` | **Refutada** — mesmo bloqueio, zero falhas de alocação |
-| Canário de pilha corrompido | comparação no frame do chamador | **Refutada** — canário íntegro (`MATCH`) |
-| Mapeamento indireto (sem `MAP_FIXED`) | log em `place()` | **Refutada** — retorna antes, no `reserve_range` |
-| `MAP_NO_OVERWRITE` sobre reserva | log em `place()` | **Refutada** — mesma razão |
-| Conflito `MAP_FIXED` × memória direta | log em `reserve_range` | **Confirmada** |
+| Canário de pilha corrompido | comparação no frame do chamador | **Refutada** — valor idêntico ao guard |
+| Pool de memória esgotado | `GOW3_DMEM_MB=8192` | **Refutada** — mesmo bloqueio |
+| O runtime escolheu `0x1000000000` | log do hint (`guest hint %p`) | **Parcialmente refutada** — o mapeamento de 6 MiB foi escolha do runtime, mas o pedido de 8 GiB é exigência do guest (`movabsq`) |
+| `reserve_range` decide antes de `place` | log em ambos | **Confirmada** — `overlaps(..., 0)` |
 
-Reprodutibilidade: três execuções independentes, mesmo endereço, mesmo VMA ocupante, exit 3.
-
-## Por que não corrigi ainda
-
-Duas correções possíveis, ambas com consequência não medida:
-
-1. **Reservar o pool antes do primeiro mapeamento direto.** Exige saber se o guest espera o
-   pool em `USER_MIN` ou se aceita qualquer endereço — a build real não foi observada além
-   deste ponto.
-2. **Realocar o bloco de 6 MiB** quando o guest reserva por cima. Exige provar que nenhum
-   ponteiro guest já guardado aponta para o endereço antigo.
-
-Escolher sem evidência seria trocar um bloqueio nomeado por uma corrupção silenciosa. A
-próxima sessão deve medir qual das duas o guest realmente espera — por exemplo, registrando
-se algum ponteiro guest em `[0x1000000000, 0x1000600000)` é lido depois da reserva.
-
-## Instrumentação deixada no código
-
-- `is_ps4_syscall_gate()` — nomeia o gate `INT 0x44` no relatório de falha.
-- verificação de canário no frame do chamador, com as duas fontes lado a lado.
-- `runtime_canary_address()` — expõe o valor para o reporter.
-- logs de falha em `place()`, `reserve_range()` e `pool_reserve()`.
-- `Logs` de sucesso permanecem silenciosos para não poluir a linha de base.
+A terceira linha é a que mais importa: minha primeira leitura ("o runtime escolheu o
+endereço") era **meia-verdade**. O hint de 0 provava que o runtime escolheu a colocação de
+6 MiB, mas o call site do guest provava que ele exige `USER_MIN` para o pool. Só as duas
+medições juntas dão a resposta correta.
 
 ## Estado de verificação
 
@@ -86,12 +97,26 @@ se algum ponteiro guest em `[0x1000000000, 0x1000600000)` é lido depois da rese
 |---|---|
 | `bash build.sh` | exit 0 |
 | `bash build.sh --test` | exit 0 |
-| `python -m unittest discover -s tests` | exit 0, 29 testes |
-| Boot até o bloqueio | exit 3, causa nomeada |
+| `python -m unittest discover -s tests` | exit 0, **43 testes** |
+| Boot até o bloqueio atual | exit 20, import nomeado |
 | **Primeiro frame / menu / gameplay** | **NÃO EXECUTADO** |
+
+## Próximo passo
+
+Determinar o tamanho de `sce::Toolkit2::NP::V2::Core::Request::InitParams` para esta build.
+Candidatos, em ordem de confiabilidade:
+
+1. Ler os offsets que o guest acessa na struct depois do construtor e inferir o limite
+   inferior (`0x160` já confirmado). Um limite inferior não basta para zerar com segurança.
+2. Localizar a tabela de símbolos de `libSceNpToolkit2.prx` (presente em `sce_module/`) e
+   procurar informação de tamanho.
+3. Se nenhuma fonte der o tamanho, implementar o construtor escrevendo **apenas** os campos
+   observados e registrar explicitamente a limitação, com teste.
+
+Critério: o `STOP` deixa de aparecer e o boot avança para um estágio novo e nomeado.
 
 ## Evidências
 
-`docs/evidence/prompt04/`: `boot-03-canary-check.txt` (canário íntegro),
-`boot-05-dmem-8192.txt` (pool refutado), `boot-08..12` (progressão do diagnóstico),
-`boot-12-conflict-named.txt` (VMA conflitante nomeado), `build-test.txt`.
+`docs/evidence/prompt04/`: `boot-13-hint.txt` (hint do guest), `boot-14-ra.txt` (call site),
+`boot-15-window-fix.txt` (janela aplicada), `boot-16-content-profile.txt` (22 threads, 174
+leituras, bloqueio atual), `build.txt`, `build-test.txt`.

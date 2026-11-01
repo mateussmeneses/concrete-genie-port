@@ -32,23 +32,39 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 | Vulkan/window | — | RTX 5060, Vulkan 1.4.357, swapchain Fifo, 327 HLE symbols | `prompt04/boot-12-*.txt` |
 | Imagem mapeada | — | 106.136.876 bytes, 9 segmentos, **465.785 relocations aplicadas** | idem |
 | Pools de memória guest | — | 6 MiB + 128 MiB + 5.161.025.536 bytes | idem |
-| **Reserva do pool 8 GiB** | — | **recusada**: `NO_MEMORY` por conflito em `0x1000000000` | `prompt04/boot-12-*.txt` |
-| Boot | **3** | aborta em `libc+0x21264` (`abort` → `INT 0x44` → `ud2`) | idem |
+| **Reserva do pool 8 GiB** | — | **concedida** (3 reservas: 8 GiB ×2 + 1 GiB) | `prompt04/boot-16-*.txt` |
+| Threads guest / IO | — | **22 threads**, `TaskGraphThreadNP 0..N`; 174 leituras (10.107.208 bytes) | idem |
+| AppContent | — | inicializado, perfil offline base-game | idem |
+| Boot | **20** | `STOP`: import `NpToolkit2 InitParams` não implementado | idem |
 
-Reprodutibilidade do bloqueio: **3 execuções independentes**, mesmo endereço, mesmo VMA
-ocupante, exit 3 em todas.
+Reprodutibilidade: **2 execuções independentes** com a correção, mesmo resultado (exit 20, mesmo
+import). O bloqueio anterior era determinístico em 3 execuções.
 
 ## Bugs observados
 
 ### P0 — bloqueia o boot (nenhum frame)
 
-**P0-1: reserva do pool de 8 GiB recusada por conflito de endereço**
+**P0-1: reserva do pool de 8 GiB recusada — RESOLVIDO**
 
 - Sintoma: `pool_reserve(0x1000000000, 8 GiB, flags=0x90) -> 0x8002000c`.
-- Causa medida: `reserve_range` recusa porque um mapeamento `KIND_DIRECT` de 6 MiB já ocupa
-  `0x1000000000`, criado por `find_free` (que sempre inicia em `USER_MIN`).
-- Condição de reprodução: `cg-runtime boot-linked.bin --app0 <dump>`, qualquer execução.
-- Consequência: `libc abort` → gate `INT 0x44` → `ud2`, exit 3.
+- Causa medida: `reserve_range` recusava porque um mapeamento `KIND_DIRECT` de 6 MiB
+  escolhido pelo runtime já ocupava `0x1000000000`.
+- Correção: `find_free_unhinted()` — colocação sem hint começa em `USER_MIN + 8 GiB`.
+- Verificação: 3 reservas concedidas, mapeamento movido para `0x1200000000`, 2 execuções.
+
+**P0-2: `--content-profile` ausente no pipeline — RESOLVIDO**
+
+- Sintoma: `STOP: AppContent needs --content-profile`.
+- Correção: gerar `content.bin` com `content_profile.prepare` e passar `--content-profile`.
+- Verificação: `AppContent initialized; offline base-game profile`, referências=1.
+
+**P0-3: import `NpToolkit2::Request::InitParams` não implementado — ABERTO**
+
+- Sintoma: `STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)`,
+  exit 20.
+- Construtor C++ chamado na inicialização de PSN do UE4 mesmo offline.
+- Não implementado: falta o tamanho exato da struct `InitParams`; zeração com tamanho
+  adivinhado pode atingir o canário da pilha do guest.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados
@@ -69,6 +85,7 @@ Idem.
 | `MAP_NO_OVERWRITE` sobre reserva | log em `place()` | **Refutada** — a decisão ocorre antes, em `reserve_range` |
 | Mapeamento indireto (sem `MAP_FIXED`) | log em `place()` | **Refutada** — mesma razão |
 | Conflito `MAP_FIXED` × memória direta | log em `reserve_range` | **Confirmada** |
+| "O runtime escolheu `0x1000000000`" | log `guest hint` + disassembly do call site | **Meia-verdade**: o mapeamento de 6 MiB foi escolha do runtime, mas o pool é exigência do guest (`movabsq`) |
 
 ## Não executado — não inferir aprovação
 

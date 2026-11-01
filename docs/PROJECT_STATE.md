@@ -25,15 +25,17 @@ execução para antes de qualquer frame, num conflito de reserva de memória.
 
 ## Bloqueio atual (P0)
 
+Resolvidos nesta sessão: (1) reserva fixa do pool de 8 GiB em `USER_MIN`, que colidia com um
+mapeamento escolhido pelo runtime — corrigido com `find_free_unhinted()`; (2) `--content-profile`
+ausente no pipeline. Com ambos, o boot avança para:
+
 ```
-pool_reserve(address=0x1000000000, size=8 GiB, flags=0x90) -> 0x8002000c (NO_MEMORY)
-reserve_range refused; VMA at 0x1000000000+6291456 kind=2 (KIND_DIRECT)
+STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)
+API: _ZN3sce7Toolkit2NP2V24Core7Request10InitParamsC1Ev
 ```
 
-O guest pede reserva fixa de 8 GiB em `0x1000000000`; um mapeamento direto de 6 MiB do
-próprio runtime já ocupa essa base, porque `find_free` sempre começa em `USER_MIN`.
-A `libc` trata o erro como fatal, chama `abort`, cujo `INT 0x44` não tem handler e cai em
-`ud2`. Exit 3, determinístico em 3 execuções.
+Antes do bloqueio, o jogo cria **22 threads guest** (incluindo `TaskGraphThreadNP 0..N` do
+UE4), inicializa o AppContent e lê 174 vezes do dump (10.107.208 bytes). Exit 20.
 
 Detalhe e hipóteses refutadas: `docs/MEMORY_AUDIT.md`.
 
