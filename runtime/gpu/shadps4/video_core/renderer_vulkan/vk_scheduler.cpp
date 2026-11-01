@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <algorithm>
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
@@ -70,6 +71,32 @@ void Scheduler::BeginRendering(const RenderState& new_state) {
     EndRendering();
     is_rendering = true;
     render_state = new_state;
+    /* Logging clears answers whether the black screen comes from a clear issued every frame:
+     * a clear to 0 with no later draw covering the target looks exactly like "nothing rendered". */
+    {
+        static const bool trace = std::getenv("GOW3_TRACE_CLEAR") != nullptr;
+        if (trace) {
+            u32 clears = 0, black = 0;
+            for (u32 i = 0; i < render_state.num_color_attachments; ++i) {
+                const auto& cb = render_state.color_attachments[i];
+                if (!cb.is_clear) continue;
+                ++clears;
+                if ((cb.clear_value[0] & 0x00ffffffu) == 0) ++black;
+            }
+            static std::atomic<u64> calls{0};
+            const u64 n = ++calls;
+            /* Log the passes that actually have a colour target, not every pass: the interesting
+             * question is whether the target is cleared to black and left black. */
+            if (clears > 0 && (n <= 3 || (n % 200) == 0)) {
+                std::fprintf(stderr,
+                             "Clear: BeginRendering #%llu, %u/%u color clears, %u black; "
+                             "depth_clear=%d\n",
+                             static_cast<unsigned long long>(n), black, clears,
+                             render_state.num_color_attachments,
+                             render_state.depth_stencil_attachment.depth_clear ? 1 : 0);
+            }
+        }
+    }
 
     std::array<vk::RenderingAttachmentInfo, 8> color_attachments;
     for (u32 i = 0; i < render_state.num_color_attachments; ++i) {
@@ -139,6 +166,20 @@ void Scheduler::EndRendering() {
         return;
     }
     is_rendering = false;
+    /* Draws that landed inside this pass. A pass that clears to black and records zero draws is
+     * the difference between "the guest stopped submitting geometry" and "geometry is submitted
+     * but mis-rendered", which need opposite fixes. */
+    {
+        static const bool trace = std::getenv("GOW3_TRACE_CLEAR") != nullptr;
+        if (trace && render_state.num_color_attachments > 0) {
+            static u64 last_draws = 0;
+            const u64 draws = Gow3Stats::draws.load();
+            std::fprintf(stderr, "Clear: pass closed with %llu draws (%u color attachments)\n",
+                         static_cast<unsigned long long>(draws - last_draws),
+                         render_state.num_color_attachments);
+            last_draws = draws;
+        }
+    }
     Record([](vk::CommandBuffer cmdbuf) { cmdbuf.endRendering(); });
 }
 

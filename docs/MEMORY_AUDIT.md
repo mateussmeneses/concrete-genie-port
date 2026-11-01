@@ -1,3 +1,94 @@
+# Draws por passe de cor: a geometria É submetida, e chega à tela
+
+## Medição (`GOW3_TRACE_CLEAR=1`, contando draws por `BeginRendering`/`EndRendering`)
+
+```
+Clear: pass closed with 17 draws (1 color attachments)
+Clear: pass closed with  0 draws (1 color attachments)
+Clear: pass closed with  4 draws (1 color attachments)
+```
+
+Distribuição em **43.935** passes de cor fechados:
+
+| Draws no passe | Passes |
+|---|---|
+| 0 | 36.964 (84%) |
+| 1-9 | ~4.200 |
+| >9 | ~2.700 |
+
+E o frame 1200 dessa execução **tem conteúdo**: 3,71% de pixels não-pretos.
+
+## O que isso estabelece — e o que não estabelece
+
+**Estabelecido:** a geometria é submetida (passes com 17, 4, 9 draws) e **chega à tela** (3,71% de
+conteúdo no frame 1200). Portanto o pipeline de desenho funciona; não é "nada desenha".
+
+**Não estabelecido:** que 84% de passes vazios seja o bug. Passes de cor com zero draws são
+plausíveis num motor com passes de preparação, depth-only e cópias. Chamar isso de causa seria
+interpretar demais.
+
+## O que continua sendo o fato estranho
+
+A tela **funciona até ~frame 1800 e depois fica preta**, com o motor a 60 FPS. A sequência medida
+até aqui:
+
+| Frame | Conteúdo |
+|---|---|
+| 1200 | 3,71% (conteúdo) |
+| 1700-1800 | 100% (menu) |
+| 2500+ | 0% (preto) |
+
+O problema está **na transição depois do menu**, não no pipeline como um todo. As passes vazias
+podem ser sintoma (nada é submetido porque o estado de jogo parou) e não causa.
+
+## Próximo passo correto
+
+Capturar em 1800, 2000, 2500, 3000 **na mesma execução** com `GOW3_TRACE_CLEAR=1` e comparar
+`pass closed with N draws` entre o período que funciona e o preto. Se os draws caírem para zero
+junto com a tela, é o guest que parou de submeter; se continuarem altos, é estado de render.
+
+# Passes de render: só 6 de 90 têm alvo de cor, e todos limpam para preto
+
+## Medição (`GOW3_TRACE_CLEAR=1`)
+
+Instrumentei `Scheduler::BeginRendering`, que é onde o Vulkan recebe os anexos de render:
+
+```
+Clear: BeginRendering #1,    0/0 color clears, 1 black; depth_clear=0
+Clear: BeginRendering #500,  0/0 color clears, 1 black; depth_clear=0
+Clear: BeginRendering #5500, 1/1 color clears, 1 black; depth_clear=0
+```
+
+Distribuição em 90 chamadas logadas:
+
+| Anexos de cor | Chamadas |
+|---|---|
+| **0** | **83** |
+| 1 | 7 |
+
+E das passes que **têm** alvo de cor, **21 de 21 limpam para preto**
+(`1/1 color clears, N black`), em nova execução com filtro nas que têm anexo.
+
+## Interpretação cautelosa
+
+`0/0 color clears` **é normal** para passes de profundidade, cópia e compute — não é bug por si.
+O sinal relevante é outro: as poucas passes que escrevem cor **começam limpando para preto**, e o
+frame capturado depois disso continua preto. Ou seja, nada desenha por cima do clear.
+
+Limpar para preto no início de um frame também é normal. O que falta medir é se **algo é desenhado
+depois do clear** nesse alvo. Sem essa contagem, "limpa para preto" sozinho não prova nada — e eu
+não vou registrar como causa.
+
+## Onde isso deixa a investigação
+
+Descartados por medição: paks, `usrdt53l`, performance (60 FPS), input (controle), SRT, deadlock.
+O que resta é: **o guest para de submeter geometria que cubra o alvo de cor** depois do menu, ou o
+estado de render (blend/viewport/scissor) faz os draws caírem fora.
+
+Próxima medição necessária: contar draws **por passe**, associados ao `BeginRendering` que tem
+anexo de cor. Se houver clear + 0 draws, o guest não desenha. Se houver clear + draws, o problema é
+estado de pipeline.
+
 # Tela preta após o menu: NÃO é o input (controlado)
 
 ## O controle que refutou a hipótese

@@ -182,6 +182,17 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
   `docs/evidence/prompt04/boot-77-past-savedata.txt`.
 
+**P0-19: passes de cor vazias na transição — ABERTO (instrumentado)**
+
+- `GOW3_TRACE_CLEAR=1` loga `BeginRendering` (anexos + clears) e `EndRendering` (draws no passe).
+- 43.935 passes de cor fechados: 36.964 (84%) com **0 draws**; o resto entre 1 e dezenas.
+- **Mas a geometria chega à tela**: frame 1200 = 3,71%, frame 1500 = 6,50%, frame 1900 = 100%.
+  Portanto "nada desenha" está errado — o pipeline funciona.
+- No ponto de parada (frame ~1800), passes com 2-3 anexos de cor fecham com **0 draws**.
+- Nem todo passe com 0 draws é bug (depth-only, cópias); não registrar como causa.
+- Evidência: `boot-83-clears.txt`, `boot-84-clears2.txt`, `boot-85-draws-per-pass.txt`,
+  `boot-86-transition.txt`.
+
 **P0-18: tela preta após o menu — ABERTO (input refutado)**
 
 - Sequência: carrega → menu (~frame 1700-1800, 100% de pixels) → **tela preta permanente**.

@@ -142,7 +142,45 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Investigar a tela preta pós-menu — o input foi refutado como causa.
+Instrumentação de GPU pronta; falta capturar a transição completa.
+
+Adicionei dois pontos de medição, ambos atrás de `GOW3_TRACE_CLEAR=1`:
+- `Scheduler::BeginRendering` → anexos e clears de cada passe.
+- `Scheduler::EndRendering` → **draws que caíram dentro do passe**.
+
+Uso:
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_TRACE_CLEAR=1 GOW3_FRAME_STATS=1     GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/tr"     GOW3_FRAME_DUMP_AT=1500,1900,2400,3200 GOW3_DUMP_SYNC=1     timeout 320 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 290
+```
+
+## Medido até agora
+
+| Frame | Conteúdo | Observação |
+|---|---|---|
+| 1200 | 3,71% | pipeline desenha |
+| 1500 | 6,50% | idem |
+| 1900 | **100%** | menu |
+| 2500+ | 0% | preto |
+
+43.935 passes de cor: 84% fecham com 0 draws — mas há passes com 17 draws, e a tela mostra
+conteúdo. **"Nada desenha" está errado.**
+
+O bloqueio prático: a execução **não passa do frame ~1800** dentro de 290-320 s de `timeout`, então
+não consigo capturar 2400/3200 para ver o período preto. A fase de carga consome quase todo o tempo.
+
+## Próximo passo
+
+Duas opções, ambas concretas:
+
+1. **Aumentar a janela** para ~600 s e capturar 2400/3200 com `GOW3_TRACE_CLEAR=1`, comparando
+   draws por passe entre o período que funciona e o preto. É a medição que fecha a questão.
+2. **Pular a carga**: verificar se há um modo de iniciar direto no menu (o jogo monta
+   `CheckPoint1`; se ele retomar de save, o menu pode ser alcançável em menos frames).
+
+Critério de conclusão: comparar draws/passe em frame que funciona versus frame preto, e nomear se o
+guest parou de submeter ou se o estado de render está errado.
 
 **Fato controlado:** o jogo carrega, mostra o menu (~frame 1700-1800, 100% de pixels), e então fica
 **inteiramente preto** e permanece. Sem nenhum input acontece igual (frames 2500/3500/5000/8000
