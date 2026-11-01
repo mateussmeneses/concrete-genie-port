@@ -30,8 +30,17 @@ mapeamento escolhido pelo runtime — corrigido com `find_free_unhinted()`; (2) 
 ausente no pipeline. Com ambos, o boot avança para:
 
 ```
-STOP: first unsupported PS4 import: j1ITE-EoJmE#libSceMove (index 855)
+Fault: execute access to 0000000000000000 at 0000000000000000
+  thread name: RHIThread
+  #0 guest offset 0x14d6aec
 ```
+
+O boot atravessou todos os subsistemas de sensor (PS Move, PSVR, áudio 3D, câmera, VR tracker) e
+chegou à **inicialização de RHI do UE4**, onde falha numa chamada virtual indireta por ponteiro
+nulo. Nenhum frame foi renderizado: isto não é uma cena, nem menu, nem intro.
+
+Antes de falhar o jogo estabeleceu GPU Vulkan 1.4.357 (RTX 5060), resolução 1920x1080 e um
+DualSense conectado, e fez 12 sondagens de formato de superfície.
 
 `runtime/src/runtime_np.c` implementa o construtor/destrutor de `InitParams` (**352 bytes**,
 medidos no frame do guest) e recusa o serviço `Core::init` com `0x80550003`. O jogo aceitou a

@@ -258,6 +258,16 @@ uintptr_t runtime_resolve(const char *name, int is_data) {
     if (extra) return extra;
     uintptr_t np = runtime_np_resolve(name);
     if (np) return np;
+    uintptr_t move = runtime_move_resolve(name);
+    if (move) return move;
+    uintptr_t hmd = runtime_hmd_resolve(name);
+    if (hmd) return hmd;
+    uintptr_t a3d = runtime_audio3d_resolve(name);
+    if (a3d) return a3d;
+    uintptr_t cam = runtime_camera_resolve(name);
+    if (cam) return cam;
+    uintptr_t vr = runtime_vr_resolve(name);
+    if (vr) return vr;
     return gow3gpu_resolve(name);
 }
 static const struct { const char *nid, *symbol; } import_names[]={

@@ -142,3 +142,16 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
   medida confundiu `rbp-0x260` (um campo interno) com o início do objeto seguinte, que é
   `rbp-0x238`. Teste novo impede regressão. Lição: medir a extensão pelos campos que o guest
   escreve e pelo próximo objeto construído, não por um único `leaq` vizinho.
+
+- **Subsistemas de sensor respondem "biblioteca carregada, dispositivo ausente".** PS Move,
+  PSVR, áudio 3D, câmera e VR tracker não têm hardware nesta máquina. A escolha é distinta de
+  "não implementado" e de "sucesso falso": a biblioteca inicializa, e cada operação que exigiria
+  um dispositivo devolve o código de erro da própria família PS4. `sceCameraIsAttached` responde
+  0 (não anexada) porque essa é a resposta que faz o jogo escolher o caminho sem gestos.
+- **Não fabricar handle nem estrutura de saída.** `sceHmdOpen`/`sceMoveOpen` devolvem "sem
+  dispositivo" em vez de um handle fictício, e `sceCameraGetFrameData` falha em vez de entregar
+  buffer zeroado que pareceria captura válida.
+- **`sceVrTrackerQueryMemory` devolve 0 — e isso é a hipótese principal do fault atual.**
+  Registrado como suspeita, não como acerto: o guest testa o retorno (`0x36f3f56`) e, com 0,
+  segue adiante. Se a falha em `RHIThread` vier daí, a correção é preencher a saída, não trocar o
+  código de retorno.

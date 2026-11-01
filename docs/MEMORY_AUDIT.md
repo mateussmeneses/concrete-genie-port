@@ -1,3 +1,59 @@
+# Marco: o boot atingiu a inicialização de RHI (Vulkan) do UE4
+
+Nesta sessão o boot atravessou todos os subsistemas de sensor e chegou ao **pipeline Vulkan
+real**. Isto não é uma cena: nenhum frame foi renderizado e nenhum pixel foi apresentado.
+`RHIThread` é a thread de renderização do UE4, e ela falhou **dentro** da inicialização.
+
+## Progressão medida (mesmo dump, mesmo binário de entrada)
+
+| Estágio | Threads | Arquivos | Leituras | Bytes | Exit |
+|---|---|---|---|---|---|
+| Início da sessão | 22 | 11 | 176 | 10.107.208 | 20 (import) |
+| Bloco PSN completo | 27 | 11 | 1.657 | 12.095.000 | 20 (import) |
+| PS Move | 27 | 16 | 2.362 | 65.394.573 | 20 (import) |
+| PSVR + áudio 3D | 36 | 17 | 4.653 | 109.824.245 | 20 (import) |
+| Câmera | 36 | 18 | 4.654 | 109.826.114 | 20 (import) |
+| VR tracker / social screen | 36 | 18 | — | — | **3 (fault em RHIThread)** |
+
+## Subsistemas implementados nesta sessão
+
+Todos com semântica de **"biblioteca carregada, dispositivo ausente"** — nunca um handle
+inventado, nunca sucesso cego:
+
+| Arquivo | Subsistema | Imports | Resposta |
+|---|---|---|---|
+| `runtime/src/runtime_move.c` | libSceMove | 7 | `sceMoveOpen` → `0x80930002` (sem dispositivo) |
+| `runtime/src/runtime_hmd.c` | libSceHmd (PSVR) | 22 | init ok, `sceHmdOpen` → `0x80AF0003` |
+| `runtime/src/runtime_audio3d.c` | libSceAudio3d | 14 | `PortOpen` → `0x80268003` |
+| `runtime/src/runtime_camera.c` | libSceCamera | 7 | `sceCameraIsAttached` → 0 (honesto) |
+| `runtime/src/runtime_vr.c` | VrTracker + SocialScreen + Vr | 24 | tracking indisponível |
+
+`sceHmdInitialize315` foi medido em `0x41252b1`: o guest **descarta** o retorno (vai direto a
+`movl $0x170,%edi` em `0x41252b6`, sem `testl`), então recusar é caminho tratado.
+
+## Estado atual: falha em `RHIThread`
+
+```
+Fault: execute access to 0000000000000000 at 0000000000000000
+  thread name: RHIThread
+  #0 guest offset 0x14d6aec
+```
+
+`0x14d6aec` é `movq %rbx,%rsi` após `callq *0x8(%rsi)` em `0x14d6ae9` — uma chamada **virtual
+indireta** através de um ponteiro nulo. Determinístico: duas execuções idênticas.
+
+Antes de falhar, o jogo estabeleceu:
+- `GPU: NVIDIA GeForce RTX 5060 Laptop GPU, Vulkan 1.4.357`, `maintenance5/8`, feedback loop layouts
+- `Output resolution: 1920x1080 (live)`
+- `Runtime: gamepad connected: DualSense Wireless Controller (USB 054c:0ce6)`
+- 12 sondagens de formato de superfície (`CollectImageFormatInfo`)
+
+## O que isto NÃO é
+
+- Não é um frame renderizado.
+- Não é menu, intro ou gameplay.
+- Não é boot completo: o processo termina em fault na thread de renderização.
+
 # Auditoria da memória e do primeiro boot
 
 Data: 2026-11-01 UTC. Dump `CUSA11875`. Este documento registra a cadeia completa do boot,

@@ -10,10 +10,10 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | `libSceMove` (PS Move) |
+| Bloqueio | `abort` sem causa | fault em `RHIThread` durante init de RHI |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
-| Threads guest | 0 | **27**, incluindo `TaskGraphThreadNP 0..N` (UE4) |
-| Leitura do dump | 0 arquivos | **1.657 leituras, 12.095.000 bytes** |
+| Threads guest | 0 | **36** |
+| Leitura do dump | 0 arquivos | **4.654 leituras, 109.826.114 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
 | Testes Python | 39 | **53** |
@@ -51,18 +51,21 @@ rejeita qualquer símbolo que não seja construtor. Sem sucesso cego para servi�
 
 ## Bloqueio atual
 
-**Bloco NpToolkit2 concluído** (7 imports). O boot atravessou toda a inicialização de PSN e
-parou em:
+**Todos os subsistemas de sensor foram resolvidos** e o boot saiu da camada de imports. Estado
+atual:
 
 ```
-STOP: first unsupported PS4 import: j1ITE-EoJmE#libSceMove (index 855)
-API: name not resolved; see analysis.json import_name_hints
+Fault: execute access to 0000000000000000 at 0000000000000000
+  thread name: RHIThread
+  #0 guest offset 0x14d6aec
 ```
 
-`libSceMove` é **PS Move**. O Prompt 04 pede explicitamente para registrar esses imports e
-mantê-los fora do primeiro gate jogável, então o passo aqui é decidir entre registrar com
-recusa explícita ou implementar presença mínima — não há evidência ainda de que o jogo exija
-sucesso para seguir.
+O jogo chegou à **inicialização de RHI do UE4** e configura GPU Vulkan 1.4.357, resolução
+1920x1080, um DualSense e 12 sondagens de formato. A falha é `callq *0x8(%rsi)` com `rsi` nulo
+em `0x14d6ae9`, seguida de `0x14d6aec`. Determinístico em duas execuções.
+
+Nenhum frame foi renderizado. `RHIThread` falhar **dentro** da inicialização não é cena, menu
+nem intro.
 
 ### Decisão tomada: `Core::init` **recusa**, não sucede
 
@@ -110,16 +113,18 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Implementar os construtores/destrutores de `Request`/`Response` do NpToolkit2, **medindo cada
-tamanho no próprio call site** (não reaproveitando o de `InitParams`):
+Investigar o fault em `RHIThread` em `0x14d6aec`:
 
-1. Para cada construtor que bloqueia, localizar o `leaq <base>(%rbp)` que o precede e o próximo
-   objeto construído no mesmo frame; a diferença é o tamanho.
-2. Registrar o tamanho e a evidência (offset da chamada) na tabela de `runtime_np.c`.
-3. Nunca estimar: 312 bytes foi um erro corrigido para 352 na mesma sessão.
+1. Desassemblar a função em torno de `0x14d6a9x` e identificar qual ponteiro virtual é nulo — é o
+   primeiro ponto em que o runtime entrega um objeto incompleto ao código de renderização.
+2. Verificar se algum dos subsistemas recém-implementados (áudio 3D, PSVR, VrTracker) devolve
+   uma estrutura que o RHI depois lê. `sceVrTrackerQueryMemory` devolve 0 sem preencher a saída;
+   o guest testa o retorno (`testl %eax,%eax; jne` em `0x36f3f56`), então a hipótese principal é
+   que 0 = sucesso leve o guest a consumir uma estrutura que nunca foi preenchida.
+3. Adicionar telemetria ao redor do ponteiro nulo antes de mudar comportamento.
 
-Critério de conclusão: o `STOP` desaparece e o boot avança para um estágio novo e nomeado.
-Construtores não recebem sucesso cego; serviços continuam recusando com código real.
+Critério de conclusão: o fault nomeia a origem (import, estrutura ou caminho de GPU) com log
+correspondente. Não corrigir devolvendo sucesso a mais chamadas.
 
 ## Reprodução
 

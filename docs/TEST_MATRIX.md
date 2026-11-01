@@ -78,11 +78,22 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   canário em `rbp-0x28`), mais `Core::init`/`Core::term` recusando com `0x80550003`.
 - Verificação: 27 threads, 1.657 leituras (12,1 MB); boot saiu do bloco PSN.
 
-**P0-6: `libSceMove` (PS Move) — ABERTO**
+**P0-6: subsistemas de sensor — RESOLVIDO**
 
-- Sintoma: `STOP: ... j1ITE-EoJmE#libSceMove (index 855)`.
-- O Prompt 04 mantém PS Move/PSVR/câmera fora do primeiro gate jogável, mas exige registrar os
-  imports. Falta decidir se a recusa explícita basta para o jogo seguir.
+- PS Move (7), PSVR (22), áudio 3D (14), câmera (7), VR tracker/social screen/VR (24): todos
+  registrados com semântica "biblioteca carregada, dispositivo ausente".
+- Verificação: boot atravessou todos e saiu da camada de imports.
+
+**P0-7: fault em `RHIThread` na inicialização de RHI — ABERTO**
+
+- Sintoma: `Fault: execute access to 0000000000000000`, `thread name: RHIThread`,
+  `#0 guest offset 0x14d6aec` (após `callq *0x8(%rsi)` com `rsi` nulo em `0x14d6ae9`).
+- Determinístico em duas execuções. Reprodução: `docs/evidence/prompt04/boot-27-vr-tracker.txt`
+  e `boot-28-rhi-determinism.txt`.
+- Contexto: antes de falhar, GPU Vulkan 1.4.357 (RTX 5060), 1920x1080, DualSense conectado,
+  12 sondagens `CollectImageFormatInfo`.
+- Hipótese principal: `sceVrTrackerQueryMemory` devolve 0 (sucesso) sem preencher a estrutura de
+  saída; o guest testa o retorno em `0x36f3f56` e segue consumindo dados não inicializados.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados
