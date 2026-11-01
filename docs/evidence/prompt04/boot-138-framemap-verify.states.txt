@@ -1,0 +1,6 @@
+boot-138-framemap-verify.txt: 961 samples, frames 1..9601
+
+state regions (frame numbers are the sampled ones):
+  black  frames     1..  431 (44 samples)
+  fade   frames   441..  461 (3 samples)
+  scene  frames   471.. 9601 (914 samples)

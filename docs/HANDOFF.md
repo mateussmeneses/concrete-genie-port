@@ -1,8 +1,47 @@
 # Handoff entre IAs
 
 - Data (UTC): 2026-11-01, sessão PROMPT 04 (continuação).
-- Branch: `bootstrap/windows`. Nenhum merge, rebase ou reset executado.
-- **Critério do PROMPT 04 NÃO atingido: não existe primeira cena jogável.** Não houve frame.
+- Branch: `bootstrap/windows`, HEAD `0d21f2b` + esta sessão. Nenhum merge, rebase ou reset executado.
+- IA/sessão: agente Hermes (DeepSeek v4.1), sessão de instrumentação de estado por frame.
+- Base upstream / submódulos: MediEvil `424f3ea8dbdcb02754a31e5225ef42e2f77f8e94`;
+  `git submodule status --recursive` em `docs/BASELINE.md`.
+- Build alvo: **CUSA11875** (EU), APP_VER `01.07`, `eboot.bin` SHA-256 `06f143de…33e51`
+  (108.601.759 bytes). `CUSA11834` (US) é candidata documental, **não validada**.
+- Estado: build exit 0; testes nativos exit 0; **86 testes Python** exit 0; boot sem `STOP` de
+  import; cena 3D estável a 30 FPS; **sem áudio, sem pintura, sem save/load verificados**.
+
+## Próxima ação única, verificável
+
+Ancorar cada teste de gameplay a uma amostra do mapa de estado, em vez de a um índice de frame fixo.
+
+Procedimento: rodar com `GOW3_FRAME_MAP=1 GOW3_FRAME_MAP_EVERY=10`, ler a primeira faixa `scene`
+com `python scripts/frame_states.py <log>`, e só então escolher os frames de captura **dentro** dela,
+na mesma execução. Critério de aceitação: o log mostra a faixa `scene` cobrindo os frames
+escolhidos, e a captura seguinte é comparada com um controle da mesma faixa. Sem isso, qualquer
+resultado de pintura ou pausa pode cair em `bright`/`fade` e ser mal interpretado, como já ocorreu
+duas vezes.
+Critério do PROMPT 04 **NÃO atingido**: não existe primeira cena jogável demonstrada com input e
+  áudio. A cena 3D renderiza e é estável, mas a pintura não foi observada por nenhum caminho,
+  o áudio nunca tocou e o save/load não foi exercitado.
+
+## Onde o estado do jogo está agora (medido, não inferido)
+
+Instrumentação nova (`GOW3_FRAME_MAP=1`) grava por frame a grade de luminância 3×3 da imagem
+apresentada e a contagem de draws. Ela substitui a amostragem manual que produziu duas conclusões
+erradas. Resumo de quatro execuções independentes:
+
+| Execução | Entrada | Estado observado |
+|---|---|---|
+| `boot-135` | `cross` | preto 1..586, fade 591..616, **cena 3D 621..9021**, 30 FPS |
+| `boot-137` | `cross` (repetição) | preto 1..511, fade 516..556, **cena 3D 561..9006** |
+| `run5-verify` | `cross`, amostra a cada 10 | preto 1..431, fade 441..461, **cena 3D 471..9601** |
+| `boot-136` | `cross` + `options` | preto 1..411, fade 416..461, **UI clara 466..9041** |
+
+O estado **não oscila**: uma vez alcançada a cena, ela permanece até o timeout. A variação entre
+execuções é o ponto de parada do boot, não instabilidade do jogo — o que confirma a correção 5.
+
+Custo da instrumentação, medido: **3,09 ms por amostra** (readback incluído), estável em 1.800
+amostras, com o jogo mantendo 30 FPS. Ela não muda o estado que mede.
 
 ## Avanço desta sessão (medido)
 
@@ -165,16 +204,34 @@ R2 parado, R2+stick, R2+sensor verificado ativo.
 triangle, e verificar se a cena tem menu de pausa por outro gatilho. Sem isso, pausa fica como
 "não observada" honestamente.
 
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
-concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
+### Instrumentação que substitui a amostragem manual
 
-**Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs
-controle sem input); 8.100+ frames; boot sem `STOP` de import; 31 imports antes sem nome agora
-resolvidos.
+`GOW3_FRAME_MAP=1` registra, por frame apresentado, a grade de luminância 3×3 da imagem final e os
+draws desde a amostra anterior. `scripts/frame_states.py` classifica cada amostra em
+`black`/`fade`/`bright`/`scene` e imprime as faixas de frame.
 
-**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
-**Verificado e funcionando:** cena 3D a 30 FPS, input move a câmera (99,94% dos pixels diferem vs
-controle sem input), 8.100+ frames, boot sem `STOP` de import.**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
+```bash
+env GOW3_FRAME_MAP=1 GOW3_FRAME_MAP_EVERY=10 GOW3_PAD_FILE=".../pad.txt" \
+  timeout 320 runtime/out/gpu/cg-runtime.exe .cg/audit/prepared/boot-linked.bin \
+  --content-profile .cg/audit/prepared/content.bin --app0 "<dump>" --user .cg/audit/run/user \
+  --timeout 290 > run.log 2>&1
+python scripts/frame_states.py run.log --frames 3000,4400
+```
+
+**Achado que a instrumentação produziu:** o estado alcançado depende do **ponto de parada do boot**,
+não do script de input. Quatro execuções com `cross` chegaram à cena 3D em frames diferentes
+(471, 561, 621) e permaneceram nela até o timeout, sem alternância. A execução com `options` passou
+da cena para uma UI clara em 466 e nunca saiu — 8.500 frames parada ali.
+
+Isso significa que um teste de pausa em `options` a partir do frame 3000 estava medindo uma tela de
+UI estática, não gameplay pausado. A cena não "ignorou" OPTIONS; o input chegou mas o jogo já estava
+fora da cena.
+
+**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs
+controle sem input); 9.600+ frames; boot sem `STOP` de import; 31 imports antes sem nome agora
+resolvidos; mapa de estado por frame com custo medido de 3,09 ms.
+
+**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
 
 **Verificado nesta sessão: input move a câmera.**
 

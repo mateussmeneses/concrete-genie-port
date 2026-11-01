@@ -1,7 +1,35 @@
 # Matriz de testes
 
-Atualizado: 2026-11-01 UTC. Dump `CUSA11875`. **Nenhum frame foi renderizado.**
+Atualizado: 2026-11-01 UTC. Dump `CUSA11875`. **Há frames renderizados e uma cena 3D estável; não
+há cena jogável verificada** (sem pintura, áudio ou save/load observados).
 Evidências em `docs/evidence/`.
+
+## Mapa de estado por frame — instrumentação e resultado
+
+Registro novo, `GOW3_FRAME_MAP=1`, amostra a grade de luminância 3×3 da imagem final e os draws
+desde a amostra anterior. `scripts/frame_states.py` lê o log e imprime as faixas de estado.
+
+| Execução | Entrada | Faixas observadas | Evidência |
+|---|---|---|---|
+| `boot-135` | `cross` | black 1..586, fade 591..616, **scene 621..9021** | `boot-135-framemap-cross.txt` |
+| `boot-137` | `cross` (repetição) | black 1..511, fade 516..556, **scene 561..9006** | `boot-137-framemap-repro.txt` |
+| `run5-verify` | `cross`, a cada 10 | black 1..431, fade 441..461, **scene 471..9601** | `.cg/audit/statemap/run5-verify.log` |
+| `boot-136` | `cross`+`options` | black 1..411, fade 416..461, **bright 466..9041** | `boot-136-framemap-options.txt` |
+
+**O estado não alterna.** Alcançada a cena, ela permanece até o timeout em todas as execuções com
+`cross`, em frames de início diferentes (471/561/621). A variação entre execuções é o ponto em que
+cada run para na sequência de boot — não instabilidade do jogo.
+
+**Custo medido da instrumentação:** 3,09 ms por amostra (readback incluído), estável de 60 a 1.800
+amostras, com o jogo mantendo 30 FPS. A sonda não altera o estado que mede.
+
+**Consequência para os testes anteriores:** a execução `pz` (`cross`+`options`) passou para uma UI
+clara em 466 e nunca voltou à cena. O teste de pausa "a partir do frame 3000" media, portanto, uma
+tela de UI estática — não gameplay que ignorou OPTIONS. O veredito de pausa permanece
+**não observado**, agora com a causa da má interpretação identificada.
+
+**Pintura — veredito inalterado:** negativa por três caminhos (R2 parado, R2+stick, R2+sensor
+verificado ativo). Esses cinco runs (grade 78/163/50) estavam na mesma cena 3D e seguem comparáveis.
 
 ## Ambiente medido
 
@@ -16,7 +44,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **73 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **86 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -464,19 +492,24 @@ Idem.
 
 ## Não executado — não inferir aprovação
 
+Cada linha abaixo é o que **falta**; nada aqui foi aprovado.
+
 | Item | Estado |
 |---|---|
-| **Primeiro frame renderizado** | **NÃO EXECUTADO** |
-| Intro, menu principal, primeira cena | NÃO EXECUTADO |
-| Movimentação, pintura, pausa | NÃO EXECUTADO |
-| Áudio (reprodução, pausas, dispositivos) | **NÃO AUDITADO** — sem cena |
+| Primeiro frame / imagem de conteúdo | **EXECUTADO** — frames com conteúdo capturados (`GOW3_FRAME_DUMP_AT`) |
+| Cena 3D estável | **EXECUTADO** — faixa `scene` contínua em 4 execuções (ver mapa acima) |
+| Intro e menu principal | **PARCIAL** — menu medido por draws (`boot-70`), mas nunca navegado por input |
+| Pintura (R2, stick, sensor) | **EXECUTADO e NEGATIVO** — nenhuma cor nova por nenhum dos três caminhos |
+| Pausa | **NÃO OBSERVADO** — OPTIONS muda o estado para UI, não congela a cena |
+| Áudio (reprodução, pausas, dispositivos) | **NÃO AUDITADO** — runtime correto em todas as camadas; o guest entrega zeros |
 | Save/load | NÃO EXECUTADO — formato ainda desconhecido |
-| Controles SDL3 gamepad / teclado+mouse | **NÃO VALIDADO** — sem gameplay |
+| Controles SDL3 gamepad / teclado+mouse | **PARCIAL** — `GOW3_PAD_FILE` move a câmera; mouse não validado |
 | Mouse → eixo direito (fallback de pintura) | NÃO IMPLEMENTADO nem validado |
-| Câmera, gyro, PS Move, PSVR | NÃO EXECUTADO — apenas imports presentes |
-| Shader cache, frame pacing, p50/p95/p99 | **NÃO MEDIDO** — sem frames |
+| Câmera, gyro, PS Move, PSVR | NÃO EXECUTADO — imports registrados; sensores do gamepad lidos |
+| Frame pacing | **MEDIDO** — mediana 33,34 ms, p99 34,38 ms, 30 FPS estável (`boot-131`) |
+| Shader cache cold/warm | NÃO MEDIDO — compilações já caem a 0 após o startup |
 | Flicker, iluminação, VRAM, readback | NÃO AUDITADO |
-| Outras GPUs | NÃO EXECUTADO |
+| Outras GPUs | NÃO EXECUTADO — só RTX 5060 |
 | Pacote Windows em máquina limpa | NÃO EXECUTADO |
 
 ## Como repetir

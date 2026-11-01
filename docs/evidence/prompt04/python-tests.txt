@@ -1,6 +1,9 @@
-...........................Starting verified build CUSA11834 01.00; no game patches enabled.
-............
+...................................Starting verified build CUSA11834 01.00; no game patches enabled.
+...................ERROR: no 'FrameMap:' lines in C:\Users\Mateus\AppData\Local\Temp\tmpkbo1kz_0\empty.log
+Hint: run the runtime with GOW3_FRAME_MAP=1.
+.ERROR: C:\projetos\concrete-genie-port\does-not-exist.log does not exist
+...............................
 ----------------------------------------------------------------------
-Ran 39 tests in 1.963s
+Ran 86 tests in 2.533s
 
 OK

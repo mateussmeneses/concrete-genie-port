@@ -1,14 +1,15 @@
 # Estado do projeto
 
-Atualizado: 2026-11-01 UTC. **PROMPT 04 não atingiu o critério: não existe primeira cena
-jogável.** O código guest executa, o Vulkan inicializa e as relocations são aplicadas, mas a
-execução para antes de qualquer frame, num conflito de reserva de memória.
+Atualizado: 2026-11-01 UTC, sessão de instrumentação de estado por frame. **O PROMPT 04 não atingiu
+o critério: não existe primeira cena jogável demonstrada.** A cena 3D renderiza, é estável e
+responde a input de câmera, mas pintura, áudio e save/load não foram observados. Este documento
+descreve o que foi medido, não o que se espera.
 
 ## Onde o port está
 
 - Branch `bootstrap/windows`, runtime do MediEvil vendorizado (base `424f3ea`). Sem merge.
 - Build reproduzível: `bash build.sh` e `bash build.sh --test`, ambos exit 0.
-- **39 testes Python**, exit 0. Smoke sem dump funcionando.
+- **86 testes Python**, exit 0. Smoke sem dump funcionando.
 - Dump `CUSA11875` (EU, APP_VER 01.07) identificado e auditado; pipeline executado até o boot.
 
 ## Estágios comprovadamente atingidos
@@ -21,65 +22,63 @@ execução para antes de qualquer frame, num conflito de reserva de memória.
 | Vulkan / janela | RTX 5060, Vulkan 1.4.357, swapchain, 327 HLE symbols |
 | Imagem mapeada | 106.136.876 bytes, 9 segmentos, 465.785 relocations aplicadas |
 | Memória guest | pools de 6 MiB + 128 MiB + 5.161.025.536 bytes |
-| **Primeiro frame** | **NÃO. Bloqueio abaixo.** |
+| Cadeia de apresentação | `Flip` → `PrepareFrame` → `vkQueuePresentKHR` = `Success` |
+| **Cena 3D renderizada** | **sim, estável a 30 FPS, 9.600+ frames** |
+| Áudio audível | **não** — runtime correto em todas as camadas; o guest entrega zeros |
+| Pintura | **não** — negativa por três caminhos de input |
+| Save/load | **não executado** |
 
-## Bloqueio atual (P0)
+## Estado do jogo, medido por frame
 
-Resolvidos nesta sessão: (1) reserva fixa do pool de 8 GiB em `USER_MIN`, que colidia com um
-mapeamento escolhido pelo runtime — corrigido com `find_free_unhinted()`; (2) `--content-profile`
-ausente no pipeline. Com ambos, o boot avança para:
+`GOW3_FRAME_MAP=1` grava a grade de luminância 3×3 da imagem final por frame, com a contagem de
+draws. Quatro execuções independentes:
 
-```
-Swapchain: present #300 -> Success
-```
-Frame capturado, com conteúdo e animando (1,96% de pixels não-pretos, 5,65% de diferença entre
-frames). Não é cena jogável: é uma faixa central de glifos em ~2% da tela.
+| Execução | Entrada | Estado |
+|---|---|---|
+| `boot-135` | `cross` | black 1..586 → fade 591..616 → **scene 621..9021** |
+| `boot-137` | `cross` (repetição) | black 1..511 → fade 516..556 → **scene 561..9006** |
+| `run5-verify` | `cross` (a cada 10) | black 1..431 → fade 441..461 → **scene 471..9601** |
+| `boot-136` | `cross`+`options` | black 1..411 → fade 416..461 → **bright 466..9041** |
 
-O boot atravessou todos os subsistemas de sensor (PS Move, PSVR, áudio 3D, câmera, VR tracker) e
-chegou à **inicialização de RHI do UE4**, onde falha numa chamada virtual indireta por ponteiro
-nulo. Nenhum frame foi renderizado: isto não é uma cena, nem menu, nem intro.
+O estado **não alterna**: a cena, uma vez alcançada, permanece até o timeout. As diferenças de frame
+inicial são o ponto em que cada execução para no boot — não instabilidade do jogo. Isso encerra a
+hipótese de "instabilidade de estado" registrada em sessões anteriores e explica por que dois testes
+foram mal interpretados: eles capturaram a fase de UI.
 
-Antes de falhar o jogo estabeleceu GPU Vulkan 1.4.357 (RTX 5060), resolução 1920x1080 e um
-DualSense conectado, e fez 12 sondagens de formato de superfície.
+A execução com `options` sai da cena para uma UI clara no frame 466 e nunca volta — 8.500 frames
+parada ali. O teste de pausa feito nessa faixa media uma tela de UI, não gameplay pausado.
 
-`runtime/src/runtime_np.c` implementa o construtor/destrutor de `InitParams` (**352 bytes**,
-medidos no frame do guest) e recusa o serviço `Core::init` com `0x80550003`. O jogo aceitou a
-recusa e continuou. O bloqueio atual é o próximo construtor da sequência de `Request`; há 51
-construtores/destrutores desse tipo no eboot, cada um exigindo medida no próprio call site.
+Custo da instrumentação: **3,09 ms por amostra**, com o jogo mantendo 30 FPS. Não altera o estado.
 
-Antes do bloqueio, o jogo cria **22 threads guest** (incluindo `TaskGraphThreadNP 0..N` do
-UE4), inicializa o AppContent e lê 174 vezes do dump (10.107.208 bytes). Exit 20.
+## O que funciona, e o que não
 
-Detalhe e hipóteses refutadas: `docs/MEMORY_AUDIT.md`.
+**Funciona:** boot completo sem `STOP` de import; cena 3D a 30 FPS; input de gamepad move a câmera
+(99,94% dos pixels diferem do controle no mesmo frame); frame pacing estável (mediana 33,34 ms,
+p99 34,38 ms); menu principal alcançado (medido por contagem de draws).
 
-## Correções de diagnóstico aplicadas
-
-- `is_ps4_syscall_gate()`: o gate `INT 0x44` passa a ser nomeado no relatório de falha, em vez
-  de aparecer como "read access to ffffffff".
-- Verificação de canário no frame do chamador, com as duas fontes lado a lado.
-- Logs de falha em `place`, `reserve_range`, `pool_reserve` (sucesso permanece silencioso).
+**Não funciona / não observado:** pintura (R2, stick e sensor, todos negativos); áudio; save/load;
+mouse como eixo direito; pausa.
 
 ## O que NÃO foi feito e por quê
 
-Os tópicos de áudio, controles, shader cache, frame pacing e captura de frame do Prompt 04
-**não foram auditados**. Todos dependem de uma cena visível: auditar shaders ou reprodução de
-áudio sem frame seria descrever código, não observar comportamento. Registrar isso como
-"feito" seria a mesma inflação de progresso que as regras do projeto proíbem.
+Shaders cold/warm, flicker, iluminação, VRAM e distribuição Windows continuam sem auditoria
+completa. Frame pacing tem uma medição única; flicker e iluminação exigem comparação visual que
+ainda não existe. Registrar isso como "feito" seria inflação de progresso.
 
 ## Estado de verificação
 
 | Item | Estado |
 |---|---|
 | Build + testes nativos | PASSA, exit 0 |
-| Suíte Python | PASSA, 72 testes, exit 0 |
-| Boot até o bloqueio | exit 3, causa nomeada |
-| **Frame / menu / gameplay** | **NÃO EXECUTADO** |
-| Áudio, controles, GPU visual | **NÃO AUDITADOS** |
+| Suíte Python | PASSA, 86 testes, exit 0 |
+| Boot | exit 124 (timeout), sem fault e sem `STOP` de import |
+| Frame / cena 3D | **EXECUTADO, estável a 30 FPS** |
+| Menu principal | Alcançado por draws; **não navegado** |
+| Pintura, áudio, save/load | **NÃO VERIFICADO** |
 | Suíte herdada `runtime/tests` | vermelha por expectativas de GoW/MediEvil, não corrigida |
 
 ## Próxima ação
 
-Determinar se o guest depende de `USER_MIN` para o pool: registrar leituras guest em
-`[0x1000000000, 0x1000600000)` após a chamada de `pool_reserve`. Sem leituras, o bloco de
-6 MiB pode ser realocado com segurança; com leituras, a ordem de inicialização deve ser
-invertida. Critério completo em `docs/HANDOFF.md`.
+Ancorar os testes de gameplay ao mapa de estado: rodar com `GOW3_FRAME_MAP=1`, ler a faixa `scene`
+com `python scripts/frame_states.py <log>`, e escolher os frames de captura **dentro** dela, na
+mesma execução. Critério completo em `docs/HANDOFF.md`.

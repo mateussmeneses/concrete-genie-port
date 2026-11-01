@@ -155,3 +155,32 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
   Registrado como suspeita, não como acerto: o guest testa o retorno (`0x36f3f56`) e, com 0,
   segue adiante. Se a falha em `RHIThread` vier daí, a correção é preencher a saída, não trocar o
   código de retorno.
+
+## 2026-11-01 — instrumentação de estado por frame (GOW3_FRAME_MAP)
+
+- **O teste passa a se ancorar no estado observado, não no índice de frame.** Duas conclusões
+  anteriores foram mal interpretadas por capturar frames numa fase de UI. A instrumentação grava,
+  por frame apresentado, a grade de luminância 3×3 da imagem final e a contagem de draws, e
+  `scripts/frame_states.py` imprime as faixas. Motivo: um índice de frame não identifica estado
+  quando o ponto de parada do boot varia entre execuções. Reversão: remover o bloco
+  `FrameMap` de `vk_presenter.cpp`; nada mais depende dele.
+- **A sonda é óptica, não semântica.** Ela lê a imagem que o swapchain apresenta; não consulta
+  estado do motor nem infere nome de cena. `scene`/`bright`/`fade` são descrições da imagem, não
+  rótulos de gameplay. Motivo: nomear "gameplay" a partir de luminância seria a mesma inferência
+  não medida que já produziu erro. Reversão: idem.
+- **`fade` e `scene` se separam por estrutura, não por brilho.** O fade de OPTIONS passa por 71,7
+  de média — a mesma do cenário 3D — mas com spread de 1,3 entre células, contra >80 do cenário. A
+  classificação checa luminância e depois spread, nessa ordem, porque a tela de UI é clara (≈248)
+  e pouco estruturada (spread ≈35). Reversão: ajustar as constantes; os testes fixam os valores
+  medidos.
+- **O readback é síncrono de propósito.** Um readback diferido reportaria a grade de um frame
+  antigo sob o número do frame atual, que é exatamente a confusão que a instrumentação existe para
+  eliminar. Custo medido: 3,09 ms por amostra, com 30 FPS mantidos. Reversão: `GOW3_FRAME_MAP=0`
+  desliga tudo, sem recompilar.
+- **Amortecimento por `GOW3_FRAME_MAP_EVERY`.** Amostrar todo frame custaria ~3 ms/frame; a cada 10
+  frames custa 0,3 ms/frame e ainda dá resolução suficiente para achar a fronteira de estado.
+  Motivo: a sonda não pode perturbar o que mede. Reversão: variável de ambiente.
+- **Os docs foram corrigidos, não reescritos por cima de outra IA.** `PROJECT_STATE.md`,
+  `TEST_MATRIX.md` e `HANDOFF.md` afirmavam "nenhum frame renderizado" e "39/72 testes", o que
+  contradizia evidência já commitada no mesmo branch. Corrigido com os números medidos; nenhuma
+  conclusão alheia foi apagada, apenas atualizada contra a evidência.
