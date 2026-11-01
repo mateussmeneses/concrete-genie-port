@@ -113,7 +113,20 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Carregar `binkpluginps4.prx` no loader de módulos.
+Resolver a conversão nome→NID para `sceKernelDlsym`.
+
+O módulo já está ligado e inicializado (`prx/binkpluginps4.prx@0x6540000`, `module_start` rodou),
+e o boot estendido G3PROBE6 já carrega a tabela de exports. Falta apenas casar o nome que o guest
+passa (`"BinkPluginGoto"`) com o NID exportado pelo módulo.
+
+1. Obter o algoritmo de NID do PS4 a partir de fonte primária (não por tentativa): os exports do
+   próprio módulo dão pares de validação (`b0xyllnVY-I` = `sceGnmAddEqEvent`, etc.), então
+   qualquer implementação pode ser conferida antes de ser usada.
+2. Alternativa: localizar no eboot a tabela nome→NID, se o jogo a contiver.
+3. Só então preencher os slots.
+
+Critério de conclusão: `runtime_linked_symbol()` devolve endereço não nulo para os 14 nomes
+`BinkPlugin*`, e o fault em `RHIThread` muda de lugar. Não preencher com stubs vazios.
 
 A causa do fault já está medida (`docs/MEMORY_AUDIT.md`): o jogo resolve 8 funções do plugin Bink
 por `sceKernelDlsym` para slots em `.bss` e as chama sem testar nulo; o módulo existe em

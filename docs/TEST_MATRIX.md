@@ -99,7 +99,12 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   parâmetro de saída. Agora zera `*out` e tenta resolver. O crash persiste, com null definido.
 - Hipótese descartada: `sceVrTrackerQueryMemory` devolvendo 0 — mudar para erro produziu o mesmo
   crash (`exp-01-vrtracker-refused.txt`).
-- Próximo passo: mapear `binkpluginps4.prx` no loader de módulos.
+- **Progresso:** `prx/binkpluginps4.prx` é SELF decriptável e foi **ligado** pelo linker
+  (`@0x6540000`); seu `module_start` executou (log: `Starting linked module 2`). Imports faltando
+  caíram de 105 para 100.
+- **Bloqueio atual:** `sceKernelDlsym` recebe nomes (`BinkPluginGoto`), mas os 32 exports do
+  módulo são NIDs. O algoritmo nome→NID não foi reproduzido (4 variantes testadas, 0/4).
+- Nenhum slot preenchido; fault inalterado.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

@@ -198,7 +198,11 @@ static ABI int32_t kernel_dlsym(int32_t handle, const char *name, void **out) {
     if (!out) return ERR(E_INVAL);
     *out = NULL;
     if (name) {
+        /* The PS4 linker answers dlsym from a loaded module's export table, keyed by NID. The
+         * guest passes a plain name ("BinkPluginGoto"), so try the name first, then treat it as
+         * a NID against the freshly linked modules. */
         uintptr_t symbol = runtime_resolve(name, 0);
+        if (!symbol) symbol = runtime_linked_symbol(name);
         if (symbol) { *out = (void *)symbol; return 0; }
     }
     return ERR(E_SRCH);

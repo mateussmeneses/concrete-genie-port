@@ -36,6 +36,18 @@ static size_t page_size;
 typedef struct { uint64_t base, size, init, tls_address, tls_memsz, tls_filesz, tls_module; } LinkedModule;
 static LinkedModule modules[16];
 static uint64_t module_count;
+/* Export table of freshly linked modules (G3PROBE6), so sceKernelDlsym can answer a lookup by
+ * NID the way the PS4 linker does. */
+#define EXPORT_ENTRIES_MAX 8192
+static char export_nids[EXPORT_ENTRIES_MAX][16];
+static uint64_t export_addresses[EXPORT_ENTRIES_MAX];
+static uint64_t linked_exports;
+uintptr_t runtime_linked_symbol(const char *nid) {
+    if (!nid || !nid[0]) return 0;
+    for (uint64_t i=0;i<linked_exports;++i)
+        if (!strcmp(export_nids[i], nid)) return (uintptr_t)(image+export_addresses[i]);
+    return 0;
+}
 static int entered_game;
 static int gpu_enabled;
 int vulkan_smoke(void);
@@ -540,7 +552,7 @@ int main(int argc, char **argv) {
     FILE *f = fopen(argv[1], "rb");
     if (!f) fail("cannot open boot file; run prepare.py first");
     char magic[8];
-    if (fread(magic, 1, 8, f) != 8 || (memcmp(magic, "G3PROBE1", 8) && memcmp(magic, "G3PROBE2", 8) && memcmp(magic,"G3PROBE3",8) && memcmp(magic,"G3PROBE4",8) && memcmp(magic,"G3PROBE5",8))) fail("bad boot file signature");
+    if (fread(magic, 1, 8, f) != 8 || (memcmp(magic, "G3PROBE1", 8) && memcmp(magic, "G3PROBE2", 8) && memcmp(magic,"G3PROBE3",8) && memcmp(magic,"G3PROBE4",8) && memcmp(magic,"G3PROBE5",8) && memcmp(magic,"G3PROBE6",8))) fail("bad boot file signature");
     uint64_t size = read64(f), entry = read64(f), ns = read64(f), nr = read64(f);
     import_count = read64(f);
     uint64_t capabilities = memcmp(magic, "G3PROBE1", 8) ? read64(f) : 0;
@@ -548,7 +560,7 @@ int main(int argc, char **argv) {
     runtime_start(strict_imports ? 0 : capabilities);
     if (!size || size > 512*1024*1024 || entry >= size || !ns || ns > 64 || nr > 1000000 || import_count > 100000)
         fail("boot file limits exceeded");
-    int multi=!memcmp(magic,"G3PROBE5",8);
+    int multi=!memcmp(magic,"G3PROBE5",8) || !memcmp(magic,"G3PROBE6",8);
     int linked=!memcmp(magic,"G3PROBE3",8) || !memcmp(magic,"G3PROBE4",8) || multi;
     int native_libc=linked && !strict_imports && (capabilities&1);
     uint64_t main_tls[4]={0};
@@ -595,6 +607,19 @@ int main(int argc, char **argv) {
                 if (address>=modules[m].base && address-modules[m].base<modules[m].size) inside=1;
             if (index>=import_count || !inside || (kind!=1 && kind!=2) || bindings[index]) fail("invalid native binding");
             bindings[index]=address; binding_kinds[index]=kind;
+        }
+        /* G3PROBE6 export table: NID (16 bytes) -> image offset, for sceKernelDlsym. It follows
+         * the bindings in the file (link_modules.py writes it after them). */
+        {
+            uint64_t export_count=read64(f);
+            if (export_count>EXPORT_ENTRIES_MAX) fail("invalid export count");
+            for (uint64_t e=0;e<export_count;++e) {
+                if (fread(export_nids[e],1,16,f)!=16) fail("truncated export table");
+                export_nids[e][15]='\0';
+                export_addresses[e]=read64(f);
+                if (export_addresses[e]>=size) fail("export outside image");
+            }
+            linked_exports=export_count;
         }
     }
     Segment *segments = calloc(ns, sizeof(*segments));

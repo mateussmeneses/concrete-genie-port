@@ -1,3 +1,62 @@
+# Bink: módulo ligado, falta a resolução nome→NID
+
+## O que foi feito e verificado
+
+O `prx/binkpluginps4.prx` do dump é um **SELF decriptável** (ELF válido, 10 segmentos). O linker
+do projeto, que já mapeava `sce_module/*.prx`, agora aceita um caminho explícito e ligou o módulo:
+
+```
+Linked modules: libc.prx@0x62a0000, libSceFios2.prx@0x63b0000, prx/binkpluginps4.prx@0x6540000
+```
+
+O `module_start` **executou de verdade**:
+
+```
+Starting linked module 2 at image offset 0x6540000; native bindings=210
+```
+
+Imports do eboot que faltam: **105 → 100**.
+
+## O mecanismo, medido
+
+- O eboot contém **14** strings `BinkPlugin*` (`Goto`, `ProcessBinks`, `LimitSpeakers`, `Loop`,
+  `Pause`, `Draw`, `SetPerFrameInfo`, `ScheduleToTexture`, `ScheduleOverlay`, `AllScheduled`,
+  `IOPause`, `TurnOnGPUAssist`, `Error`, `Vol`) e as passa a `sceKernelDlsym`.
+- As funções vão para slots em `.bss` (`0x618f738`..`0x618f7b8`), chamados sem teste de nulo.
+- O módulo exporta por **NID**: `BinkPluginPS4` tem 32 exports, `libSceGnmDriver` 87,
+  `libc` 14, `libkernel` 12. O `bink2ps4.prx` tem 68 exports em `Bink2PS4`.
+- O módulo **não contém** as strings `BinkPlugin*`: ele exporta por NID, e o kernel PS4 resolve
+  nome→NID. Sem essa conversão, `sceKernelDlsym(handle,"BinkPluginGoto",&slot)` não tem como
+  casar com nenhum export.
+
+## Formato do boot estendido (G3PROBE6)
+
+O linker agora grava a tabela de exports (NID de 16 bytes → offset no image) depois dos bindings,
+e o runtime a lê em `runtime_linked_symbol()`; `kernel_dlsym` tenta nome → tabela de exports.
+
+Durante a implementação houve um erro meu: a leitura da tabela foi inserida em **dois** pontos do
+`probe.c` (antes e depois do loop de bindings), corrompendo o alinhamento e produzindo
+`ERROR: invalid native binding`. Corrigido removendo a leitura duplicada; o boot voltou a rodar.
+
+## Bloqueio atual
+
+`sceKernelDlsym` recebe **nomes**, os exports são **NIDs**, e o algoritmo de hash não foi
+reproduzido. Quatro variantes testadas contra NIDs de verdade do próprio módulo
+(`sceGnmAddEqEvent`→`b0xyllnVY-I`, `sceGnmSetVsShader`→`gAhCn6UiU4Y`, etc.) falharam todas:
+
+| Variante | Acertos |
+|---|---|
+| SHA1(name)[:8], base64 PS4 (`+-`) | 0/4 |
+| SHA1(name)[:8], base64 padrão (`+/`) | 0/4 |
+| SHA1(name + NUL) | 0/4 (ambas) |
+
+Faltam duas coisas, ambas verificáveis: (a) o algoritmo exato de NID do PS4, ou (b) a tabela
+nome→NID do próprio jogo. Adivinhar mais variantes não é evidência.
+
+## O que NÃO foi feito
+
+Nenhum slot Bink foi preenchido. O fault em `RHIThread` continua idêntico. Nenhum frame.
+
 # Causa raiz do fault em RHIThread — encontrada e verificada
 
 Não é regressão dos subsistemas de sensor. É uma dependência de módulo dinâmico.

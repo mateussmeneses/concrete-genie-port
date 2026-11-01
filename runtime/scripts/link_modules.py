@@ -128,7 +128,12 @@ def link(game, out, module_names=DEFAULT_MODULES):
     fs_patched = patch_fs_loads(image, main['ph'], 0)
     tls_module = 2
     for filename in module_names:
-        m = module(game / 'sce_module' / filename)
+        # Modules live in sce_module/ (system libraries) or prx/ (game-shipped plugins such as
+        # the Bink video plugin). An entry may name its own subdirectory explicitly.
+        if '/' in filename:
+            m = module(game / filename)
+        else:
+            m = module(game / 'sce_module' / filename)
         loads = [p for p in m['ph'] if p['type'] in (1, 0x61000010)]
         modsize = max(p['vaddr'] + p['memsz'] for p in loads)
         if base + modsize > 512 * 1024 * 1024:
@@ -197,6 +202,9 @@ def link(game, out, module_names=DEFAULT_MODULES):
         base = (base + modsize + 65535) & ~65535
 
     bindings, unresolved = [], []
+    exports_by_nid = {}
+    for identity, (value, kind, _source) in exports.items():
+        exports_by_nid[identity[0]] = value
     for identity, index in identities.items():
         found = exports.get(identity)
         if not found and identity and identity[1][0] == 'libSceLibcInternal':
@@ -213,8 +221,13 @@ def link(game, out, module_names=DEFAULT_MODULES):
                      or main_tls['vaddr'] + main_tls['filesz'] > size):
         raise ValueError('unsupported eboot TLS layout')
     procparam = next(p for p in main['ph'] if p['type'] == 0x61000001)
+    # Export table for the game's own runtime lookups. The guest calls
+    # sceKernelDlsym(handle, "BinkPluginGoto", &slot) and expects the PS4 linker to answer from
+    # a loaded module's export table. Without this the slots stay null and the game calls a null
+    # function pointer much later (an execute fault in RHIThread).
+    export_table = [(nid, value) for nid, value in sorted(exports_by_nid.items())]
     with (out / 'boot-linked.bin').open('wb') as f:
-        f.write(struct.pack('<8s6Q', b'G3PROBE5', len(image), entry, len(segments), len(relocs), len(names), flags))
+        f.write(struct.pack('<8s6Q', b'G3PROBE6', len(image), entry, len(segments), len(relocs), len(names), flags))
         f.write(struct.pack('<Q', procparam['vaddr']))
         f.write(struct.pack('<4Q', *main_tls_values))
         f.write(struct.pack('<Q', len(table)))
@@ -224,6 +237,14 @@ def link(game, out, module_names=DEFAULT_MODULES):
         f.write(struct.pack('<Q', len(bindings)))
         for binding in bindings:
             f.write(struct.pack('<3Q', *binding))
+        # G3PROBE6: export table (NID string -> guest address) for sceKernelDlsym.
+        f.write(struct.pack('<Q', len(export_table)))
+        for nid, address in export_table:
+            encoded = nid.encode()
+            if len(encoded) >= 16:
+                raise ValueError('NID too long')
+            f.write(encoded.ljust(16, b'\0'))
+            f.write(struct.pack('<Q', address))
         for segment in segments:
             f.write(struct.pack('<3Q', *segment))
         for name in names:
