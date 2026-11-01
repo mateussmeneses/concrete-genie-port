@@ -147,6 +147,17 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - O conteúdo é uma faixa central de glifos em ~2% da tela, compatível com tela de título/logo.
 - Não há movimento de câmera, personagem, pintura, menu navegável nem áudio verificado.
 - O critério do Prompt 04 continua **não cumprido**.
+
+**P0-12: runtime não lê pak algum — ABERTO**
+
+- Medido: dois paks **válidos** no dump (19,1 GB + 5,4 GB, assinatura `0x5A6F12E1` no rodapé,
+  `mount point ../../../`, 57.303 entradas) e **zero** tentativas de montagem durante o boot.
+- `grep -rniE "\.pak" runtime/src/*.c` → uma única menção, um comentário.
+- Efeito observado: 116 arquivos pedidos pelo motor não existem soltos (49 deles
+  `internationalization/usrdt53l.dat`); o boot lê apenas 109 MB.
+- Status: causa **provável** da tela magra, não confirmada. Confirmar exige implementar leitura de
+  pak e comparar capturas.
+- Detalhe: `docs/MEMORY_AUDIT.md`.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

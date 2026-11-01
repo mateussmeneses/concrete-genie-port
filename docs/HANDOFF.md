@@ -131,9 +131,18 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Identificar o que a faixa de conteúdo é e por que ocupa só ~2% da tela.
+Implementar leitura de pak UE4 — o runtime não abre os 23 GB de conteúdo do jogo.
 
-A captura funciona; o próximo passo é interpretar o conteúdo, não consertar a apresentação.
+Medido nesta sessão: o dump tem dois paks **válidos** (`concretegenie-ps4.pak` 19,1 GB e
+`concretegenie-ps4_0_p.pak` 5,4 GB; assinatura `0x5A6F12E1` no rodapé, `mount point ../../../`,
+57.303 entradas), e o runtime **nunca tenta abri-los** — não há implementação de pak em
+`runtime/src/`. O motor pede arquivos que vivem dentro do pak, recebe "not found" (116 ocorrências,
+49 delas `internationalization/usrdt53l.dat`) e segue com os loose files.
+
+Isso é consistente com a tela capturada (faixa de glifos em ~2% da imagem), mas **não está
+confirmado como causa** — confirmar exige ler o pak e ver a tela mudar.
+
+A captura, entretanto, funciona; ela é o instrumento de verificação.
 
 Reprodução exata (o `env` é obrigatório; o prefixo inline não propaga neste shell):
 
@@ -143,14 +152,16 @@ env GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/dump"     GOW3_FRAM
 python scripts/frame_stats.py dump/output_000_1920x1080.raw
 ```
 
-1. Extrair o texto da faixa (a 1920x1080, caixa 512..1414 x 430..586) e identificar a tela.
-2. Contar draws por frame: se o guest emite poucos draws, a cena não está sendo submetida — o
-   problema é antes do apresentador, no comando do guest.
-3. Verificar se há um estado de carregamento bloqueado (FSM lendo 109 MB do dump e 116 arquivos
-   não encontrados) em vez de cena renderizada.
+1. Obter o formato do índice pak **v4** de fonte primária (v4 tem hash por entrada e tabela de
+   nomes separada; a tentativa de parse por nome falhou e não deve ser refeita por tentativa).
+2. Implementar montagem mínima em `runtime/src/`: abrir o índice, resolver caminho → (offset,
+   tamanho, compressão) e servir em `runtime_file_open`.
+3. Teste de aceitação: localizar `usrdt53l.dat` e `icudt53l.dat` **pelo nome** no índice, antes de
+   servir qualquer byte.
+4. Verificar com captura antes/depois: `python scripts/frame_stats.py <frame.raw>`.
 
-Critério de conclusão: identificar a tela e mover para além dela (menu ou cena), com captura
-antes/depois. Não declarar cena jogável sem movimento, input e áudio verificados.
+Critério de conclusão: o motor para de pedir arquivos que existem no pak, e um frame capturado
+mostra conteúdo além da faixa de glifos. Não declarar cena jogável sem movimento, input e áudio.
 
 A causa do fault já está medida (`docs/MEMORY_AUDIT.md`): o jogo resolve 8 funções do plugin Bink
 por `sceKernelDlsym` para slots em `.bss` e as chama sem testar nulo; o módulo existe em

@@ -1,3 +1,47 @@
+# Causa provável da tela magra: o runtime não lê pak algum
+
+## Medição
+
+O dump tem **23 GB** de conteúdo de jogo em dois paks UE4 válidos:
+
+```
+gamedump/CUSA11875/concretegenie/content/paks/
+  concretegenie-ps4.pak        19.131.292.555 bytes   pak v4, índice 8.450.254 bytes @ 19122842256
+  concretegenie-ps4_0_p.pak     5.412.583.974 bytes
+```
+
+Verificado no arquivo, não por suposição: a assinatura `0x5A6F12E1` está no fim do arquivo
+(v4 guarda o índice no rodapé), `mount point = "../../../"`, **57.303 entradas**, a primeira sendo
+`ConcreteGenie/ConcreteGenie.uproject`.
+
+Durante o boot o runtime leu **109 MB** e registrou **116 arquivos não encontrados**, incluindo 49
+tentativas de `/app0/engine/content/internationalization/usrdt53l.dat` e o diretório
+`internationalization` **inteiro ausente** do dump em forma de arquivo solto.
+
+## O que isso significa
+
+`grep -rniE "\.pak" runtime/src/*.c` encontra **uma única** menção, e é um comentário sobre uma
+variável de trace. Não existe implementação de montagem de pak em lugar nenhum do runtime.
+
+Ou seja: o motor pede arquivos que vivem **dentro** do pak, o runtime responde "not found", e o
+jogo segue com o que consegue montar a partir de loose files. É consistente com o que foi
+capturado na tela: uma faixa central de glifos em ~2% da imagem — tela de título/placeholder, não
+conteúdo carregado.
+
+## Causa medida versus causa suposta
+
+Isto **não** foi confirmado como a causa da tela magra por experimento. O que está provado é:
+(1) os paks existem e são válidos; (2) o runtime nunca os abre; (3) 116 arquivos que o motor pede
+não existem soltos no dump. A confirmação exige implementar leitura de pak e observar a tela mudar
+— ou, antes disso, uma telemetria que mostre qual asset específico falha primeiro.
+
+## Próximo passo
+
+Ler o índice do pak v4 exige o formato correto. A primeira tentativa de parse falhou (assumi
+nome por entrada, mas v4 usa hash + tabela de nomes separada). Não vou implementar leitura de pak
+por tentativa e erro: o formato precisa vir de fonte primária, e o teste de aceitação é abrir o
+índice e localizar `usrdt53l.dat` e `icudt53l.dat` pelo nome.
+
 # Captura de frame: há conteúdo renderizado (e ele anima)
 
 ## A captura falhava por um problema de ambiente, não do renderizador
