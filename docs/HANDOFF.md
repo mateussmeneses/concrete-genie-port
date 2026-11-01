@@ -142,30 +142,31 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Identificar a UI de pintura: R2 já se provou necessário, falta saber se pinta.
+Provar ou refutar pintura com a câmera congelada.
 
-**Resultado do teste de pintura (R2):** R2 muda o estado do jogo, medido com controle de uma variável.
+**Descoberta que muda o teste:** `cross` sozinho **leva à cena 3D** (80% não-preto, geometria
+estruturada), enquanto `cross + r2` **volta à tela branca de UI**. Meu teste anterior estava invertido
+— o run "com R2" regredia de estado em vez de pintar. R2 sozinho, no estado inicial, é o que destrava a
+tela branca; mas junto com `cross` ele desfaz o avanço.
 
-| Execução | Entrada | Resultado |
-|---|---|---|
-| `p2`  | `r2` + `rx=200` | **71,60% não-preto, 3 frames distintos** |
-| `p2c` | `rx=200`       | **100% branco, sha idêntico nos 3 frames** |
+**Teste válido** (ambos com `cross`, só R2 difere, ambos na cena 3D):
 
-Ambas saudáveis (8.100–8.400 presents, ~30 fps). Sem R2 o jogo fica numa tela de UI estática (94,07%
-`#ffffff` com um elemento dourado) — provavelmente um prompt. Com R2 a cena 3D renderiza e anima.
+| Execução | Entrada | Não-preto | Mudança/frame |
+|---|---|---|---|
+| `g1` | `cross` | **80,70%** | ~6.800 px |
+| `g2` | `cross` + `r2` | **71,06%** | ~2.300 px |
 
-**Provado:** `GOW3_PAD_FILE` → `runtime_pad.c` → `libScePad` → R2 → guest funciona e o guest reage.
-**Não provado:** que R2 *pinta*.
+**Provado:** R2 altera o regime da cena — conteúdo cai 9,6 pontos e a mudança quadro-a-quadro cai ~3×,
+coerente com modo de mira onde a câmera trava e o stick direito vira o pincel.
 
-**Erro meu registrado:** o primeiro teste comparou pintura contra "sem input" e deu 100,00% de
-diferença — mas o controle estava numa tela branca estática. Variava duas coisas (R2 e estado do
-jogo). O número espetacular era artefato. O controle precisa diferir em **uma** variável.
+**Não provado:** traços na geometria. A diferença é de **cena inteira (99,20% dos pixels), constante
+nos 4 frames** — assinatura de mudança de modo, não de tinta acumulando.
 
-**Próximo passo único:** descobrir o que a tela branca espera. Se for um prompt de tutorial, avançar
-por ele (cross/options) e então repetir o teste de pintura já dentro do gameplay, comparando mesmo
-frame com e sem R2. Enquanto o jogo estiver em tela de UI, nenhum teste de pintura é válido.
+**Próximo passo único:** congelar a câmera (`lx=ly=rx=ry=128`) e manter R2 por vários frames,
+comparando a **mesma região** entre frames consecutivos. Se a área alterada crescer monotonicamente
+ali e em nenhum outro lugar, é pintura. Sem isso, "R2 pinta" continua hipótese.
 
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

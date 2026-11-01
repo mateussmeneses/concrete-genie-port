@@ -193,7 +193,24 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-30: R2 muda o estado do jogo — VERIFICADO (não é prova de pintura)**
+**P0-31: R2 no gameplay — muda o regime da cena, pintura NÃO provada**
+
+- **`cross` sozinho leva à cena 3D** (80% não-preto, geometria). `cross + r2` **volta** à tela branca
+  de UI — meu teste anterior estava invertido.
+- **Teste válido** (ambos com `cross`, só R2 difere, ambos na cena 3D, 4 frames distintos):
+
+  | Execução | Entrada | Não-preto | Mudança/frame |
+  |---|---|---|---|
+  | `g1` | `cross` | **80,70%** | ~6.800 px |
+  | `g2` | `cross` + `r2` | **71,06%** | ~2.300 px |
+
+- **Provado:** R2 altera o regime — conteúdo cai 9,6 pontos e a mudança quadro-a-quadro cai ~3×
+  (compatível com modo de mira onde a câmera trava).
+- **Não provado:** traços na geometria. A diferença é de **cena inteira (99,20%)** e constante nos 4
+  frames — assinatura de mudança de modo, não de tinta incremental.
+- Evidência: `boot-112-cross-advance.txt` … `boot-116-ingame-r2.txt`.
+
+**P0-30: R2 muda o estado do jogo (histórico)**
 
 - **Teste 1 (inválido):** pintura vs "sem input" deu 100,00% de diferença, mas o controle era uma
   **tela branca estática** (sha idêntico nos 4 frames, 94,07% `#ffffff`). Variava duas coisas.

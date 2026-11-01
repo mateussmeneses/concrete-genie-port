@@ -1,3 +1,52 @@
+# R2 dentro do gameplay: muda o regime da cena, mas não prova pintura
+
+## Como cheguei a um teste válido (dois anteriores inválidos)
+
+**Teste A (inválido):** `cross + r2` vs nada. O controle ficou na tela branca (sha idêntico) →
+100,00% de diferença, medindo estado, não pintura.
+
+**Teste B (inválido, invertido):** descobri que **`cross` sozinho leva à cena 3D** (80% não-preto,
+geometria estruturada), enquanto `cross + r2` **volta** à tela branca de UI. Ou seja o run "com R2"
+estava regredindo de estado, não pintando.
+
+**Teste C (válido):** os dois runs com `cross`, um com `r2` e outro sem. Ambos **na cena 3D**, ambos
+animando, 4 frames distintos em cada. Só R2 difere.
+
+| Execução | Entrada | Não-preto | Cores | Frames |
+|---|---|---|---|---|
+| `g1` | `cross` | **80,70%** | 3.603 | 4 distintos |
+| `g2` | `cross` + `r2` | **71,06%** | 3.352 | 4 distintos |
+
+## O sinal que encontrei
+
+Comparação quadro-a-quadro (persistência):
+
+| Execução | Mudança por frame | Concentração nas 3 bandas mais ativas |
+|---|---|---|
+| `g1` (`cross`) | ~6.800 px | ~24,7% |
+| `g2` (`cross`+`r2`) | ~2.300 px | ~24,0% |
+
+**Com R2 a cena muda ~3× menos.** Isso é compatível com o jogo entrar em modo de mira/pintura, onde a
+câmera trava e o controle vira o pincel. E o conteúdo não-preto cai ~9,6 pontos, compatível com um
+overlay de pincel ocupando a tela.
+
+## O que está provado e o que não está
+
+**Provado:** R2 altera mensuravelmente o regime da cena — conteúdo cai 80,70% → 71,06% e a mudança
+quadro-a-quadro cai ~3×. O caminho `GOW3_PAD_FILE` → `libScePad` → R2 → guest funciona, e o guest
+responde de forma coerente com um modo de pintura.
+
+**Não provado:** que traços aparecem na geometria. A diferença é **de cena inteira (99,20% dos
+pixels)**, constante nos 4 frames — assinatura de mudança de modo, não de deposição incremental de
+tinta. Para provar pintura seria preciso ver a região pintada **crescer ou persistir** entre frames
+com o resto da cena estável, e com a câmera parada.
+
+## Próximo passo
+
+Congelar a câmera (`lx=ly=rx=ry=128`) e manter R2 por vários frames, comparando a mesma região entre
+frames consecutivos. Se a área alterada crescer monotonicamente ali e em nenhum outro lugar, é
+pintura. Sem isso, "R2 pinta" continua sendo hipótese.
+
 # R2 no controle muda o estado do jogo — e meu primeiro controle era inválido
 
 ## Teste 1, inválido: comparação pintura vs sem input
