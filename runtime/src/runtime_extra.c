@@ -368,6 +368,14 @@ static ABI int32_t ngs2_voice_state(uintptr_t voice, void *state, uint64_t size)
     if (state && size) memset(state,0,size); /* stopped, not in use */
     return 0;
 }
+static ABI int32_t ngs2_voice_control(uintptr_t voice, const void *param, uint64_t size) {
+    static const int tr=-1; static int on; static unsigned long calls;
+    if (tr==-1) on=getenv("GOW3_TRACE_NGS2")!=NULL;
+    if (on && (++calls<=10 || (calls%200)==0))
+        fprintf(stderr,"Ngs2: VoiceControl voice=%p param=%p size=%llu (call %lu)\n",
+                (void*)voice,param,(unsigned long long)size,calls);
+    return 0;
+}
 static ABI int32_t ngs2_voice_flags(uintptr_t voice, uint32_t *flags) {
     (void)voice;
     if (flags) *flags=0;
@@ -376,11 +384,36 @@ static ABI int32_t ngs2_voice_flags(uintptr_t voice, uint32_t *flags) {
 typedef struct { void *buffer; uint64_t size; uint32_t waveform, channels; } Ngs2RenderBuffer;
 static ABI int32_t ngs2_render(uintptr_t system, Ngs2RenderBuffer *buffers, uint32_t count) {
     (void)system;
+    { static const int tr=-1; static int on; static unsigned long calls;
+      if (tr==-1) on=getenv("GOW3_TRACE_NGS2")!=NULL;
+      if (on && (++calls<=6 || (calls%500)==0))
+        fprintf(stderr,"Ngs2: SystemRender count=%u buf0=%p size0=%llu ch0=%u wf0=%u (call %lu)\n",
+                count, buffers?buffers[0].buffer:NULL,
+                (unsigned long long)(buffers?buffers[0].size:0),
+                buffers?buffers[0].channels:0, buffers?buffers[0].waveform:0, calls); }
     for (uint32_t i=0;buffers && i<count;++i) if (buffers[i].buffer) memset(buffers[i].buffer,0,buffers[i].size);
     ++ngs2_renders;
     return 0;
 }
-static ABI int32_t ngs2_unsupported_waveform(void) { return (int32_t)0x804A0200; } /* invalid waveform */
+/* Trace: what the guest actually passes to the waveform entry points decides whether a simple voice
+ * mix can produce audio. A non-null data pointer with a sane size means the guest HAS the samples
+ * and is only being told they are invalid; null data would mean there is nothing to mix. */
+static ABI int32_t ngs2_parse_waveform(const void *data, uint64_t size, void *out, uint64_t out_size) {
+    static const int tr=-1; static int on; static unsigned long calls;
+    if (tr==-1) on=getenv("GOW3_TRACE_NGS2")!=NULL;
+    if (on && (++calls<=8 || (calls%200)==0))
+        fprintf(stderr,"Ngs2: ParseWaveformData data=%p size=%llu out=%p out_size=%llu (call %lu)\n",
+                data,(unsigned long long)size,out,(unsigned long long)out_size,calls);
+    return (int32_t)0x804A0200; /* invalid waveform */
+}
+static ABI int32_t ngs2_calc_waveform_block(const void *waveform, uint32_t channels, void *out, uint64_t out_size) {
+    static const int tr=-1; static int on; static unsigned long calls;
+    if (tr==-1) on=getenv("GOW3_TRACE_NGS2")!=NULL;
+    if (on && (++calls<=8 || (calls%200)==0))
+        fprintf(stderr,"Ngs2: CalcWaveformBlock wf=%p ch=%u out=%p out_size=%llu (call %lu)\n",
+                waveform,channels,out,(unsigned long long)out_size,calls);
+    return (int32_t)0x804A0200;
+}
 
 /* ---- Json2 (C++ ABI, this in rdi). Parsing reports failure; values read as null/empty. ---- */
 static unsigned char json_null[64];
@@ -567,10 +600,10 @@ static const RuntimeExport exports[]={
     {"sceAppContentTemporaryDataMount2",temp_mount2},
     {"sceNgs2SystemCreateWithAllocator",ngs2_system_create}, {"sceNgs2SystemDestroy",ok_noop},
     {"sceNgs2RackCreateWithAllocator",ngs2_rack_create}, {"sceNgs2RackDestroy",ok_noop},
-    {"sceNgs2RackGetVoiceHandle",ngs2_voice_handle}, {"sceNgs2VoiceControl",ok_noop},
+    {"sceNgs2RackGetVoiceHandle",ngs2_voice_handle}, {"sceNgs2VoiceControl",ngs2_voice_control},
     {"sceNgs2VoiceGetState",ngs2_voice_state}, {"sceNgs2VoiceGetStateFlags",ngs2_voice_flags},
     {"sceNgs2SystemRender",ngs2_render}, {"sceNgs2PanInit",ok_noop}, {"sceNgs2PanGetVolumeMatrix",ok_noop},
-    {"sceNgs2ParseWaveformData",ngs2_unsupported_waveform}, {"sceNgs2CalcWaveformBlock",ngs2_unsupported_waveform},
+    {"sceNgs2ParseWaveformData",ngs2_parse_waveform}, {"sceNgs2CalcWaveformBlock",ngs2_calc_waveform_block},
     {"_ZN3sce4Json11InitializerC1Ev",json_nothing}, {"_ZN3sce4Json11InitializerD1Ev",json_nothing},
     {"_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE",json_initialize},
     {"_ZN3sce4Json12MemAllocatorC2Ev",json_nothing}, {"_ZN3sce4Json12MemAllocatorD2Ev",json_nothing},

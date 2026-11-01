@@ -142,38 +142,37 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Decidir entre as duas rotas para o áudio, depois de medir qual é viável.
+Descobrir por que o `AudioThread` do motor entrega buffers zerados.
 
-**Causa raiz do silêncio, identificada nesta sessão:** o mixer deste jogo é **NGS2**, e
-`sceNgs2SystemRender` é um stub que apaga o buffer:
+**Causa do silêncio, medida na entrada:** o runtime **não** silencia nada.
 
-```c
-memset(buffers[i].buffer,0,buffers[i].size);   /* runtime_extra.c, ngs2_render */
+```
+AudioIn: port 0 call 1    raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 0 call 1000 raw_peak 0.0000 frames 256 ch 8 float 1
 ```
 
-Os 13 imports NGS2 do eboot são stubs; `sceNgs2VoiceGetState` zera o estado ("stopped"), então o
-guest não tem motivo para acreditar que uma voz toca.
+`raw_peak 0.0000` é medido **antes** de volume e remap. O ganho é neutro e o remap é identidade, logo
+os zeros vêm do guest.
 
-**Duas conclusões minhas corrigidas** (registradas em MEMORY_AUDIT):
-- "o guest não submete batch Ajm" — **falso**, submete 40.800 `BatchStart`.
-- "`Ajm batches` nunca impresso logo não decodifica" — **enganoso**; a linha de resumo só sai ao
-  encerrar e a execução foi cortada por timeout. Instrumentando `run_job`: todos os 94 jobs são
-  `STATISTICS_INSTANCE` (`instance=524288`), que retornam cedo por projeto. Ajm não é o mixer.
+**Correção importante:** o commit `79e9e18` afirma "o mixer deste jogo é NGS2". **Errado.** Com
+`GOW3_TRACE_NGS2=1`, as quatro entradas NGS2 registram **0 chamadas**. Eu tinha lido o stub
+`ngs2_render` e assumido que era o caminho ativo — ler código não é medir execução. Ajm também não:
+todos os 94 jobs são `STATISTICS_INSTANCE`.
 
-**O caminho de saída está correto** e isso importa: `938 buffers/5s (expected 937)`, `starved 0`,
-`max gap 6.76 ms`, WASAPI real. O que falta é o sintetizador, não a saída.
+**Onde o silêncio está:** no conteúdo que o motor produz. `AudioThread` existe, `brbDriver`
+inicializou (`NUM CHANNELS ( 8 ) CLAMPED TO 2.`), o port WASAPI está correto (`938 buffers/5s`,
+`starved 0`) e o buffer chega zerado. O runtime de áudio está correto de ponta a ponta.
 
-**Próximo passo único — medir antes de escolher:**
+**Próximo passo único:** encontrar o log do subsistema de áudio do motor (UE4 audio device) e
+verificar se ele reportou falha ao inicializar, ou se o som está desabilitado por
+configuração/estado. Rastrear qual código do guest preenche o buffer de `sceAudioOutOutput` e por que
+sai zero.
 
-1. Quantas vozes ficam ativas e se `sceNgs2ParseWaveformData`/`CalcWaveformBlock` recebem dados
-   válidos. Se o guest fornece as amostras, um render simples (mistura de vozes com volume e pan)
-   produz áudio sem reproduzir o NGS2 inteiro.
-2. Se houver conteúdo pré-mixado (stream/bink) que dispense NGS2.
+**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs
+controle sem input); 8.100+ frames; boot sem `STOP` de import; 31 imports antes sem nome agora
+resolvidos.
 
-Rota 1 é preferível se as waveforms chegarem válidas, porque é incremental e verificável pelo mesmo
-`peak`/`loud` já instrumentado.
-
-**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
+**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
 **Verificado e funcionando:** cena 3D a 30 FPS, input move a câmera (99,94% dos pixels diferem vs
 controle sem input), 8.100+ frames, boot sem `STOP` de import.**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
 

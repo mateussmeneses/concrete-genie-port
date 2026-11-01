@@ -201,6 +201,19 @@ static int32_t output_port(int32_t handle, const void *data, int pace) {
     size_t samples=(size_t)p->frames*(size_t)p->channels, bytes=samples*(size_t)p->sample_bytes;
     uint64_t period=(uint64_t)p->frames*1000000000u/48000u;
     if (data) {
+        /* Whether the guest sends silence or the runtime silences it are different bugs. Inspect the
+         * raw buffer before conversion so the distinction is measured, not assumed. */
+        {
+            static const int tr=-1; static int on; static unsigned long calls;
+            if (tr==-1) on=getenv("GOW3_TRACE_AUDIO_IN")!=NULL;
+            if (on && (++calls<=6 || (calls%1000)==0)) {
+                float rp=0.0f;
+                if (p->is_float) { for (size_t i=0;i<samples;++i){ float v; memcpy(&v,(const char*)data+i*4,4); float a=fabsf(v); if(a>rp) rp=a; } }
+                else { for (size_t i=0;i<samples;++i){ int16_t v; memcpy(&v,(const char*)data+i*2,2); float a=fabsf((float)v/32768.0f); if(a>rp) rp=a; } }
+                fprintf(stderr,"AudioIn: port %d call %lu raw_peak %.4f frames %d ch %d float %d\n",
+                        (int)(p-ports),calls,rp,p->frames,p->channels,p->is_float);
+            }
+        }
         /* Apply per-channel volume and map PS4 8ch (L R C LFE SL SR BL BR) to SDL 7.1 order. */
         unsigned char converted[2048*8*4];
         static const int remap[8]={0,1,2,3,6,7,4,5};

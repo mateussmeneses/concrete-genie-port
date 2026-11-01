@@ -193,7 +193,19 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-25: áudio silencioso — CAUSA RAIZ IDENTIFICADA (NGS2 é stub que escreve zeros)**
+**P0-26: áudio silencioso — o guest entrega zeros (medido na entrada)**
+
+- `GOW3_TRACE_AUDIO_IN=1` inspeciona o buffer **antes** de volume/remap:
+  **`raw_peak 0.0000`** em todas as portas (0, 1, 17), todas as chamadas.
+- Ganho é neutro (`volume=32768`, `VOLUME_0DB=32768` → 1.0); remap de canal identidade. O runtime
+  **não** silencia nada.
+- **`GOW3_TRACE_NGS2=1`: 0 chamadas** a `SystemRender`, `VoiceControl`, `ParseWaveformData`,
+  `CalcWaveformBlock`. **NGS2 não é o mixer deste jogo** — corrige a afirmação do commit `79e9e18`.
+- Unthread de áudio do guest: apenas `AudioThread` (do motor) + `brbDriver`/`brbClient`.
+- O silêncio está no conteúdo produzido **pelo motor**, não no runtime de áudio.
+- Evidência: `boot-101-ngs2-trace.txt`, `boot-102-raw-audio.txt`.
+
+**P0-25: áudio silencioso — hipótese NGS2 (REFUTADA, histórico)**
 
 - `sceNgs2SystemRender` faz `memset(buffers[i].buffer,0,size)` — o synth do jogo apaga o buffer.
 - Os **13 imports NGS2** deste eboot são stubs; `sceNgs2VoiceGetState` zera o estado ("stopped").

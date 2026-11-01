@@ -1,3 +1,65 @@
+# CORREÇÃO 4: NGS2 não é o mixer deste jogo — zero chamadas, medido
+
+## O que eu afirmei e o que a instrumentação mostrou
+
+O commit `79e9e18` afirma "o mixer deste jogo é NGS2". **Está errado.** Instrumentei os quatro
+pontos de entrada NGS2 com contagem e argumentos:
+
+```
+VoiceControl        0 chamadas
+SystemRender        0 chamadas
+ParseWaveformData   0 chamadas
+CalcWaveformBlock   0 chamadas
+```
+
+**NGS2 nunca é chamado.** A conclusão anterior veio de ler o stub `ngs2_render` e assumir que ele era
+o caminho ativo, sem verificar se era chamado. Ler o código não é medir a execução.
+
+## O que a medição seguinte mostrou
+
+Instrumentando o buffer **antes** de qualquer conversão de canal ou volume:
+
+```
+AudioIn: port 0 call 1    raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 0 call 1000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 3000 raw_peak 0.0000 frames 256 ch 1 float 1
+```
+
+**`raw_peak 0.0000` na entrada.** O guest entrega zeros. O runtime não está silenciando nada: o
+ganho é neutro (`volume=32768`, `VOLUME_0DB=32768` → gain 1.0) e o remap de canais é identidade
+quando não há conteúdo.
+
+## Onde está o silêncio
+
+| Camada | Estado |
+|---|---|
+| Port WASAPI, 8ch→stereo | correto (`938 buffers/5s`, `starved 0`, gap 6.76 ms) |
+| Ganho e remap de canal | corretos (neutros) |
+| Buffer entregue pelo guest | **zeros** |
+| Quem enche o buffer | `AudioThread` do próprio motor |
+| NGS2 | **não usado** |
+| Ajm | só `STATISTICS_INSTANCE`, não carrega áudio |
+
+O silêncio está no **conteúdo que o motor produz**, não no runtime de áudio. O motor tem sua própria
+thread de áudio e entrega buffers zerados — o que sugere que ele não carregou assets de áudio, ou que
+o subsistema de som do motor está desabilitado por configuração/estado.
+
+## O que isso invalida das minhas conclusões
+
+| Afirmação anterior | Status |
+|---|---|
+| "o mixer deste jogo é NGS2" (`79e9e18`) | **errada**: 0 chamadas |
+| "NGS2 é stub que silencia o jogo" | tecnicamente verdadeiro sobre o stub, **irrelevante**: não é chamado |
+| "o guest não submete batch Ajm" | errada (submete 40.800) |
+| "áudio não pode ser auditado sem cena visível" | errada |
+
+## Próximo passo
+
+Descobrir por que o motor entrega zeros: procurar o log do subsistema de áudio do próprio motor
+(UE4 audio device init), e se ele reportou falha ao inicializar. `brbDriver::Initialize(): NUM
+CHANNELS ( 8 ) CLAMPED TO 2.` mostra que o driver inicializou; falta saber se o subsistema de som
+acima dele está ativo.
+
 # CAUSA RAIZ DO SILÊNCIO: o synth de áudio do jogo é um stub que escreve zeros
 
 ## O caminho até aqui, e duas conclusões minhas que estavam erradas
