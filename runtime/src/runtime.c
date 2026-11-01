@@ -80,6 +80,7 @@ void runtime_report(void) {
     runtime_content_report();
     runtime_memory_report();
     runtime_ajm_report();
+    runtime_late_report();
     runtime_audio_report();
     runtime_pad_report();
     runtime_extra_report();

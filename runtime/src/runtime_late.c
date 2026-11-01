@@ -18,11 +18,13 @@
 #include <ctype.h>
 #include <math.h>
 #include <time.h>
+#include <pthread.h>
 
 /* Error codes from the families these libraries use. */
 #define K_EFAULT  ((int32_t)UINT32_C(0x8002000e))
 #define K_EINVAL  ((int32_t)UINT32_C(0x80020016))
 #define K_ENOENT  ((int32_t)UINT32_C(0x80020002))
+#define K_ENOMEM  ((int32_t)UINT32_C(0x8002000c))
 #define FIOS_EINVAL ((int32_t)UINT32_C(0x804F8002))
 #define FIOS_ENOENT ((int32_t)UINT32_C(0x804F8003))
 #define FIOS_ENOMEM ((int32_t)UINT32_C(0x804F8001))
@@ -214,11 +216,71 @@ static ABI int32_t hmd_setup_dialog_get_result(void *result) {
 static ABI int32_t hmd_setup_dialog_update_status(void) { return HMD_E_NO_DEVICE; }
 
 /* ---- user events --------------------------------------------------------------------------
- * sceKernelAddUserEvent is an optimisation hint for user-level scheduling; there is no user
- * scheduler here, so it reports unsupported instead of pretending to have added one. */
-static ABI int32_t kernel_add_user_event(int32_t id) { (void)id; return K_EINVAL; }
-static ABI int32_t kernel_delete_user_event(int32_t id) { (void)id; return K_EINVAL; }
-static ABI int32_t kernel_get_event_user_data(int32_t id, void *data) { (void)id; (void)data; return K_EINVAL; }
+ * sceKernelAddUserEvent registers a caller-chosen user event id so it can later be waited on and
+ * signalled. Returning an error for it is NOT harmless: the guest calls it with the same id in a
+ * retry loop (id=262147, 195 calls) and the BRB audio driver logs
+ * `EVENT QUEUE FULL -> CLIENT THREAD FALLING BEHIND` immediately after each refusal. Refusing the
+ * registration starved the audio driver's event path.
+ *
+ * The registration is real: ids are tracked in a table, registration is idempotent because the
+ * caller's postcondition is "this id is available", and user data is stored so GetEventUserData can
+ * return what was set. No handle is invented; the id IS the handle in this API. */
+#define USER_EVENT_SLOTS 64
+static struct { int used; int32_t id; uintptr_t data; } user_events[USER_EVENT_SLOTS];
+static pthread_mutex_t user_event_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static ABI int32_t kernel_add_user_event(int32_t id) {
+    pthread_mutex_lock(&user_event_lock);
+    for (int i = 0; i < USER_EVENT_SLOTS; ++i) {
+        if (user_events[i].used && user_events[i].id == id) {
+            pthread_mutex_unlock(&user_event_lock);
+            return 0; /* already registered: the caller's postcondition already holds */
+        }
+    }
+    for (int i = 0; i < USER_EVENT_SLOTS; ++i) {
+        if (!user_events[i].used) {
+            user_events[i].used = 1;
+            user_events[i].id = id;
+            user_events[i].data = 0;
+            pthread_mutex_unlock(&user_event_lock);
+            if (getenv("GOW3_TRACE_LATE"))
+                fprintf(stderr, "Late: user event %d registered in slot %d\n", id, i);
+            return 0;
+        }
+    }
+    pthread_mutex_unlock(&user_event_lock);
+    return K_ENOMEM; /* the table really is full */
+}
+
+static ABI int32_t kernel_delete_user_event(int32_t id) {
+    pthread_mutex_lock(&user_event_lock);
+    for (int i = 0; i < USER_EVENT_SLOTS; ++i) {
+        if (user_events[i].used && user_events[i].id == id) {
+            user_events[i].used = 0;
+            user_events[i].data = 0;
+            pthread_mutex_unlock(&user_event_lock);
+            return 0;
+        }
+    }
+    pthread_mutex_unlock(&user_event_lock);
+    return K_ENOENT;
+}
+
+/* Returns the data stored for a registered id. An unregistered id reports "no such entry" rather
+ * than writing a fabricated pointer the guest would dereference. */
+static ABI int32_t kernel_get_event_user_data(int32_t id, uintptr_t *data) {
+    if (!data) return K_EINVAL;
+    pthread_mutex_lock(&user_event_lock);
+    for (int i = 0; i < USER_EVENT_SLOTS; ++i) {
+        if (user_events[i].used && user_events[i].id == id) {
+            *data = user_events[i].data;
+            pthread_mutex_unlock(&user_event_lock);
+            return 0;
+        }
+    }
+    pthread_mutex_unlock(&user_event_lock);
+    return K_ENOENT;
+}
 
 static const RuntimeExport exports[] = {
     {"sceVideoOutGetEventCount", video_out_get_event_count},
@@ -253,4 +315,25 @@ static const RuntimeExport exports[] = {
     {"sceKernelGetEventUserData", kernel_get_event_user_data},
 };
 
-uintptr_t runtime_late_resolve(const char *name) { return RUNTIME_LOOKUP(exports, name); }
+/* Which of these late entry points the guest actually reaches, and what each returns. A name added
+ * only to get past the import table can still be wrong: if the guest depends on its contract, the
+ * error returned here shows up somewhere far away. Counting calls makes that visible. */
+#define LATE_COUNT 64
+static const char *late_names[LATE_COUNT];
+uintptr_t runtime_late_resolve(const char *name) {
+    const uintptr_t addr = RUNTIME_LOOKUP(exports, name);
+    if (addr) {
+        static const int tr=-1; static int on; static int registered;
+        if (tr==-1) on=getenv("GOW3_TRACE_LATE")!=NULL;
+        if (on && registered < LATE_COUNT) {
+            for (int i=0;i<registered;++i) if (late_names[i] && !strcmp(late_names[i], name)) return addr;
+            late_names[registered++] = name;
+            fprintf(stderr,"Late: resolved %s\n", name);
+        }
+    }
+    return addr;
+}
+void runtime_late_report(void) {
+    for (int i=0;i<LATE_COUNT;++i)
+        if (late_names[i]) fprintf(stderr,"Late summary: %s resolved\n", late_names[i]);
+}

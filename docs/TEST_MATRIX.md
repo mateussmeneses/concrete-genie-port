@@ -193,6 +193,16 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
+**P0-27: `sceKernelAddUserEvent` recusado — RESOLVIDO (áudio ainda silencioso)**
+
+- Implementado devolvendo `K_EINVAL`; o guest chamava **195 vezes com o mesmo id `262147`** (loop de
+  retentativa) e a cada recusa o driver logava
+  `BRB DRIVER: ! EVENT QUEUE FULL -> CLIENT THREAD FALLING BEHIND !`.
+- Após registro real (tabela de 64 slots, idempotente, `GetUserData`/`Delete` reais):
+  `AddUserEvent` 195 → **0**, `EVENT QUEUE FULL` 4 → **0**, `BRB WARNING REPORT` 4 → **1**.
+- **Não resolveu o silêncio:** `peak 0.0000` persiste. São dois problemas distintos.
+- Evidência: `boot-103-late-calls.txt`, `boot-104-userevent-fixed.txt`.
+
 **P0-26: áudio silencioso — o guest entrega zeros (medido na entrada)**
 
 - `GOW3_TRACE_AUDIO_IN=1` inspeciona o buffer **antes** de volume/remap:

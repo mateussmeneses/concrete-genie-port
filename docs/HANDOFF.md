@@ -142,33 +142,35 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Descobrir por que o `AudioThread` do motor entrega buffers zerados.
+Descobrir por que o `AudioThread` do motor entrega buffers zerados (o user event já foi corrigido).
 
-**Causa do silêncio, medida na entrada:** o runtime **não** silencia nada.
+**Corrigido nesta sessão: `sceKernelAddUserEvent`.** Eu o havia implementado devolvendo
+`K_EINVAL`, achando inofensivo. A instrumentação mostrou o guest chamando **195 vezes com o mesmo id
+`262147`** em loop de retentativa, e a cada recusa o driver de áudio logava
+`BRB DRIVER: ! EVENT QUEUE FULL -> CLIENT THREAD FALLING BEHIND !`.
 
-```
-AudioIn: port 0 call 1    raw_peak 0.0000 frames 256 ch 8 float 1
-AudioIn: port 0 call 1000 raw_peak 0.0000 frames 256 ch 8 float 1
-```
+| Métrica | Antes | Depois |
+|---|---|---|
+| `AddUserEvent` chamado | 195 | **0** |
+| `EVENT QUEUE FULL` | 4 | **0** |
+| `BRB WARNING REPORT` | 4 | **1** |
 
-`raw_peak 0.0000` é medido **antes** de volume e remap. O ganho é neutro e o remap é identidade, logo
-os zeros vêm do guest.
+**Mas o áudio continua silencioso:** `peak 0.0000`, `0/938 loud`. São dois problemas distintos —
+este está resolvido, o outro não.
 
-**Correção importante:** o commit `79e9e18` afirma "o mixer deste jogo é NGS2". **Errado.** Com
-`GOW3_TRACE_NGS2=1`, as quatro entradas NGS2 registram **0 chamadas**. Eu tinha lido o stub
-`ngs2_render` e assumido que era o caminho ativo — ler código não é medir execução. Ajm também não:
-todos os 94 jobs são `STATISTICS_INSTANCE`.
+**Estado medido do áudio:** o runtime está correto ponta a ponta (`938 buffers/5s`, `starved 0`,
+ganho neutro, remap identidade), e o buffer chega zerado **do guest** (`raw_peak 0.0000` medido antes
+de qualquer conversão). NGS2 nunca é chamado (0 em quatro entradas); Ajm só responde
+`STATISTICS_INSTANCE`.
 
-**Onde o silêncio está:** no conteúdo que o motor produz. `AudioThread` existe, `brbDriver`
-inicializou (`NUM CHANNELS ( 8 ) CLAMPED TO 2.`), o port WASAPI está correto (`938 buffers/5s`,
-`starved 0`) e o buffer chega zerado. O runtime de áudio está correto de ponta a ponta.
+**Próximo passo único:** rastrear qual código do guest preenche o buffer de `sceAudioOutOutput` e por
+que sai zero — provavelmente o subsistema de som do motor não carregou conteúdo. Instrumentar as
+chamadas de leitura de assets de áudio do engine e verificar se alguma falha.
 
-**Próximo passo único:** encontrar o log do subsistema de áudio do motor (UE4 audio device) e
-verificar se ele reportou falha ao inicializar, ou se o som está desabilitado por
-configuração/estado. Rastrear qual código do guest preenche o buffer de `sceAudioOutOutput` e por que
-sai zero.
+**Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
-**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs
+**Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs
 controle sem input); 8.100+ frames; boot sem `STOP` de import; 31 imports antes sem nome agora
 resolvidos.
 

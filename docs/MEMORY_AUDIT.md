@@ -1,3 +1,52 @@
+# BUG CORRIGIDO: `sceKernelAddUserEvent` recusava e travava o driver de áudio do jogo
+
+## O defeito
+
+Quando implementei os 31 imports sem nome, `sceKernelAddUserEvent` foi registrado devolvendo
+`K_EINVAL`, com o comentário "não há scheduler de usuário aqui, então reporta não suportado em vez de
+fingir". A instrumentação mostrou o custo disso:
+
+```
+Late: AddUserEvent id=262147 (call 1)
+BRB DRIVER: ! EVENT QUEUE FULL -> CLIENT THREAD FALLING BEHIND !
+Late: AddUserEvent id=262147 (call 2)
+BRB DRIVER: ! EVENT QUEUE FULL -> CLIENT THREAD FALLING BEHIND !
+...
+```
+
+**195 chamadas, todas com o mesmo id `262147`** — o guest em loop de retentativa — e a cada recusa o
+driver de áudio (`BRB`) logava fila cheia. As duas coisas eram o mesmo evento.
+
+**Não registrei a hipótese como causa sem testar.** Depois de implementar o registro real:
+
+| Métrica | Antes | Depois |
+|---|---|---|
+| `AddUserEvent` chamado | 195 | **0** |
+| `EVENT QUEUE FULL` | 4 | **0** |
+| `BRB WARNING REPORT` | 4 | **1** |
+
+O guest registra uma vez e está satisfeito. A recusa era um defeito real e caro.
+
+A implementação é real: tabela de 64 slots, registro idempotente (a pós-condição do chamador é "este
+id está disponível"), `GetEventUserData` devolve o que foi guardado, `Delete` libera. O id **é** o
+handle nesta API — nenhum handle é inventado.
+
+## O que isso NÃO resolveu
+
+```
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 8.41 ms,
+                    min queued 7680 bytes, starved 0, peak 0.0000, 0/938 loud
+```
+
+**`peak 0.0000` continua.** Corrigir o registro de user event removeu a falha do driver, mas o buffer
+entregue pelo guest continua zerado. São dois problemas distintos, e agora só um está resolvido.
+
+## Método que funcionou
+
+Instrumentar entrada (contagem + argumentos) em vez de ler o stub e concluir. Foi assim que a
+hipótese NGS2 caiu (0 chamadas) e que este defeito apareceu (195 recusas seguidas de falha do
+driver).
+
 # CORREÇÃO 4: NGS2 não é o mixer deste jogo — zero chamadas, medido
 
 ## O que eu afirmei e o que a instrumentação mostrou

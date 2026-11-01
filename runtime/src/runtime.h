@@ -122,6 +122,7 @@ uintptr_t runtime_linked_symbol(const char *nid);
 /* Bink plugin API with no video playing (see runtime_bink.c). */
 uintptr_t runtime_bink_resolve(const char *name);
 uintptr_t runtime_late_resolve(const char *name);
+void runtime_late_report(void);
 unsigned char *runtime_image_base(void);
 int runtime_sse4a_emulate(void *context_record);
 /* Address of the runtime's __stack_chk_guard value, for diagnosing a canary mismatch. */
