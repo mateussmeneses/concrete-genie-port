@@ -1,3 +1,63 @@
+# Pintura: R2 NÃO pinta — três testes, resultado negativo conclusivo
+
+## O que testei e o que cada teste mostrou
+
+**Teste 1 — câmera congelada, R2 mantido (`buttons=0x4200`, sticks 128).**
+R2 e controle estatisticamente indistinguíveis: 5.748 vs 5.581 células alteradas, overlap 43–50%.
+Sem movimento do stick não há traço. Negativo.
+
+**Teste 2 — R2 + stick em movimento (troca por tempo), vs controle só `cross`.**
+
+| Execução | Mudança/frame | Overlap |
+|---|---|---|
+| `tm` (cross→R2+rx=210) | ~13.600 células | 57–78% |
+| `tmc` (só cross) | ~5.100 células | 40–53% |
+
+R2 **triplica** a mudança e a concentra (overlap até 78%). Sinal forte — mas não prova pintura.
+
+**Teste 3 — o teste que decide: cor nova aparece e cresce?**
+
+Comparando o primeiro e o último frame da execução com R2 + stick:
+
+```
+cores quantizadas: primeiro=1602, último=1582   <- DIMINUIU
+cores presentes no último e ausentes no primeiro: 259
+  maior delas: 0,004% da tela
+maior crescimento entre cores existentes: 125 células de 129.600
+```
+
+**Nenhuma cor nova de tamanho significativo. Nenhum crescimento localizado.** Uma pintura produziria
+uma região nova com cor própria, crescendo ou persistindo entre frames. O que existe é variação
+distribuída de cena inteira (51.836 células, ~90% da tela), compatível com a cena animando — não com
+tinta depositada.
+
+## Veredito
+
+**R2 com stick em movimento altera o regime da cena, mas não pinta.** Os 99,6% de overlap do teste 3
+parecem acumulação, mas olhando a área (90% da tela) e as cores (nenhuma nova relevante) o fenômeno é
+movimento de câmera repetido no mesmo enquadramento, não deposição de tinta.
+
+## O que isso invalida das minhas afirmações
+
+| Afirmação | Status |
+|---|---|
+| "R2 pinta" (hipótese da sessão) | **refutada** para este mapeamento de input |
+| "overlap 76% com R2 = pintura" | **errado**: área de 90% da tela é movimento, não traço |
+| "R2 muda o regime" | mantido: 3× mais mudança, mas é câmera/modo, não tinta |
+
+## Próximo passo
+
+O fallback `mouse → analógico direito` que o Prompt 04 pede é exatamente o que foi testado (stick
+direito), e ele **não pinta** neste estado do jogo. Duas possibilidades, ambas verificáveis:
+
+1. O jogo exige o **sensor de movimento / PS Move** para pintar (o Prompt 04 diz que a pintura é por
+   sensor, com analógico direito como alternativa) — mas a alternativa pode estar atrás de uma opção.
+2. A cena alcançada ainda **não é o gameplay de pintura** (é exploração/intro), e R2 ali tem outra
+   função.
+
+Medir antes de concluir: procurar no log do guest menção ao modo de pintura, e verificar se existe
+uma opção de configuração de controle de pintura.
+
 # R2 dentro do gameplay: muda o regime da cena, mas não prova pintura
 
 ## Como cheguei a um teste válido (dois anteriores inválidos)

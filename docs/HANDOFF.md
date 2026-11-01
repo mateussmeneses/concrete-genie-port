@@ -142,31 +142,31 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Provar ou refutar pintura com a câmera congelada.
+Decidir se a cena alcançada é o gameplay de pintura, ou se a pintura exige outra condição.
 
-**Descoberta que muda o teste:** `cross` sozinho **leva à cena 3D** (80% não-preto, geometria
-estruturada), enquanto `cross + r2` **volta à tela branca de UI**. Meu teste anterior estava invertido
-— o run "com R2" regredia de estado em vez de pintar. R2 sozinho, no estado inicial, é o que destrava a
-tela branca; mas junto com `cross` ele desfaz o avanço.
+**Pintura: refutada para o mapeamento mouse→analógico direito.** Três testes, o último decisivo:
 
-**Teste válido** (ambos com `cross`, só R2 difere, ambos na cena 3D):
+1. Câmera congelada + R2 (`0x4200`, sticks 128): R2 vs controle indistinguíveis — sem movimento do
+   stick não há traço.
+2. R2 + stick movendo: mudança ~13.600 vs ~5.100 células, overlap até 78% — sinal forte.
+3. **Decisivo (cor nova aparece e cresce?):** cores quantizadas **diminuíram** 1602 → 1582; 259 cores
+   novas, a maior com **0,004% da tela**; maior crescimento 125 de 129.600 células.
 
-| Execução | Entrada | Não-preto | Mudança/frame |
-|---|---|---|---|
-| `g1` | `cross` | **80,70%** | ~6.800 px |
-| `g2` | `cross` + `r2` | **71,06%** | ~2.300 px |
+**Nenhuma tinta.** Os 51.836 células alteradas são ~90% da tela — movimento de câmera no mesmo
+enquadramento, não deposição. Overlap alto com área de 90% da tela engana; a cor não.
 
-**Provado:** R2 altera o regime da cena — conteúdo cai 9,6 pontos e a mudança quadro-a-quadro cai ~3×,
-coerente com modo de mira onde a câmera trava e o stick direito vira o pincel.
+**O que isso significa para o Prompt 04:** ele pede justamente o fallback mouse→analógico direito, e
+esse caminho **não pinta** neste estado. Duas hipóteses verificáveis, nenhuma confirmada:
 
-**Não provado:** traços na geometria. A diferença é de **cena inteira (99,20% dos pixels), constante
-nos 4 frames** — assinatura de mudança de modo, não de tinta acumulando.
+1. O jogo exige **sensor de movimento / PS Move** para pintar, e o analógico direito depende de uma
+   opção de configuração que não foi ativada.
+2. A cena alcançada **não é o gameplay de pintura** — é exploração/intro, e R2 ali tem outra função.
 
-**Próximo passo único:** congelar a câmera (`lx=ly=rx=ry=128`) e manter R2 por vários frames,
-comparando a **mesma região** entre frames consecutivos. Se a área alterada crescer monotonicamente
-ali e em nenhum outro lugar, é pintura. Sem isso, "R2 pinta" continua hipótese.
+**Próximo passo único:** determinar o que a cena alcançada é. Rastrear no log do guest menção a modo
+de pintura / tutorial, e verificar se existe opção de controle de pintura no menu do jogo. Enquanto
+não se souber se esta cena sequer é a de pintura, nenhum teste de R2 é interpretável.
 
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

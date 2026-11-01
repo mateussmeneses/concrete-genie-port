@@ -193,7 +193,20 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-31: R2 no gameplay — muda o regime da cena, pintura NÃO provada**
+**P0-32: pintura — R2 NÃO pinta (três testes, negativo conclusivo)**
+
+- Teste 1 (câmera congelada, `0x4200`, sticks 128): R2 vs controle indistinguíveis
+  (5.748 vs 5.581 células, overlap 43–50%). Negativo.
+- Teste 2 (R2 + stick movendo vs só `cross`): mudança ~13.600 vs ~5.100 células, overlap até 78%.
+  Sinal forte, mas não prova.
+- Teste 3 (**decisivo** — cor nova aparece e cresce?): cores quantizadas **diminuíram** (1602 → 1582);
+  259 cores novas, maior delas **0,004% da tela**; maior crescimento 125 de 129.600 células.
+- **Veredito:** R2 com stick altera o regime (câmera/modo), **não deposita tinta**. Os 99,6% de
+  overlap vêm de 90% da tela mudando — movimento, não traço.
+- **Refuta** a hipótese "R2 pinta" para o mapeamento mouse→analógico direito neste estado do jogo.
+- Evidência: `boot-117-paint-frozen.txt` … `boot-122-r2-held.txt`.
+
+**P0-31: R2 no gameplay — muda o regime, pintura não provada (histórico)**
 
 - **`cross` sozinho leva à cena 3D** (80% não-preto, geometria). `cross + r2` **volta** à tela branca
   de UI — meu teste anterior estava invertido.
