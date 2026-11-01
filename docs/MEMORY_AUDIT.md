@@ -1,3 +1,52 @@
+# Causa raiz do fault em RHIThread — encontrada e verificada
+
+Não é regressão dos subsistemas de sensor. É uma dependência de módulo dinâmico.
+
+## Cadeia medida
+
+1. O guest chama **`sceKernelDlsym(handle, name, &slot)`** oito vezes em `0x414160f`..`0x414169x`
+   (um stub PLT em `0x45f6320` → índice de import `0x39b` = 923 = `sceKernelDlsym`).
+2. Os nomes resolvidos, lidos do `.rodata` do eboot, são a API do plugin de vídeo Bink:
+   `BinkPluginGoto`, `BinkPluginProcessBinks`, `BinkPluginLimitSpeakers`, `BinkPluginLoop`,
+   `BinkPluginPause`, `BinkPluginDraw`, `BinkPluginSetPerFrameInfo`,
+   `BinkPluginScheduleToTexture`.
+3. Os destinos são slots em **`.bss`** (`0x618f738`, `0x618f740`, `0x618f788`, `0x618f790`,
+   `0x618f798`, `0x618f7a0`, `0x618f7a8`, `0x618f7b8`). Verificado em três frentes:
+   - além de `filesz` do segmento (104.088 bytes a partir de `0x5CE0000`), então são zerados;
+   - **zero escritas estáticas**: `grep` no disassembly completo (1,6 GB, 26 M linhas) encontra
+     apenas 7 leituras de `0x618f7a0` e nenhum `mov` para ele;
+   - todas as leituras são `leaq slot,%rax; callq *(%rax)`, sem verificação de nulo.
+4. O guest chama esses slots sem testar: `0x4142b6c: callq *(%rax)` com `rax = 0x618f7a0`.
+5. **`sceKernelLoadStartModule` recusa o módulo**:
+   ```
+   Runtime: sceKernelLoadStartModule(binkpluginps4.prx) -> not available
+   Runtime: sceKernelLoadStartModule(/app0/prx/binkpluginps4.prx) -> not available
+   ```
+6. O módulo **existe no dump**: `gamedump/CUSA11875/prx/binkpluginps4.prx` (e `bink2ps4.prx`).
+
+Sem o módulo carregado, os slots ficam nulos e o crash aparece longe da causa: execute fault em
+`RHIThread`, `#0 guest offset 0x14d6aec`.
+
+## Correção aplicada nesta sessão
+
+`sceKernelDlsym` estava registrado como `not_found`, cuja assinatura é `int32_t not_found(void)`.
+Como `sceKernelDlsym` recebe `(handle, name, void **out)`, o parâmetro de saída **nunca era
+escrito** — o slot ficava com lixo da pilha. Agora `kernel_dlsym` zera `*out` antes de falhar e
+tenta `runtime_resolve(name, 0)` primeiro. O crash persiste, mas com null **definido** em vez de
+lixo, que é o comportamento honesto.
+
+## O que falta
+
+Carregar e mapear `binkpluginps4.prx` de verdade dentro de `sceKernelLoadStartModule`, para que os
+oito símbolos resolvam e o plugin de vídeo exista. Isso é trabalho de loader de módulo (mapear
+ELF, resolver imports do próprio módulo, executar seus construtores), não um stub.
+
+## Hipótese descartada
+
+`sceVrTrackerQueryMemory` devolvendo 0 **não** causa o fault: mudar o retorno para erro produziu
+exatamente o mesmo crash, na mesma thread, com as mesmas 12 sondagens de formato
+(`docs/evidence/prompt04/exp-01-vrtracker-refused.txt`). Revertido.
+
 # Marco: o boot atingiu a inicialização de RHI (Vulkan) do UE4
 
 Nesta sessão o boot atravessou todos os subsistemas de sensor e chegou ao **pipeline Vulkan

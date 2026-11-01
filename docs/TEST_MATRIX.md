@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **53 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **58 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -92,8 +92,14 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   e `boot-28-rhi-determinism.txt`.
 - Contexto: antes de falhar, GPU Vulkan 1.4.357 (RTX 5060), 1920x1080, DualSense conectado,
   12 sondagens `CollectImageFormatInfo`.
-- Hipótese principal: `sceVrTrackerQueryMemory` devolve 0 (sucesso) sem preencher a estrutura de
-  saída; o guest testa o retorno em `0x36f3f56` e segue consumindo dados não inicializados.
+- **Causa raiz encontrada:** o jogo resolve 8 funções do plugin Bink via `sceKernelDlsym` para
+  slots em `.bss` (zero escritores estáticos) e as chama sem verificar nulo. O módulo
+  `prx/binkpluginps4.prx` **existe no dump**, mas `sceKernelLoadStartModule` o recusa.
+- Correção parcial: `sceKernelDlsym` tinha assinatura errada (`not_found(void)`) e não escrevia o
+  parâmetro de saída. Agora zera `*out` e tenta resolver. O crash persiste, com null definido.
+- Hipótese descartada: `sceVrTrackerQueryMemory` devolvendo 0 — mudar para erro produziu o mesmo
+  crash (`exp-01-vrtracker-refused.txt`).
+- Próximo passo: mapear `binkpluginps4.prx` no loader de módulos.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

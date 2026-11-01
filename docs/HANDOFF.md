@@ -113,18 +113,22 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Investigar o fault em `RHIThread` em `0x14d6aec`:
+Carregar `binkpluginps4.prx` no loader de módulos.
 
-1. Desassemblar a função em torno de `0x14d6a9x` e identificar qual ponteiro virtual é nulo — é o
-   primeiro ponto em que o runtime entrega um objeto incompleto ao código de renderização.
-2. Verificar se algum dos subsistemas recém-implementados (áudio 3D, PSVR, VrTracker) devolve
-   uma estrutura que o RHI depois lê. `sceVrTrackerQueryMemory` devolve 0 sem preencher a saída;
-   o guest testa o retorno (`testl %eax,%eax; jne` em `0x36f3f56`), então a hipótese principal é
-   que 0 = sucesso leve o guest a consumir uma estrutura que nunca foi preenchida.
-3. Adicionar telemetria ao redor do ponteiro nulo antes de mudar comportamento.
+A causa do fault já está medida (`docs/MEMORY_AUDIT.md`): o jogo resolve 8 funções do plugin Bink
+por `sceKernelDlsym` para slots em `.bss` e as chama sem testar nulo; o módulo existe em
+`gamedump/CUSA11875/prx/binkpluginps4.prx`, mas `sceKernelLoadStartModule` o recusa com
+"not available".
 
-Critério de conclusão: o fault nomeia a origem (import, estrutura ou caminho de GPU) com log
-correspondente. Não corrigir devolvendo sucesso a mais chamadas.
+1. Implementar mapeamento real de módulo em `load_start_module` (`runtime/src/runtime_extra.c`):
+   mapear o ELF do `.prx`, aplicar relocações, resolver imports contra os módulos já ligados.
+2. Fazer `sceKernelDlsym` procurar os símbolos exportados pelo módulo carregado — hoje ele só
+   tenta `runtime_resolve` e falha.
+3. Verificar com `--check-imports` e com o boot que os 8 slots são preenchidos.
+
+Critério de conclusão: os slots `0x618f738`..`0x618f7b8` recebem endereços não nulos e o fault em
+`RHIThread` muda de lugar. Não preencher os slots com stubs vazios para "passar": o plugin desenha
+vídeo e devolver um no-op deixaria o jogo acreditando que o vídeo foi apresentado.
 
 ## Reprodução
 

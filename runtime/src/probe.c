@@ -152,9 +152,29 @@ static LONG fatal_exception(EXCEPTION_POINTERS *info) {
         }
     }
     else if (record->ExceptionCode==EXCEPTION_ACCESS_VIOLATION && record->NumberParameters>=2)
+    {
         fprintf(stderr,"Fault: %s access to %p at %s (thread %lu)\n",
                 record->ExceptionInformation[0]==1 ? "write" : record->ExceptionInformation[0]==8 ? "execute" : "read",
                 (void *)record->ExceptionInformation[1],where,GetCurrentThreadId());
+        /* An execute fault at 0 through a register means an indirect call reached a null method
+         * pointer. Dump the object the call was made through, so the fault names its own cause
+         * instead of requiring a debugging session. rsi at this point has already been reloaded
+         * with the next node, so the object that was called is the one in rbx's chain. */
+        if (record->ExceptionInformation[0]==8 && (uintptr_t)record->ExceptionInformation[1]==0 && image) {
+            SIZE_T got=0; uint64_t words[4];
+            uintptr_t bases[2]={(uintptr_t)c->Rsi,(uintptr_t)c->R12};
+            for (int b=0;b<2;b++) {
+                if (!bases[b]) continue;
+                if (!ReadProcessMemory(GetCurrentProcess(),(void *)bases[b],words,sizeof(words),&got)
+                    || got!=sizeof(words)) continue;
+                fprintf(stderr,"  object at %s=%016llx:\n", b? "r12":"rsi",(unsigned long long)bases[b]);
+                for (int i=0;i<4;i++)
+                    fprintf(stderr,"    +%02x: %016llx%s\n",(unsigned)(i*8),
+                            (unsigned long long)words[i],
+                            (i==1 && words[1]==0) ? "   <- called method is null" : "");
+            }
+        }
+    }
     else
         fprintf(stderr,"Fault: exception 0x%08lx at %s (thread %lu)\n",record->ExceptionCode,where,GetCurrentThreadId());
     /* The thread's name (SetThreadDescription: the port's threads and the game's own). */

@@ -183,6 +183,26 @@ static ABI int32_t thread_name(void *thread, char *name) {
 static ABI int32_t ok_noop(void) { return 0; }
 static ABI void *null_pointer(void) { return NULL; }
 static ABI int32_t not_found(void) { return ERR(E_SRCH); }
+/* sceKernelDlsym(handle, name, void **out): resolve a symbol from a loaded module.
+ *
+ * The signature matters. Registering this as a zero-argument `not_found` left `*out` untouched,
+ * and the game stores the result of `sceKernelDlsym(...,"BinkPluginSetPerFrameInfo",&slot)` in a
+ * .bss slot it later calls through (`leaq slot,%rax; callq *(%rax)`). An untouched slot meant a
+ * null function pointer, which surfaced much later as an execute fault in RHIThread.
+ *
+ * No module in this build exports the Bink plugin, so the honest answer is "not found" -- but
+ * the out-parameter is cleared first, so a caller that ignores the error code at least gets a
+ * defined null rather than whatever the stack happened to hold. */
+static ABI int32_t kernel_dlsym(int32_t handle, const char *name, void **out) {
+    (void)handle;
+    if (!out) return ERR(E_INVAL);
+    *out = NULL;
+    if (name) {
+        uintptr_t symbol = runtime_resolve(name, 0);
+        if (symbol) { *out = (void *)symbol; return 0; }
+    }
+    return ERR(E_SRCH);
+}
 static ABI int32_t kernel_chmod(const char *path, uint16_t mode) { (void)path; (void)mode; return 0; }
 static ABI int32_t kernel_utimes(const char *path, const void *times) { (void)path; (void)times; return 0; }
 static ABI int32_t kernel_getdents(int fd, char *buffer, uint64_t size) {
@@ -458,7 +478,7 @@ static ABI __attribute__((noreturn)) void load_exec(const char *path, const void
 }
 
 static const RuntimeExport exports[]={
-    {"sceKernelLoadStartModule",load_start_module}, {"sceKernelDlsym",not_found},
+    {"sceKernelLoadStartModule",load_start_module}, {"sceKernelDlsym",kernel_dlsym},
     {"fcntl",posix_fcntl}, {"pthread_cancel",posix_cancel},
     {"sceHttpGetLastErrno",http_last_errno}, {"sceHttpAbortRequest",ok_noop},
     {"sceHttpGetAllResponseHeaders",http_network}, {"sceHttpGetMemoryPoolStats",http_network},
