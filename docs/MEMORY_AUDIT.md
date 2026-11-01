@@ -1,3 +1,71 @@
+# A tela clara NÃO é um loading: é a cena renderizada e não apresentada
+
+## A correção da correção
+
+Duas sessões discutiram se a tela clara (`bright`) seria UI, loading, ou efeito de OPTIONS. A
+medição desta sessão mostra que nenhuma das três leituras se sustenta:
+
+| Estado | draws por amostra | imagens distintas | luminância |
+|---|---|---|---|
+| `scene` (`boot-139`) | **36.148** | 617 | 86,2 |
+| `bright` (`boot-140`) | **36.148** | **1** | 248,6 |
+
+**O custo de renderização é idêntico.** A execução que mostra branco executa exatamente o mesmo
+trabalho de GPU da que mostra a cena. Uma tela de loading não desenha 36 mil draws por frame; ela
+não tem esse trabalho para fazer. O que muda não é o que é renderizado — é o que chega ao ecrã.
+
+E a tela clara é **uma única imagem**: 1 grade distinta em 1.863 amostras de 600 a 9.661, sempre
+`[[255,255,255],[252.5,239.1,254.2],[253.2,220.2,253.2]]`, spread 34,8, byte-idêntica. Comparado a
+centenas de imagens distintas na cena. É um frame congelado, não um menu.
+
+## O padrão aparece em todas as execuções
+
+| Execução | Estado final | draws/amostra | imagens distintas |
+|---|---|---|---|
+| `boot-135` | scene | 36.138 | 393 |
+| `boot-137` | scene | 36.143 | 362 |
+| `boot-139` | scene | 36.148 | 617 |
+| `boot-140` | **bright** | 36.148 | **1** |
+| `boot-136` | **bright** | 36.145 | **3** |
+| `io_run` | **bright** | 144.597 | **1** |
+
+Nas três execuções `bright`, a contagem de imagens distintas é 1–3 e o trabalho de GPU continua. Nas
+`scene`, são centenas. **A assinatura de `bright` é "a mesma imagem para sempre com a GPU ocupada".**
+
+## O que isso implica
+
+- **A hipótese de IO/carga cai.** Medi um run com `GOW3_FILE_TRACE=1`; os paks abrem, o índice é
+  lido, e ele terminou em `bright` mesmo assim. E o argumento decisivo não depende de IO: 36 mil
+  draws por frame é trabalho de cena em execução.
+- **A hipótese "OPTIONS muda o estado" cai de vez.** `boot-140` chegou a `bright` sem nenhum input.
+- **A hipótese "instabilidade do guest" cai como explicação principal.** O guest está desenhando;
+  o que falha está depois dele.
+- **A causa está no caminho de apresentação/framebuffer**, não no motor. `display_*` e `output_*`
+  foram capturados e ambos contêm a cena (100% preenchido, grid 112/193/91) num run que chegou a
+  `scene` — portanto o dump lê corretamente; a diferença está entre o que o guest renderiza e o que
+  o swapchain mostra.
+
+## O que ainda não sei
+
+Qual das duas coisas acontece no estado `bright`:
+
+1. O guest renderiza a cena, e o port apresenta um buffer antigo (upscaler, `DisplayOverride`,
+   ou a imagem de display não sendo atualizada). O frame branco congelado com draws vivos é
+   compatível com isso.
+2. O guest renderiza numa superfície diferente daquela que o `PrepareFrame` recebe, e a superfície
+   certa é branca.
+
+A medição que distingue: no estado `bright`, capturar `display`/`output` e ver se contêm a cena
+(hipótese 1, buffer antigo porém válido) ou se já são brancos (hipótese 2, o guest realmente
+desenha branco). Uma captura em `bright` responde.
+
+## Correção de método
+
+O classificador chamava essa tela de `bright` e a tratava como "UI clara", o que induziu a leitura
+de menu/loading. O nome descreve a imagem, não a causa — e a causa agora é conhecida o bastante
+para o nome estar errado. As regiões passam a ser lidas junto com `draws` e com o número de imagens
+distintas, que é o que separa "uma tela nova" de "a mesma tela".
+
 # O estado NÃO é determinístico: a mesma entrada chega à cena ou ao loading
 
 ## O que uma sessão anterior concluiu, e por que está incompleto

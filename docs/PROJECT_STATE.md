@@ -43,11 +43,11 @@ draws. Quatro execuções independentes:
 | `boot-136` | `cross`+`options` | black 1..411 → fade 416..461 → **bright 466..9041** |
 
 O estado **não alterna dentro de uma execução** — uma vez alcançada a cena, ela permanece. Mas
-**entre execuções não é determinístico**: com a mesma entrada `cross`, uma execução terminou em
-`bright` (`boot-140`) em vez de `scene`. A tela `bright` é idêntica à observada com `options`, e
-aparece **sem nenhum input**, então não pode ser atribuída ao OPTIONS. Isso corrige pela metade a
-hipótese de "instabilidade" de sessões anteriores: o ponto de parada importa, mas nem toda execução
-chega à cena.
+**entre execuções não é determinístico**, e a causa **não é loading**: medindo o trabalho de GPU,
+a execução que mostra a tela clara executa **o mesmo** número de draws por frame (36.148) e produz
+**uma única imagem** repetida, enquanto a cena produz centenas. A tela clara é a cena renderizada
+que não chega ao swapchain — defeito de apresentação, não de IO nem do motor. Ver
+`scripts/frame_workload.py` e `docs/MEMORY_AUDIT.md`.
 
 Custo da instrumentação: **3,09 ms por amostra**, com o jogo mantendo 30 FPS. Não altera o estado.
 

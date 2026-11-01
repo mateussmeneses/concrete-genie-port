@@ -1,0 +1,6 @@
+boot-141-white-vs-scene.txt: 517 samples, frames 1..10321
+
+state regions (frame numbers are the sampled ones):
+  black  frames     1..  581 (30 samples)
+  fade   frames   601..  621 (2 samples)
+  scene  frames   641..10321 (485 samples)

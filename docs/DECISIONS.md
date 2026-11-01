@@ -207,3 +207,20 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
   que se quer observar quando o ponto de chegada varia. A captura periódica, filtrada por
   `GOW3_FRAME_DUMP_FROM`/`MAX`, produz a linha do tempo dentro do estado medido. Reversão:
   variáveis de ambiente; sem elas o comportamento antigo permanece.
+
+## 2026-11-01 — a tela branca é uma falha de apresentação, não um estado do jogo
+
+- **A leitura de "loading/UI clara" foi refutada pelo custo de GPU.** No estado branco o guest
+  executa 36.148 draws por amostra, o mesmo da cena, e a imagem apresentada é uma só, repetida.
+  Uma tela de loading não tem esse trabalho. Motivo de registrar: duas sessões leram essa tela como
+  estado do jogo (UI, loading, efeito de OPTIONS) e cada leitura levou a uma investigação diferente.
+- **O classificador descreve a imagem, não a causa.** `bright` continua sendo um nome válido para
+  "imagem clara e pouco estruturada", mas a doc passa a exigir a leitura junto com `draws` e com o
+  número de imagens distintas. Nomear a causa ("menu", "loading") a partir da luminância seria
+  repetir o erro que originou tudo isto. Reversão: `scripts/frame_workload.py` é só leitura.
+- **Não corrijo o caminho de apresentação sem saber qual dos dois casos ocorre.** Se `display`
+  contém a cena, o defeito é o buffer apresentado; se já está branco, é o render do guest. As duas
+  correções são opostas e a medição que as separa custa uma execução com captura. Reversão: n/a,
+  nada foi alterado.
+- **`GOW3_FRAME_DUMP_EVERY/_FROM/_MAX` acrescentados** para produzir linha do tempo densa dentro do
+  estado medido, em vez de um índice fixo que pode cair fora dele.

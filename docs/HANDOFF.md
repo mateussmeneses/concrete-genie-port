@@ -13,17 +13,27 @@
 
 ## Próxima ação única, verificável
 
-Descobrir **o que decide entre a cena e a tela clara**, já que a medição mostra que não é o input.
+Determinar **por que a cena renderizada não chega ao swapchain** nas execuções que ficam brancas.
 
-Hipótese a testar: a execução que termina em `bright` **nunca conclui a carga**. Medir, por frame e
-em ambas as execuções, os pacotes de carga concluídos e o estado do `FAsyncLoadingThread`. Se a
-execução `bright` tiver 0 pacotes concluídos enquanto a `scene` avança, a causa é IO/carga; se ambas
-tiverem a mesma contagem, a causa é de renderização ou de estado do guest e a hipótese cai.
+O que já está medido: no estado `bright` o guest executa **o mesmo** trabalho de GPU da cena
+(36.148 draws/amostra) e a imagem apresentada é **uma só**, repetida ~1.900 vezes. Não é loading
+(que não custaria isso), não é menu (seria mais de uma imagem), não é OPTIONS (acontece sem input).
 
-Critério de aceitação: o log nomeia a diferença entre uma execução que chega a `scene` e uma que
-para em `bright`, com contadores concretos por frame — ou a hipótese é refutada com os mesmos
-contadores. Não declarar gameplay, pausa ou pintura antes disso: sem saber por que a cena às vezes
-não é alcançada, qualquer teste de gameplay tem 50% de chance de medir a tela errada.
+A medição que fecha: numa execução que chega a `bright`, capturar `display` e `output` com
+`GOW3_FRAME_DUMP_AT` e comparar.
+
+- Se `display`/`output` **contêm a cena**, o guest desenha certo e o port apresenta um buffer
+  antigo → investigar `TemporalUpscaler::DisplayOverride` e o caminho `upscaled` de
+  `vk_presenter.cpp`.
+- Se `display`/`output` **já estão brancos**, o guest desenha branco → investigar estado de render
+  (blend/clear/viewport) ou uma superfície diferente da que `PrepareFrame` recebe.
+
+Comando: o mesmo do `state_anchored_run.py` já documentado, acrescentando
+`GOW3_FRAME_DUMP_AT=600,1200,1800 GOW3_DUMP_SYNC=1 GOW3_DUMP_DIR=<dir>`.
+
+Critério de aceitação: as capturas de uma execução `bright` mostram qual dos dois casos ocorre, e o
+doc nomeia o estágio onde a cena se perde. Não corrigir antes disso: as duas causas exigem correções
+opostas, e escolher errado trocaria um defeito visível por um invisível.
 
 ## Estado atual (critério e counts)
 
@@ -47,9 +57,10 @@ erradas. Resumo de quatro execuções independentes:
 | `boot-136` | `cross` + `options` desde o início | preto 1..411, fade 416..461, **UI clara 466..9041** |
 
 Dentro de uma execução o estado **não oscila**: alcançada a cena, ela permanece. **Entre execuções
-não é determinístico:** `boot-140`, com a mesma entrada `cross` das outras, terminou em UI clara.
-Essa tela é a mesma que aparece com `options` e aparece **sem input nenhum**, portanto não pode ser
-atribuída ao OPTIONS — e nenhum teste pode assumir que `cross` leva à cena.
+não é determinístico**, e a causa **não é loading** — o estado branco executa o mesmo trabalho de
+GPU da cena (36.148 draws/amostra) com **uma única imagem** repetida. A tela branca é a cena
+renderizada que não chega ao swapchain: defeito de apresentação, não de IO, input ou motor.
+Ver `scripts/frame_workload.py` e `docs/MEMORY_AUDIT.md`.
 
 Custo da instrumentação, medido: **3,09 ms por amostra** (readback incluído), estável em 1.800
 amostras, com o jogo mantendo 30 FPS. Ela não muda o estado que mede.

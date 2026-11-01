@@ -16,22 +16,30 @@ desde a amostra anterior. `scripts/frame_states.py` lê o log e imprime as faixa
 | `run5-verify` | `cross`, a cada 10 | black 1..431, fade 441..461, **scene 471..9601** | `.cg/audit/statemap/run5-verify.log` |
 | `boot-136` | `cross`+`options` | black 1..411, fade 416..461, **bright 466..9041** | `boot-136-framemap-options.txt` |
 
-**O estado não alterna *dentro* de uma execução**, mas **não é determinístico entre execuções**.
-Alcançada a cena, ela permanece até o timeout. Porém, com a mesma entrada `cross`, uma execução
-terminou em `bright` (`boot-140`) em vez de `scene`:
+O estado **não alterna dentro de uma execução**, mas **não é determinístico entre execuções**, e a
+causa não é loading. Medindo o trabalho de GPU por estado (`scripts/frame_workload.py`):
 
-| Execução | Entrada | Estado final |
-|---|---|---|
-| `boot-135` | `cross` | **scene** (621..9021) |
-| `boot-137` | `cross` | **scene** (561..9006) |
-| `boot-138` | `cross` | **scene** (471..9601) |
-| `boot-140` | `cross` | **bright** (496..9661) |
-| `boot-139` | `cross`, `options` no frame 461 | **scene** (461..24181) |
-| `boot-136` | `cross`+`options` | **bright** (466..9041) |
+| Estado | draws/amostra | imagens distintas | leitura |
+|---|---|---|---|
+| `scene` (`boot-139`) | **36.148** | 617 | renderização viva |
+| `bright` (`boot-140`) | **36.148** | **1** | **present congelado** |
 
-A tela `bright` é a **mesma** nos dois casos que a alcançaram, e aparece **sem nenhum input**
-(`boot-140`). Portanto não se pode atribuir `bright` ao OPTIONS, e nenhum teste pode assumir que
-`cross` leva à cena.
+O custo de renderização é idêntico e a tela clara é uma única imagem repetida 1.863 vezes. Uma tela
+de loading não executa 36 mil draws por frame. **A tela clara é a cena renderizada que não chega ao
+swapchain** — o defeito está no caminho de apresentação, não no motor nem em IO.
+
+Isso corrige três leituras anteriores: não é loading (o trabalho de GPU continua), não é menu (é um
+frame só), e não é efeito de OPTIONS (`boot-140` chegou lá sem input nenhum).
+
+| Execução | Entrada | Estado final | imagens distintas |
+|---|---|---|---|
+| `boot-135` | `cross` | **scene** | 393 |
+| `boot-137` | `cross` | **scene** | 362 |
+| `boot-139` | `cross`, `options` no frame 461 | **scene** | 617 |
+| `boot-141` | `cross` | **scene** | 485 |
+| `boot-140` | `cross` | **bright** | **1** |
+| `boot-136` | `cross`+`options` | **bright** | 3 |
+| `boot-142` | `cross` (com IO trace) | **bright** | 1 |
 
 **Custo medido da instrumentação:** 3,09 ms por amostra (readback incluído), estável de 60 a 1.800
 amostras, com o jogo mantendo 30 FPS. A sonda não altera o estado que mede.
