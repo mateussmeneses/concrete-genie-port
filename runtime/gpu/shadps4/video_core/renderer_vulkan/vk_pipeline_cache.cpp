@@ -609,7 +609,11 @@ void PipelineCache::PublishShaders(bool wait) {
             build->spec.info = &program->info;
             RegisterShaderMeta(program->info, build->spec.fetch_shader_data, build->spec,
                                perm_hash, build->permutation);
+            /* Copy before the move: the pending set is keyed by spec, and it has to be released
+             * once the permutation is visible in modules. */
+            const Shader::StageSpecialization published_spec = build->spec;
             program->AddPermut(build->module, std::move(build->spec));
+            std::erase(program->queued_permutations, published_spec);
             build->module = nullptr;
             program->pending.reset();
         }
@@ -1319,50 +1323,30 @@ PipelineCache::Result PipelineCache::GetProgram(PipelineSelection& sel, HwStage 
             return {};
         }
         if (compile_async) {
-            /* Diagnostic: a permutation queued repeatedly for the same program is the re-queue
-             * loop. Counting per hash tells a one-time compile apart from thousands of identical
-             * requests. */
+            /* A permutation already in flight must not be queued again: that was 269,447 redundant
+             * queues and a permutation index growing to 28,474 for one hash. The spec is compared
+             * before taking an index, and the index itself is reserved below so two draws asking
+             * for the same spec cannot each take a different one. */
             {
-                static const bool trace = std::getenv("GOW3_TRACE_REQUEUE") != nullptr;
-                if (trace) {
-                    static std::mutex m;
-                    static std::unordered_map<uint64_t, u64> per_hash;
-                    u64 count = 0;
-                    {
-                        std::scoped_lock lock{m};
-                        count = ++per_hash[params.hash];
-                    }
-                    /* Whether the spec differs between consecutive requests for the same hash
-                     * decides the fix: if it is identical, the queue is a redundant loop and
-                     * marking the permutation pending removes it; if it differs, the specs are
-                     * genuinely distinct and a pending-set keyed by spec would not help. */
-                    static std::mutex spec_mutex;
-                    static std::unordered_map<uint64_t, size_t> last_perm;
-                    static std::atomic<u64> same_spec{0}, diff_spec{0};
-                    {
-                        std::scoped_lock lock{spec_mutex};
-                        const auto it = last_perm.find(params.hash);
-                        if (it == last_perm.end()) {
-                            last_perm.emplace(params.hash, perm_idx);
-                        } else if (it->second == perm_idx) {
-                            ++same_spec;
-                        } else {
-                            ++diff_spec;
-                            it->second = perm_idx;
-                        }
-                    }
-                    if (count <= 3 || (count % 1000) == 0) {
-                        std::fprintf(stderr,
-                                     "Requeue: hash %016llx queued %llu times (perm %zu); "
-                                     "same-perm=%llu diff-perm=%llu\n",
-                                     static_cast<unsigned long long>(params.hash),
-                                     static_cast<unsigned long long>(count), perm_idx,
-                                     static_cast<unsigned long long>(same_spec.load()),
-                                     static_cast<unsigned long long>(diff_spec.load()));
-                    }
+                std::shared_lock lk{programs_mutex};
+                const auto queued = std::ranges::find(program->queued_permutations, spec);
+                if (queued != program->queued_permutations.end()) {
+                    return {};
                 }
             }
-            QueueShader(*program, hw_stage, sw_stage, params, runtime_info, binding, perm_idx, false,
+            const size_t reserved = [&] {
+                std::unique_lock lk{programs_mutex};
+                const auto queued = std::ranges::find(program->queued_permutations, spec);
+                if (queued != program->queued_permutations.end()) {
+                    return std::numeric_limits<size_t>::max(); // lost the race: already queued
+                }
+                program->queued_permutations.push_back(spec);
+                return program->modules.size() + program->queued_permutations.size() - 1;
+            }();
+            if (reserved == std::numeric_limits<size_t>::max()) {
+                return {};
+            }
+            QueueShader(*program, hw_stage, sw_stage, params, runtime_info, binding, reserved, false,
                         std::move(spec));
             return {};
         }

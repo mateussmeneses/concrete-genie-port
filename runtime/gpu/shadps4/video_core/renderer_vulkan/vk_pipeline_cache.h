@@ -61,6 +61,12 @@ struct Program {
     std::shared_ptr<AsyncShaderCompilation> pending;
     bool compilation_failed = false;
     std::vector<Shader::StageSpecialization> failed_permutations;
+    /* gow3: permutations already queued and waiting for the async publisher. Without this the
+     * next draw asking for the same permutation queues it again, and because perm_idx came from
+     * modules.size() (which does not grow until the publisher runs) each retry also took a new
+     * index. Measured: 1,262,000 translations for 409 distinct hashes, 269,447 redundant queues
+     * and a permutation index reaching 28,474 for one hash. Guarded by programs_mutex. */
+    std::vector<Shader::StageSpecialization> queued_permutations;
 
     Program() = default;
     Program(Shader::HwStage stage, Shader::SwStage l_stage, Shader::ShaderParams params)

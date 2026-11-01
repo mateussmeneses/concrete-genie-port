@@ -182,7 +182,24 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
   `docs/evidence/prompt04/boot-77-past-savedata.txt`.
 
-**P0-21: re-enfileiramento de shader — DOIS DEFEITOS MEDIDOS**
+**P0-21: re-enfileiramento de shader — RESOLVIDO**
+
+- Correção A: `Program::queued_permutations` consultado antes de enfileirar (elimina 269.447 filas
+  redundantes).
+- Correção B: índice = `modules.size() + queued_permutations.size() - 1`, reservado sob
+  `unique_lock` (impede o crescimento a 28.474).
+- Liberação: `std::erase(...)` em `PublishShaders`, com cópia da `spec` antes do `move`.
+- **Aceitação cumprida:** traduções 1.262.000 → **~5**; FPS 0,7 → **30,0**; `capture` 3256 ms →
+  **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
+- Evidência: `boot-92-fix.txt`.
+
+**P0-22: cena 3D renderizada — OBSERVADO**
+
+- Três capturas (frames 2000/3000/4000): 100% não-pretas, todas diferentes, ~4.900 cores distintas
+  (gradientes contínuos). Massa iluminada central sobre fundo escuro.
+- **Não é jogabilidade**: sem câmera, input, áudio ou save/load verificados.
+
+**P0-23: re-enfileiramento — DEFEITOS MEDIDOS (histórico)**
 
 - `GOW3_TRACE_SHADER_KEYS=1`: **1.262.000 traduções para 409 hashes distintos** (3.085× redundância).
 - `GOW3_TRACE_REQUEUE=1`: `same-perm=269.447` (mesma permutação re-enfileirada) e

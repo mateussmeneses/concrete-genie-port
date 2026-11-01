@@ -1,3 +1,48 @@
+# CORREÇÃO APLICADA: re-enfileiramento de shader eliminado — 0,7 → 30 FPS, e cena real
+
+## Aceitação, contra os critérios que eu mesmo escrevi
+
+| Critério | Antes | Depois |
+|---|---|---|
+| Traduções de shader | 1.262.000 | **~5** (4 hashes distintos) |
+| FPS na transição | 0,7 | **30,0** (pior frame 51 ms) |
+| `capture` por frame | 3256 ms | **0,0 ms** |
+| Frames alcançados | 2.100 | **9.900** |
+| Capturas pós-menu | pretas | **100% de conteúdo, três frames distintos** |
+
+## O que a correção faz
+
+Dois consertos em `vk_pipeline_cache.cpp` / `.h`:
+
+**A — marcação de pendência por `spec`.** `Program` ganhou `queued_permutations`. Antes de
+enfileirar, a `spec` é procurada nesse conjunto; se já está em voo, a chamada retorna sem
+enfileirar. Elimina as **269.447** filas redundantes.
+
+**B — índice reservado, não `modules.size()`.** O índice agora é
+`modules.size() + queued_permutations.size() - 1`, tomado sob `unique_lock` junto com a inserção no
+conjunto. Dois draws pedindo a mesma `spec` não podem mais reservar índices diferentes. Elimina o
+crescimento até **28.474** permutações num hash.
+
+**Liberação:** ao publicar, `PublishShaders` copia a `spec` antes do `std::move` e faz
+`std::erase(program->queued_permutations, published_spec)`. Sem isso, a marcação suprimiria pedidos
+legítimos para sempre.
+
+Corrida tratada: o segundo `unique_lock` relê o conjunto e devolve
+`numeric_limits<size_t>::max()` se outro thread já enfileirou — nesse caso retorna sem enfileirar.
+
+## O resultado visual
+
+Três capturas em 2000, 3000 e 4000, todas 100% não-pretas, **todas diferentes entre si**
+(sha256 distintos) e com **~4.900 cores distintas** — gradientes contínuos, não preenchimentos
+chapados. A imagem tem uma massa iluminada grande ao centro e formas na base sobre fundo escuro:
+é uma cena 3D renderizada, não um menu nem texto.
+
+## O que isso NÃO prova
+
+Não há movimento de câmera verificado, nem input testado contra a cena, nem áudio, nem save/load.
+"Aparece uma cena" não é "a primeira cena é jogável". O critério do Prompt 04 continua **não
+cumprido**.
+
 # Dois defeitos distintos no re-enfileiramento de shader (medidos)
 
 Contagem separando os dois casos:
