@@ -2251,3 +2251,46 @@ Critério: o `STOP` deixa de aparecer e o boot avança para um estágio novo e n
 `boot-15-window-fix.txt` (janela aplicada), `boot-16-content-profile.txt` (22 threads, 174
 leituras), `boot-17-np-ctor.txt` (construtor implementado, avanço para `Core::init`),
 `build.txt`, `build-test.txt`.
+
+## Resultado negativo: os dumps refletem fielmente a imagem apresentada
+
+Tentei obter a captura `bright` que decide a correção, em duas execuções consecutivas instrumentadas
+com `GOW3_FRAME_DUMP_AT`. **As duas chegaram a `scene`**, não a `bright` — a falha é intermitente
+(2 de 8 execuções recentes), e não tenho como forçá-la.
+
+O que essas execuções provam, e que continua valendo:
+
+| Execução | Captura | `output` sha | `display` sha | idênticos |
+|---|---|---|---|---|
+| `boot-143` | 700 | `2120b3c8d727` | `2120b3c8d727` | **sim** |
+| `boot-143` | 1500 | `32e524000533` | `32e524000533` | **sim** |
+| `boot-143` | 2500 | `53cacf86e511` | `53cacf86e511` | **sim** |
+
+No estado saudável, `output` e `display` são **byte-idênticos**, e a grade calculada a partir do
+arquivo bruto (86,1) casa com a grade que a sonda registrou no mesmo frame. Duas conclusões:
+
+1. **Os dumps são confiáveis**: quando eu tiver uma captura `bright`, ela responde a pergunta sem
+   ambiguidade de formato ou de origem.
+2. **No caminho saudável, o port não introduz diferença entre o framebuffer do guest e a imagem
+   apresentada.** O defeito `bright`, quando ocorre, tem de estar num ramo que esse caminho não
+   percorre.
+
+## Por que não corrigi
+
+Não sei ainda se `display`/`output` contêm a cena no estado `bright`. As duas causas possíveis pedem
+correções opostas (apresentar o buffer correto vs. consertar o render do guest). Alterar agora seria
+escolher entre duas hipóteses sem a medição que as separa — exatamente o que as regras do projeto
+proíbem. A próxima sessão precisa de uma execução `bright` com captura; a instrumentação para isso
+já está pronta.
+
+## Como aumentar a chance de reproduzir
+
+A falha apareceu em 2 de 8 execuções com os mesmos parâmetros. O caminho mais direto é rodar em
+loop com captura até uma execução cair em `bright`, em vez de assumir que uma execução basta:
+
+```bash
+for i in $(seq 1 5); do
+  # ... state_anchored_run.py com GOW3_FRAME_DUMP_AT=700,1500,2500 GOW3_DUMP_DIR=.../try$i
+  # se frame_states.py <log> mostrar 'bright', parar: é a execução que responde a pergunta
+done
+```

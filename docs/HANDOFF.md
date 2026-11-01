@@ -35,6 +35,12 @@ Critério de aceitação: as capturas de uma execução `bright` mostram qual do
 doc nomeia o estágio onde a cena se perde. Não corrigir antes disso: as duas causas exigem correções
 opostas, e escolher errado trocaria um defeito visível por um invisível.
 
+**Estado desta tentativa:** tentei duas vezes obter a captura `bright` e **as duas caíram em
+`scene`** — a falha é intermitente (2 de 8 execuções). Capturas de uma execução `scene` provaram que
+`output` e `display` são byte-idênticos e que os dumps refletem a imagem fielmente
+(`boot-143`, `docs/MEMORY_AUDIT.md`). Portanto a instrumentação está validada; falta a execução que
+falha. Rodar em loop até uma cair em `bright` é o caminho registrado no audit.
+
 ## Estado atual (critério e counts)
 
 Critério do PROMPT 04 **NÃO atingido**: não existe primeira cena jogável demonstrada com input,
