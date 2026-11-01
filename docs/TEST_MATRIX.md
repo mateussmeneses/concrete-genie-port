@@ -193,7 +193,19 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-33: sensores de movimento — implementados e ativos; pintura ainda não observada**
+**P0-34: instabilidade de estado — o mesmo input cai em cenas diferentes**
+
+- Grade de luminância 3×3 no mesmo frame entre execuções: `up/mo/rel/s1/s0` = **78/163/50** (cena 3D),
+  `ms` = **247/200/103** (cena clara), `pz` com OPTIONS = **254,5/254,9/246** (**92,6% branco, UI**).
+- O mesmo `cross` leva a estados diferentes conforme o timing da captura. O jogo alterna UI ↔ cena 3D.
+- **Explica** por que o teste de OPTIONS não pausou gameplay (nos frames 900–1800 era UI) e por que
+  `ms` não era comparável.
+- **Válido** (os cinco runs com grade 78/163/50): R2 parado = indistinguível do controle;
+  R2+stick = 99,20% de cena muda sem cor nova; R2+sensor (gz=40, ativo) = **0,002%** de cor nova.
+  **Nenhuma pintura por nenhum caminho.**
+- Evidência: `boot-126`…`boot-130`, `boot-125`.
+
+**P0-33: sensores de movimento — implementados e ativos (histórico)**
 
 - **`.uproject` extraído do pak** (offset 53, 1004 bytes) para `gamedump/CUSA11875/ConcreteGenie/`;
   `Project file not found` 1 → 0. Declara os plugins reais: `Morpheus`, `MoveController`,

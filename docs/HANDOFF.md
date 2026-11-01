@@ -142,31 +142,38 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Determinar se a cena alcançada é o gameplay de pintura.
+Mapear as faixas de frame que são gameplay, para que os testes seguintes caiam no estado certo.
 
-**Feito nesta sessão (sensores + configuração real do jogo):**
+**Descoberta que reorganiza tudo:** o mesmo script de input cai em estados diferentes conforme o
+timing. Grade de luminância 3×3 no mesmo frame:
 
-1. **`.uproject` recuperado do pak** (offset 53) → `gamedump/CUSA11875/ConcreteGenie/`. O aviso
-   `Project file not found` desapareceu. Ele lista os plugins do jogo: **`Morpheus`, `MoveController`,
-   `WinDualShock`**. Não existe plugin de pintura por analógico — pintura é por sensor, analógico é
-   alternativa, exatamente como o Prompt 04 descreve.
-2. **Gap real corrigido:** `sample_host` entregava `acceleration`/`angular_velocity` zerados. Agora lê
-   o sensor com `SDL_SetGamepadSensorEnabled` e converte para as unidades do `OrbisPadData`
-   (`m/s²→g`, `rad/s→deg/s`). Medido: `gamepad motion sensors: gyro=1 accel=1`.
-3. Injeção de sensor por `GOW3_PAD_FILE` (`gx= gy= gz= ax= ay= az=`) para teste reprodutível.
+| Execução | Grade (topo) | Estado |
+|---|---|---|
+| `up`, `mo`, `rel`, `s1`, `s0` | 78 / 163 / 50 | cena 3D escura |
+| `ms` | 247 / 200 / 103 | cena clara |
+| `pz` (OPTIONS) | **254,5 / 254,9 / 246** | **92,6% branco — UI** |
 
-**Pintura ainda não observada** com nenhuma das abordagens: R2 parado, R2+stick, R2+sensor. Cores
-novas permanecem em 0,003–0,005% da tela (ruído), não traço.
+Isso explica duas falhas minhas: o teste de OPTIONS não pausou gameplay (nos frames 900–1800 o jogo
+estava em UI) e o teste de sensor `ms` não era comparável.
 
-**A ambiguidade que resta:** não se sabe se a cena alcançada é o gameplay de pintura. Enquanto isso
-não for resolvido, a ausência de tinta é ambígua entre "o mapeamento não pinta" e "esta cena não é a
-de pintura".
+**Pintura — veredito consolidado nos cinco runs comparáveis (grade 78/163/50):**
 
-**Próximo passo único:** encontrar evidência de qual cena o jogo está exibindo. O `.uproject` e o log
-de níveis do engine (nomes de mapa carregados) são o caminho — procurar no log por nomes de level/map
-e comparar com os nomes de asset do pak.
+| Abordagem | Resultado |
+|---|---|
+| R2 parado | indistinguível do controle |
+| R2 + stick | 99,20% de cena muda, **sem cor nova** |
+| R2 + sensor (gz=40, `gyro=1 accel=1`) | **0,002%** de cor nova |
 
-**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Nenhuma pintura** por nenhum dos três caminhos. Também implementado nesta sessão: leitura dos
+sensores do gamepad (`m/s²→g`, `rad/s→deg/s`), injeção de sensor por `GOW3_PAD_FILE`
+(`gx= gy= gz= ax= ay= az=`), e recuperação do `.uproject` do pak.
+
+**Próximo passo único:** instrumentar por frame a **grade de luminância e a contagem de draws**, para
+produzir um mapa de quais faixas de frame são gameplay e quais são UI. Todo teste seguinte (pintura,
+pausa, save/load) depende disso — hoje qualquer captura pode cair em UI e o resultado ser mal
+interpretado, como já aconteceu duas vezes.
+
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

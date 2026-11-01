@@ -1,3 +1,136 @@
+# Instabilidade de estado: o mesmo input cai em cenas diferentes
+
+## A descoberta que reorganiza a interpretação de tudo
+
+Comparando a grade de luminância 3×3 no mesmo índice de frame entre execuções **com o mesmo script de
+input**:
+
+| Execução | Grade (linha superior) | Estado |
+|---|---|---|
+| `up`, `mo`, `rel`, `s1`, `s0` | 78 / 163 / 50 | cena 3D escura |
+| `ms` | 247 / 200 / 103 | cena clara (céu/atmosfera) |
+| `pz` (com OPTIONS) | **254,5 / 254,9 / 246,2** | **92,6% branco — tela de UI** |
+
+**O mesmo `cross` leva a estados diferentes** dependendo de quando os frames são capturados. O jogo
+atravessa vários estados (UI → cena 3D → UI) e o timing determina onde a captura cai.
+
+## O que isso explica
+
+- Não consigo "testar pintura" de forma reprodutível sem primeiro **fixar o estado**.
+- O teste de OPTIONS não pausou gameplay porque no frame 900–1800 o jogo estava numa tela de UI
+  (92,6% branco), não em gameplay.
+- O teste de sensor `ms` caiu numa cena diferente e por isso não era comparável.
+
+## O que permanece válido
+
+Os cinco runs com grade 78/163/50 (`up`, `mo`, `rel`, `s1`, `s0`) são comparáveis entre si. Neles:
+
+| Abordagem | Resultado |
+|---|---|
+| R2 parado | indistinguível do controle |
+| R2 + stick | 99,20% de cena muda, sem cor nova |
+| R2 + sensor (gz=40, verificado ativo) | **0,002%** de cor nova |
+
+**Nenhuma pintura** na cena escura, por nenhum caminho de input.
+
+## O que falta para um teste de pausa válido
+
+Preciso primeiro identificar o frame em que o jogo está em gameplay e capturar ao redor dele, em vez
+de supor que 900–1800 é gameplay. O log já tem como detectar: a cena 3D tem grade ~78/163/50 e
+2 milhões de draws/frame; a UI tem 92% de branco e muito menos draws.
+
+## Próximo passo
+
+Instrumentar a transição de estado: registrar por frame a grade de luminância e a contagem de draws,
+para saber exatamente quais faixas de frames são gameplay. Com esse mapa, todo teste seguinte
+(pintura, pausa, save) pode ser feito na faixa correta.
+
+# Teste de sensor com estado verificado: também negativo
+
+## Correção do teste anterior
+
+O teste `ms` tinha caído numa cena diferente (grade 247/200/103 vs 78/163/50 das execuções
+comparáveis), então não valia como evidência. Repeti com frames alcançáveis e verifiquei a cena
+**antes** de comparar cores:
+
+```
+s1 (gz=40, sensor injetado) grid=[[77.6, 162.9, 50.2], [96.5, 166.3, 78.6], [36.9, 80.1, 24.2]]
+```
+
+Mesma grade das execuções `up`/`mo`/`rel` — **comparável**. Resultado:
+
+```
+colours 1594->1611, new=125, largest=0.002%
+```
+
+**Nenhuma cor nova significativa.** O sensor de movimento, injetado e verificado ativo
+(`gyro=1 accel=1`, `gz=40`), também não produz tinta nesta cena.
+
+## As três abordagens, todas medidas na mesma cena
+
+| Abordagem | Entrada | Resultado |
+|---|---|---|
+| R2 parado | `0x4200`, sticks 128 | indistinguível do controle |
+| R2 + stick | `0x4200`, rx=210 | 99,20% de cena muda, **sem cor nova** |
+| R2 + sensor | `0x4200`, gz=40 (verificado) | **0,002%** de cor nova |
+
+Todas na mesma cena (grade 78/163/50), todas negativas para pintura.
+
+## Veredito consolidado
+
+**A pintura não acontece na cena alcançada**, por nenhum dos três caminhos: analógico direito, sensor
+de movimento, ou R2 parado. Isso é consistente e reproduzível.
+
+O que resta não é "qual entrada falta", e sim **se esta cena é a de pintura**. A cena é 3D, anima,
+responde a input de câmera e tem 2,17 milhões de draws por frame — é gameplay ou cutscene, não menu.
+Mas pode ser uma seção de exploração onde pintar ainda não foi habilitado.
+
+# Os mapas que o jogo tem — e uma divergência que invalidou meu teste de sensor
+
+## Os 218 mapas, lidos do índice do pak
+
+```
+   1  Maps/Entry.umap                 <- entrada
+  59  Content_VR/Levels               <- VR (fora do gate)
+   6  Levels/BlackOut
+  26  Levels/Cave
+  37  Levels/Lighthouse
+  28  Levels/Tunnel
+  61  Levels/VS                     <- 265 referências no índice
+```
+
+`Lighthouse` tem **2.979** referências no índice; `Levels/VS` 265. O jogo tem cenas distintas de
+sobra — o problema nunca foi falta de conteúdo.
+
+## A divergência que invalida o teste de sensor
+
+Medindo luminância média numa grade 3×3 entre execuções, no mesmo índice de frame:
+
+| Execução | Grade 3×3 (linha superior) | Cena |
+|---|---|---|
+| `up` (`.uproject`, R2+stick) | 78,0 / 163,3 / 50,4 | cena escura |
+| `mo` (sensores ativos, R2+stick) | 78,0 / 163,3 / 50,2 | **idêntica a `up`** |
+| `rel` (R2 mantido) | 78,1 / 163,2 / 50,4 | **idêntica a `up`** |
+| `ms` (**sensor injetado**, R2) | **246,8 / 199,8 / 102,8** | **cena diferente** |
+
+Três execuções caem na mesma cena (78/163/50), e a do sensor injetado cai em outra (247/200/103) —
+muito mais clara, com 39,65% de branco e gradientes de ciano: céu/atmosfera.
+
+**Conclusão:** o teste de pintura com sensor injetado **não é comparável** com os outros, porque o
+jogo estava num estado diferente. A ausência de cor nova nele mede "não pinta nesta outra cena", não
+"o sensor não pinta". Preciso repetir com o estado verificado igual.
+
+## Por que isso importa para o veredito anterior
+
+Meu veredito "R2 não pinta" está sustentado nas execuções `up`/`mo`/`rel`, que compartilham a mesma
+cena — essas são comparáveis entre si. O teste de sensor (`ms`) **não** está, e não deve ser usado
+como evidência nem a favor nem contra.
+
+## Próximo passo
+
+Repetir sensor vs sem sensor na **mesma cena**, verificando a grade de luminância antes de comparar
+cores. Um teste só vale se as duas execuções estiverem no mesmo lugar.
+
 # Sensores de movimento: implementados e ativos; a pintura continua não aparecendo
 
 ## Dois achados antes de mexer em código
