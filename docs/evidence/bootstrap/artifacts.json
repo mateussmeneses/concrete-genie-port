@@ -1,10 +1,12 @@
 [
   {
     "Path": "C:\\projetos\\concrete-genie-port\\runtime\\out\\gpu\\cg-runtime.exe",
-    "Hash": "26B9F3A9C27009C7EAF0ED89A8E9F81F438187FE5F8A05573827CBE755AB51FD"
+    "Hash": "34070D0181E156E685D583F55A1D83E5457FC212F3EBFDDB4847D74D166E6450",
+    "BuiltFrom": "bootstrap/windows acc5957, MSYS2 CLANG64, RelWithDebInfo"
   },
   {
     "Path": "C:\\projetos\\concrete-genie-port\\runtime\\out\\gpu\\cg-gpu-check.exe",
-    "Hash": "2EFBAF6A3D0202C91849DAE81A1238A8A2B3EB423C48A0B3BEA7A892EF9695A8"
+    "Hash": "2CAFE74EFDE51A69A41B855E18ECADC1586A8B09F21A8D6F04084E4B8D261B7C",
+    "BuiltFrom": "bootstrap/windows acc5957, MSYS2 CLANG64, RelWithDebInfo"
   }
 ]
