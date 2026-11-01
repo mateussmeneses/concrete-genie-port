@@ -1,3 +1,123 @@
+# Captura de frame: há conteúdo renderizado (e ele anima)
+
+## A captura falhava por um problema de ambiente, não do renderizador
+
+Três tentativas anteriores produziram zero arquivos. A causa foi medida, não suposta:
+
+```
+Dump: config at=0 frame=1 dump_at=0      <- o env var nunca chegou ao processo
+```
+
+Neste shell MSYS, `GOW3_FRAME_DUMP_AT=300 ./cg-runtime.exe ...` (prefixo inline) **não propaga**
+a variável; `env GOW3_FRAME_DUMP_AT=300 ./cg-runtime.exe ...` propaga. Verificado com uma variável
+de teste. Com `env`, a captura funciona na primeira tentativa.
+
+Também foi necessário:
+- um contador `presented_frames` separado (usar `frame_dump_index` para decidir *se* dumpar era
+  circular: ele só incrementa depois de um dump já ter ocorrido — nunca saía de 0);
+- lógica de `GOW3_DUMP_SYNC=1`, porque `DumpRaw`/`DumpImages` escrevem via
+  `DeferPriorityOperation`, que uma execução morta por `timeout` nunca alcança;
+- o bloco de dump no ramo **`upscaled`**, que era o ramo realmente tomado
+  (`DisplayOverride` retorna true) e não tinha código de captura nenhum.
+
+## O que os pixels mostram
+
+`output_000_1920x1080.raw` e `display_000_1920x1080.raw`, 1920x1080 RGBA:
+
+| Métrica | Valor |
+|---|---|
+| Pixels não-pretos | 1,96% (10.166 de 518.400 amostrados) |
+| Caixa de conteúdo | x 512..1414, y 430..586 (902x156, centralizada) |
+| Cores dominantes | `#75622e` (tan/oliva) 0,78%, `#024d76` (teal escuro) 0,71% |
+| SHA-256 frame 300 | `3dc22e7e3143a371...` |
+| SHA-256 frame 1200 | `3e7151f7265aacb8...` |
+| Pixels diferentes entre os dois | **5,65%** |
+
+O conteúdo é uma faixa central com formas de glifos (não é uma cena 3D), e **muda entre frames** —
+ou seja, é renderização viva, não um artefato estático. Ambos os buffers (display do guest e
+output apresentado) têm o mesmo conteúdo, o que confirma que a cadeia display→presente preserva
+a imagem.
+
+## O que isso NÃO prova
+
+Isto **não** é "primeira cena jogável". É uma faixa de conteúdo em 2% da tela, compatível com
+tela de título/logo/indicador de carregamento. Não há movimento de câmera, personagem, pintura,
+menu navegável nem áudio verificado. O critério do Prompt 04 continua **não cumprido**.
+
+# Cadeia de apresentação: completa e verificada ponta a ponta
+
+Instrumentação em três pontos independentes prova que o jogo renderiza e apresenta:
+
+```
+Flip: guest submitted-and-flipped #1700 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #1500 (addr=0x4001020000, 1920x1080, pitch=1920)
+Swapchain: present #300 -> Success
+```
+
+| Etapa | Medição |
+|---|---|
+| Guest submete e flipa | 1700 por execução, alternando `buf=0/1` |
+| `PatchFlipRequest` | **0 falhas** (o patch da flip nunca falha) |
+| `Presenter::PrepareFrame` | alcançado, 1920x1080, endereços reais do guest |
+| `vkQueuePresentKHR` | `Success`, 1500+ apresentações |
+
+Ou seja: o guest renderiza, o frame chega ao apresentador e o Vulkan apresenta sem erro. A cadeia
+Gnm→Vulkan→swapchain funciona.
+
+## O que ainda NÃO está provado
+
+Nenhum pixel foi lido de volta. As tentativas de captura falharam — e a causa é **do meu
+ferramental**, não do renderizador:
+
+1. `GOW3_FRAME_DUMP_TRIGGER` (arquivo de gatilho) nunca foi consumido: o arquivo continuou
+   existindo após o disparo.
+2. `GOW3_FRAME_DUMP_AT` que eu adicionei usava `frame_dump_index`, que só incrementa **depois** de
+   um dump já ter ocorrido — dependência circular que mantinha o índice em 0. Corrigido com um
+   contador `presented_frames` separado.
+3. Ambos os caminhos de dump vivem no ramo `else` (não-upscaled). A execução toma o ramo
+   **`upscaled`** (`DisplayOverride` retorna true), e **esse ramo não tem código de dump**.
+4. `DumpRaw`/`DumpImages` escrevem via `DeferPriorityOperation`, que uma execução morta por
+   `timeout` nunca alcança.
+
+Conclusão honesta: **"apresenta sem erro" não é "há uma cena visível na tela"**. Falta a captura
+de pixel para afirmar qualquer coisa sobre conteúdo — e ela precisa ser implementada no ramo
+`upscaled`.
+
+# Terceiro marco: o guest apresenta frames (1700 flips medidos)
+
+Depois de corrigir o buffer de SRT, o guest passou a **submeter e flipar** continuamente:
+
+```
+Flip: guest submitted-and-flipped #1    (count=1, vo=1, buf=0, mode=1)
+Flip: guest submitted-and-flipped #2    (count=1, vo=1, buf=1, mode=1)
+Flip: guest submitted-and-flipped #3    (count=1, vo=1, buf=0, mode=1)
+...
+Flip: guest submitted-and-flipped #1700
+```
+
+1700 por execução, alternando `buf=0/1` (double buffering), `vo=1`. Isso é o loop de render do
+guest rodando — não é "inicializa".
+
+Instrumentação adicionada em `Runtime/src/gnmdriver`:
+- contador de `sceGnmSubmitAndFlipCommandBuffersForWorkload` (as 3 primeiras e cada 100ª);
+- contador de falha de `PatchFlipRequest`, porque se o patch da flip falhar o frame nunca chega
+  ao apresentador e o sintoma é idêntico a "não renderiza nada". O log `LOG_ERROR` existente não
+  distinguia isso.
+
+## Tentativa de captura: bloqueada por medição, não por suposição
+
+`GOW3_DUMP_DIR` + `GOW3_FRAME_DUMP_TRIGGER` existem e escrevem o frame como pixels crus, mas
+**dois disparos em momentos diferentes produziram zero arquivos**. O dump só roda dentro de
+`Presenter::PrepareFrame`, então a ausência de arquivo indica que `PrepareFrame` não é alcançado,
+não que o dump esteja quebrado. Isso é o que a instrumentação de `PatchFlipRequest` vai separar:
+- patch falha -> o frame nunca vira apresentação;
+- patch passa -> `PrepareFrame` é chamado e o problema está adiante.
+
+## Estado honesto
+
+Nenhum frame capturado, nenhuma prova de pixel na tela. "1700 flips" prova que o guest pediu 1700
+apresentações; **não** prova que algo apareceu.
+
 # Segundo bloqueio de GPU: buffer de SRT esgotado
 
 Depois do Bink, o jogo passa a compilar shaders de verdade — e **todos falham**:

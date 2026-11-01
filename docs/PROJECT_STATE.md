@@ -30,10 +30,10 @@ mapeamento escolhido pelo runtime — corrigido com `find_free_unhinted()`; (2) 
 ausente no pipeline. Com ambos, o boot avança para:
 
 ```
-Fault: execute access to 0000000000000000 at 0000000000000000
-  thread name: RHIThread
-  #0 guest offset 0x14d6aec
+Swapchain: present #300 -> Success
 ```
+Frame capturado, com conteúdo e animando (1,96% de pixels não-pretos, 5,65% de diferença entre
+frames). Não é cena jogável: é uma faixa central de glifos em ~2% da tela.
 
 O boot atravessou todos os subsistemas de sensor (PS Move, PSVR, áudio 3D, câmera, VR tracker) e
 chegou à **inicialização de RHI do UE4**, onde falha numa chamada virtual indireta por ponteiro
@@ -71,7 +71,7 @@ Os tópicos de áudio, controles, shader cache, frame pacing e captura de frame 
 | Item | Estado |
 |---|---|
 | Build + testes nativos | PASSA, exit 0 |
-| Suíte Python | PASSA, 53 testes, exit 0 |
+| Suíte Python | PASSA, 72 testes, exit 0 |
 | Boot até o bloqueio | exit 3, causa nomeada |
 | **Frame / menu / gameplay** | **NÃO EXECUTADO** |
 | Áudio, controles, GPU visual | **NÃO AUDITADOS** |

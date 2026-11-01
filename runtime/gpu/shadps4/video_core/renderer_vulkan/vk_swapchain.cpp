@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <atomic>
 #include <cstdio>
 #include <limits>
 #include "common/assert.h"
@@ -139,6 +140,16 @@ bool Swapchain::Present() {
     };
 
     auto result = instance.GetPresentQueue().presentKHR(present_info);
+    /* Whether the swapchain actually presents separates "the guest rendered" from "the screen
+     * shows something". A frame can be prepared and never presented. */
+    {
+        static std::atomic<u64> presented{0};
+        const u64 n = ++presented;
+        if (n <= 3 || (n % 300) == 0 || result != vk::Result::eSuccess) {
+            std::fprintf(stderr, "Swapchain: present #%llu -> %s\n",
+                         static_cast<unsigned long long>(n), vk::to_string(result).c_str());
+        }
+    }
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
         needs_recreation = true;
     } else {

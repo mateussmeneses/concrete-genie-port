@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include <atomic>
+#include <cstdio>
 
 #include "gnm_error.h"
 #include "gnmdriver.h"
@@ -2259,6 +2261,18 @@ s32 PS4_SYSV_ABI sceGnmSubmitAndFlipCommandBuffersForWorkload(
     u32 workload, u32 count, u32* dcb_gpu_addrs[], u32* dcb_sizes_in_bytes, u32* ccb_gpu_addrs[],
     u32* ccb_sizes_in_bytes, u32 vo_handle, u32 buf_idx, u32 flip_mode, s64 flip_arg) {
     LOG_DEBUG(Lib_GnmDriver, "called [buf = {}]", buf_idx);
+    /* A submitted-and-flipped buffer is the guest asking for a frame to be shown. Counting it is
+     * how "did the guest ever present anything?" becomes measurable instead of inferred from an
+     * empty screen. */
+    {
+        static std::atomic<u64> flips{0};
+        const u64 n = ++flips;
+        if (n <= 3 || (n % 100) == 0) {
+            std::fprintf(stderr,
+                         "Flip: guest submitted-and-flipped #%llu (count=%u, vo=%u, buf=%u, mode=%u)\n",
+                         static_cast<unsigned long long>(n), count, vo_handle, buf_idx, flip_mode);
+        }
+    }
 
     if (count != 0) {
         if (!dcb_gpu_addrs) {
@@ -2301,6 +2315,14 @@ s32 PS4_SYSV_ABI sceGnmSubmitAndFlipCommandBuffersForWorkload(
     const s32 patch_result =
         PatchFlipRequest(cmdbuf, size_dw, vo_handle, buf_idx, flip_mode, flip_arg, nullptr /*unk*/);
     if (patch_result != ORBIS_OK) {
+        /* The flip is what turns a submission into a presented frame. If patching fails the
+         * frame is silently never shown, which looks exactly like "the game renders nothing". */
+        static std::atomic<u64> failures{0};
+        const u64 n = ++failures;
+        if (n <= 5 || (n % 200) == 0) {
+            std::fprintf(stderr, "Flip: PatchFlipRequest failed (#%llu) -> 0x%08x\n",
+                         static_cast<unsigned long long>(n), static_cast<unsigned>(patch_result));
+        }
         return patch_result;
     }
 

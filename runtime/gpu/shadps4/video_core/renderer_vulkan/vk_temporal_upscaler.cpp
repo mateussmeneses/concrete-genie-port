@@ -123,6 +123,24 @@ void DumpImages(const Instance& instance, Scheduler& scheduler, vk::CommandBuffe
         char path[512];
         std::snprintf(path, sizeof(path), "%s/f%03d_%s_%ux%u_%s.raw", dir.c_str(), frame,
                       image.name, image.width, image.height, image.format);
+        /* GOW3_DUMP_SYNC=1 writes the copy here instead of deferring it. A run ended by a timeout
+         * never reaches the deferred write, so a capture would silently produce nothing. */
+        static const bool sync_dump = std::getenv("GOW3_DUMP_SYNC") != nullptr;
+        if (sync_dump) {
+            scheduler.Flush();
+            scheduler.Finish();
+            vmaInvalidateAllocation(instance.GetAllocator(), allocation, 0, VK_WHOLE_SIZE);
+            std::error_code ec;
+            std::filesystem::create_directories(std::filesystem::path{path}.parent_path(), ec);
+            FILE* f = std::fopen(path, "wb");
+            std::fprintf(stderr, "Dump: %s -> %s\n", path, f ? "written" : "FAILED");
+            if (f) {
+                std::fwrite(info.pMappedData, 1, size, f);
+                std::fclose(f);
+            }
+            vmaDestroyBuffer(instance.GetAllocator(), buffer, allocation);
+            continue;
+        }
         scheduler.DeferPriorityOperation(
             [allocator = instance.GetAllocator(), buffer, allocation, info, size,
              file = std::string{path}] {
@@ -1907,6 +1925,17 @@ bool TemporalUpscaler::DisplayOverride(VAddr address, Display& display) {
     static int dump_remaining = 0;
     if (dump && dump_remaining == 0 && std::remove(dump) == 0) {
         dump_remaining = dump_count;
+    }
+    /* Direct capture by presented-frame index, without needing a cooperating process to touch a
+     * trigger file mid-run. */
+    static const int present_dump_at = [] {
+        const char* env = std::getenv("GOW3_PRESENT_DUMP_AT");
+        return env ? std::atoi(env) : 0;
+    }();
+    static int displays_shown = 0;
+    ++displays_shown;
+    if (present_dump_at > 0 && displays_shown == present_dump_at) {
+        dump_remaining = 1;
     }
     if (dump_remaining > 0) {
         --dump_remaining;

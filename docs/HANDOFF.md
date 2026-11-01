@@ -10,13 +10,13 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | **nenhum frame apresentado** (pipeline Vulkan ativo) |
+| Bloqueio | `abort` sem causa | **conteúdo em ~2% da tela; sem cena jogável** |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **36** |
 | Leitura do dump | 0 arquivos | **4.654 leituras, 109.826.114 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
-| Testes Python | 39 | **66** |
+| Testes Python | 39 | **72** |
 
 ### Correção 1 — janela de memória do guest
 
@@ -69,7 +69,21 @@ Duas causas foram encontradas e corrigidas nesta sessão (ambas medidas, ver `do
 2. **Buffer de SRT** — um único bloco de 32 MB recebia ~1 MB por shader e esgotava no ~32º,
    derrubando 208 de 208 submissões com `code is too big`. Corrigido com cadeia de blocos.
 
-**Nenhum frame foi apresentado.** O pipeline roda, mas "pipeline ativo" não é "cena visível".
+**A cadeia de apresentação foi verificada ponta a ponta** e há frame capturado com conteúdo:
+
+```
+Flip: guest submitted-and-flipped #1700 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #1500 (addr=0x4001020000, 1920x1080, pitch=1920)
+Swapchain: present #300 -> Success
+```
+
+`python scripts/frame_stats.py <frame.raw> --diff <outro>` reporta: 1920x1080, **1,96%** de pixels
+não-pretos, caixa `(512, 432, 1412, 584)`, cores `#75622e`/`#024d76`, e **5,65% de pixels
+diferentes** entre os frames 300 e 1200 — ou seja, anima.
+
+**Isso não é uma cena jogável.** É uma faixa central de glifos em ~2% da tela, compatível com
+tela de título ou indicador de carregamento. Sem câmera, personagem, pintura, menu ou áudio
+verificado, o critério do Prompt 04 continua **não cumprido**.
 
 ### Decisão tomada: `Core::init` **recusa**, não sucede
 
@@ -117,20 +131,26 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Obter o primeiro frame apresentado.
+Identificar o que a faixa de conteúdo é e por que ocupa só ~2% da tela.
 
-O boot roda estável até o timeout, com o pipeline Vulkan ativo e zero falhas de shader. O próximo
-passo é descobrir por que nada chega à tela:
+A captura funciona; o próximo passo é interpretar o conteúdo, não consertar a apresentação.
 
-1. Procurar no log por `vkAcquireNextImageKHR` / `vkQueuePresentKHR` — se nunca são chamados, o
-   caminho de apresentação não é percorrido; se são, medir o que retorna.
-2. Verificar se o guest chega ao primeiro `sceGnmSubmitAndFlipCommandBuffers` e quantos draws
-   são emitidos por frame (telemetria pequena, contador por frame).
-3. Confirmar se o problema é ausência de frames do guest ou apresentação quebrada — são causas
-   diferentes e a correção difere.
+Reprodução exata (o `env` é obrigatório; o prefixo inline não propaga neste shell):
 
-Critério de conclusão: uma captura de frame não vazia (`--frame-dump` ou equivalente) e um log
-que mostre o número de apresentações. Não declarar cena sem isso.
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/dump"     GOW3_FRAME_DUMP_AT=300 GOW3_DUMP_SYNC=1     timeout 110 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 85
+python scripts/frame_stats.py dump/output_000_1920x1080.raw
+```
+
+1. Extrair o texto da faixa (a 1920x1080, caixa 512..1414 x 430..586) e identificar a tela.
+2. Contar draws por frame: se o guest emite poucos draws, a cena não está sendo submetida — o
+   problema é antes do apresentador, no comando do guest.
+3. Verificar se há um estado de carregamento bloqueado (FSM lendo 109 MB do dump e 116 arquivos
+   não encontrados) em vez de cena renderizada.
+
+Critério de conclusão: identificar a tela e mover para além dela (menu ou cena), com captura
+antes/depois. Não declarar cena jogável sem movimento, input e áudio verificados.
 
 A causa do fault já está medida (`docs/MEMORY_AUDIT.md`): o jogo resolve 8 funções do plugin Bink
 por `sceKernelDlsym` para slots em `.bss` e as chama sem testar nulo; o módulo existe em

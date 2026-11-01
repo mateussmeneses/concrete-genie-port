@@ -29,6 +29,7 @@
 #include <cmath>
 #include <csetjmp>
 #include <cstring>
+#include <cstdio>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -468,6 +469,25 @@ static void DumpRaw(const Instance& instance, Scheduler& scheduler, vk::CommandB
     char path[512];
     std::snprintf(path, sizeof(path), "%s/%s_%03d_%ux%u.raw", dir && *dir ? dir : "out/dump", name,
                   index, w, h);
+    /* GOW3_DUMP_SYNC=1 waits for the copy right here instead of deferring it. The deferred form
+     * is correct for a running game, but a run killed by a timeout never reaches the deferred
+     * write, so a capture would silently produce nothing. */
+    static const bool sync_dump = std::getenv("GOW3_DUMP_SYNC") != nullptr;
+    if (sync_dump) {
+        scheduler.Flush();
+        scheduler.Finish();
+        vmaInvalidateAllocation(instance.GetAllocator(), allocation, 0, VK_WHOLE_SIZE);
+        std::error_code ec;
+        std::filesystem::create_directories(std::filesystem::path{path}.parent_path(), ec);
+        FILE* f = std::fopen(path, "wb");
+        std::fprintf(stderr, "Dump: %s (%ux%u) -> %s\n", name, w, h, f ? "written" : "FAILED");
+        if (f) {
+            std::fwrite(info.pMappedData, 1, buffer_ci.size, f);
+            std::fclose(f);
+        }
+        vmaDestroyBuffer(instance.GetAllocator(), buffer, allocation);
+        return;
+    }
     scheduler.DeferPriorityOperation([allocator = instance.GetAllocator(), buffer, allocation, info,
                                       size = buffer_ci.size, file = std::string{path}] {
         vmaInvalidateAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
@@ -483,11 +503,35 @@ static void DumpRaw(const Instance& instance, Scheduler& scheduler, vk::CommandB
 
 Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& attribute,
                                VAddr cpu_address) {
+    /* Whether the presenter is reached at all separates "the guest never presented" from "it
+     * presented and the image never reached the screen". Both look identical from outside. */
+    {
+        static std::atomic<u64> prepared{0};
+        const u64 n = ++prepared;
+        if (n <= 3 || (n % 300) == 0) {
+            std::fprintf(stderr, "Present: PrepareFrame #%llu (addr=0x%llx, %ux%u, pitch=%u)\n",
+                         static_cast<unsigned long long>(n),
+                         static_cast<unsigned long long>(cpu_address),
+                         attribute.attrib.width, attribute.attrib.height,
+                         attribute.attrib.pitch_in_pixel);
+        }
+    }
     // gow3: GOW3_FRAME_DUMP_TRIGGER=<file>: when the file exists it is removed and this frame's
     // guest display buffer and presented image are written to GOW3_DUMP_DIR (default out/dump)
     // as raw 32-bit pixels (menus and movies included; the upscaler dumps scene frames only).
     static const char* frame_dump_trigger = std::getenv("GOW3_FRAME_DUMP_TRIGGER");
+    /* Direct capture without the trigger file: dump the frame with this 1-based index. The
+     * trigger-file path needs a cooperating process to touch a file mid-run, which is awkward to
+     * automate; this makes "capture a frame" a single env var. */
+    static const int frame_dump_at = [] {
+        const char* env = std::getenv("GOW3_FRAME_DUMP_AT");
+        return env ? std::atoi(env) : 0;
+    }();
     static int frame_dump_index = 0;
+    /* Separate counter: frame_dump_index only advances when a dump actually happens, so using it
+     * to decide WHETHER to dump would deadlock (it never leaves 0). */
+    static u64 presented_frames = 0;
+    ++presented_frames;
     // gow3: GOW3_FRAME_DUMP_COUNT=N dumps N consecutive frames per trigger (flicker reports).
     static const int frame_dump_count = [] {
         const char* env = std::getenv("GOW3_FRAME_DUMP_COUNT");
@@ -504,6 +548,9 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     }
     if (check_trigger && std::remove(frame_dump_trigger) == 0) {
         frame_dump_remaining = frame_dump_count;
+    }
+    if (frame_dump_at > 0 && presented_frames == static_cast<u64>(frame_dump_at)) {
+        frame_dump_remaining = 1;
     }
     const bool frame_dump = frame_dump_remaining > 0;
     if (frame_dump) {
@@ -555,6 +602,13 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     vk::ImageView image_view{};
     vk::Extent2D image_size{};
     if (upscaled) {
+        /* The upscaled display is the image the swapchain actually blits, so this is the frame a
+         * capture must read. The other branch's dump code never runs for this path. */
+        if (frame_dump) {
+            DumpRaw(instance, draw_scheduler, cmdbuf, display.image, vk::ImageLayout::eGeneral,
+                    display.width, display.height, "present", frame_dump_index);
+            ++frame_dump_index;
+        }
         const auto device = instance.GetDevice();
         image_view = Check(device.createImageView({
             .image = display.image,

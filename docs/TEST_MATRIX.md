@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **66 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **72 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -120,11 +120,33 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: **0** erros `code is too big` (antes 208), 4 blocos abertos, nenhum fault.
   Evidência: `docs/evidence/prompt04/boot-45-srt-blocks.txt`.
 
-**P0-9: nenhum frame apresentado — ABERTO**
+**P0-9: cadeia de apresentação — VERIFICADA**
 
-- O pipeline Gnm→Vulkan roda (6145 image barriers num batch, imagens criadas, SPIR-V emitido,
-  shaders compilando sem falha), mas nenhum frame foi apresentado.
-- Detalhe: `docs/MEMORY_AUDIT.md`.
+- Guest: 1700 `submit-and-flip` por execução, alternando `buf=0/1`.
+- `PatchFlipRequest`: 0 falhas (o patch da flip nunca falha).
+- `Presenter::PrepareFrame`: alcançado, 1920x1080, endereços reais do guest.
+- `vkQueuePresentKHR`: `Success`, 1500+ apresentações.
+- Evidência: `docs/evidence/prompt04/boot-59-present.txt`.
+
+**P0-10: captura de frame — FUNCIONA; há conteúdo, e ele anima**
+
+- Três tentativas anteriores produziram zero arquivos por causa do **ambiente**, não do
+  renderizador: neste shell MSYS o prefixo inline `VAR=valor ./prog` não propaga; `env VAR=valor
+  ./prog` propaga. Medido com `Dump: config at=0 ... dump_at=0`.
+- Correções necessárias: `presented_frames` separado (usar `frame_dump_index` era circular),
+  `GOW3_DUMP_SYNC=1` (a escrita diferida não roda quando o processo é morto por `timeout`) e o
+  bloco de dump no ramo `upscaled`, que não tinha nenhum.
+- Resultado: `1920x1080`, 1,96% de pixels não-pretos, caixa `(512, 432, 1412, 584)`, cores
+  `#75622e` e `#024d76`; **5,65% dos pixels diferem** entre os frames 300 e 1200 — é renderização
+  viva, não artefato estático.
+- Ferramenta: `scripts/frame_stats.py <frame.raw> [--diff <outro>]`.
+- Evidência: `docs/evidence/prompt04/boot-65-capture.txt`, `boot-67-frame1200.txt`.
+
+**P0-11: primeira cena jogável — ABERTO**
+
+- O conteúdo é uma faixa central de glifos em ~2% da tela, compatível com tela de título/logo.
+- Não há movimento de câmera, personagem, pintura, menu navegável nem áudio verificado.
+- O critério do Prompt 04 continua **não cumprido**.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados
