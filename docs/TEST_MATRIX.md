@@ -148,15 +148,28 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Não há movimento de câmera, personagem, pintura, menu navegável nem áudio verificado.
 - O critério do Prompt 04 continua **não cumprido**.
 
-**P0-12: runtime não lê pak algum — ABERTO**
+**P0-12: paks — CONCLUSÃO ANTERIOR ERRADA, CORRIGIDA**
 
-- Medido: dois paks **válidos** no dump (19,1 GB + 5,4 GB, assinatura `0x5A6F12E1` no rodapé,
-  `mount point ../../../`, 57.303 entradas) e **zero** tentativas de montagem durante o boot.
-- `grep -rniE "\.pak" runtime/src/*.c` → uma única menção, um comentário.
-- Efeito observado: 116 arquivos pedidos pelo motor não existem soltos (49 deles
-  `internationalization/usrdt53l.dat`); o boot lê apenas 109 MB.
-- Status: causa **provável** da tela magra, não confirmada. Confirmar exige implementar leitura de
-  pak e comparar capturas.
+- Eu afirmei que o runtime "nunca abre os paks" com base num log **sem file tracing**. Estava
+  errado, e isso foi commitado em `07e569d`.
+- Com `GOW3_FILE_TRACE=1`: o diretório de paks é **enumerado** e os dois paks são **abertos**, com
+  `-pak` na linha de comando do motor. Nenhum erro de versão ou corrupção.
+- Evidência: `docs/evidence/prompt04/boot-68-file-trace.txt`.
+
+**P0-13: `usrdt53l.dat` — não é bug do runtime**
+
+- 49 pedidos de `/app0/engine/content/internationalization/usrdt53l.dat` falham.
+- Medido no índice do pak: `icudt53l` está **presente**, `usrdt53l` e `internationalization`
+  estão **ausentes**; nenhum deles consta no `Manifest_NonUFSFiles_PS4.txt`.
+- Conclusão: o arquivo não existe no dump. Não é algo que o runtime possa servir.
+
+**P0-14: conteúdo renderizado cresce entre frames — ABERTO (investigação)**
+
+- Frame 300: 1,96% não-preto, caixa `(512,432,1412,584)`, cores `#75622e`/`#024d76`.
+- Frame 1200: **3,71%** não-preto, caixa `(148,224,1772,736)`, cores `#ffffff` e outras.
+- Há uma forma preenchida com bordas limpas e gradiente na metade inferior — geometria renderizada.
+- Bug de GPU real observado: `SanitizeCopyLayers` clampando layers (ex.: 5→6→mínimo) em todos os
+  mips, uma vez por mip. Suspeito, mas o clamp é seguro por si.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 

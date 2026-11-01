@@ -1,4 +1,70 @@
-# Causa provável da tela magra: o runtime não lê pak algum
+# CORREÇÃO: os paks SÃO abertos — a conclusão anterior estava errada
+
+## O erro
+
+Eu concluí "o runtime nunca tenta abrir os paks" a partir de um log (`boot-65`) que **não tinha
+file tracing ligado**. Só apareciam os opens que falhavam, o que produziu uma conclusão falsa.
+
+Com `GOW3_FILE_TRACE=1` a verdade aparece:
+
+```
+Runtime: open(/app0/concretegenie/content/paks) [directory]
+Runtime: open(/app0/concretegenie/content/paks/concretegenie-ps4.pak)
+Runtime: open(/app0/concretegenie/content/paks/concretegenie-ps4_0_p.pak)
+```
+
+O diretório é **enumerado**, os dois paks são **abertos**, e não há erro de versão ou corrupção.
+A linha `AdditionalArgs after fixup = ../../../ConcreteGenie/ConcreteGenie.uproject -pak` mostra
+que o motor roda com `-pak` ativo.
+
+Registro isso explicitamente porque a conclusão errada chegou a ser commitada em `07e569d`.
+
+## O que continua valendo
+
+- Os dois paks são UE4 v4 válidos (assinatura `0x5A6F12E1` no rodapé, 57.303 entradas).
+- 116 arquivos pedidos não existem soltos, e 49 deles são `internationalization/usrdt53l.dat`.
+  Como o pak está montado, esses pedidos são provavelmente para paths que o pak não cobre
+  (ou que o engine espera em disco por serem "non-UFS").
+- A tela capturada continua sendo uma faixa de glifos em ~2% da imagem.
+
+## O que ainda não se sabe
+
+Por que a cena não aparece, agora que o pak está montado. As hipóteses antigas não servem mais;
+a próxima medição tem que ser sobre o que o motor faz **depois** de montar o pak.
+
+
+## Dados medidos depois da correção
+
+| Fato | Medição |
+|---|---|
+| Diretório de paks | **enumerado** (`[directory]` no trace) |
+| Paks abertos | `concretegenie-ps4.pak` e `concretegenie-ps4_0_p.pak` |
+| Erro de versão/corrupção | nenhum |
+| `-pak` na linha de comando | sim (`AdditionalArgs after fixup = ... -pak`) |
+| `icudt53l` no índice do pak | **PRESENTE** |
+| `usrdt53l` no índice do pak | **ausente** |
+| `internationalization` no índice | **ausente** |
+| `usrdt53l` no Manifest_NonUFSFiles | ausente |
+
+Conclusão sobre os 49 "not found" de `usrdt53l.dat`: **não é bug do runtime**. Esse arquivo não
+existe no pak nem no manifesto de arquivos não-UFS. O motor pede um path que o dump não contém —
+provavelmente porque este SKU não o empacota, ou porque o pedido depende de um locale que a build
+não trouxe.
+
+## Próximo alvo real: cópias com contagem de layers divergente
+
+O trace mostra avisos repetidos, um por mip:
+
+```
+vk_runtime.cpp:64 SanitizeCopyLayers: Coercing copy source layers 5 and destination layers 6 to minimum.
+```
+
+`SanitizeCopyLayers` (vk_runtime.cpp:40) clampa para o mínimo quando origem e destino têm tipos
+iguais mas contagens de layers diferentes. A divergência de exatamente 1 em todos os níveis é
+suspeita e merece investigação — mas o clamp em si é seguro e não descarta conteúdo silenciosamente
+além do esperado para o formato.
+
+## (superado) Causa provável da tela magra: o runtime não lê pak algum
 
 ## Medição
 

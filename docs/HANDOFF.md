@@ -131,37 +131,30 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Implementar leitura de pak UE4 — o runtime não abre os 23 GB de conteúdo do jogo.
+Investigar por que a cena não avança além do conteúdo parcial.
 
-Medido nesta sessão: o dump tem dois paks **válidos** (`concretegenie-ps4.pak` 19,1 GB e
-`concretegenie-ps4_0_p.pak` 5,4 GB; assinatura `0x5A6F12E1` no rodapé, `mount point ../../../`,
-57.303 entradas), e o runtime **nunca tenta abri-los** — não há implementação de pak em
-`runtime/src/`. O motor pede arquivos que vivem dentro do pak, recebe "not found" (116 ocorrências,
-49 delas `internationalization/usrdt53l.dat`) e segue com os loose files.
+**Correção importante:** eu havia concluído que o runtime não lia os paks. **Estava errado** —
+aquela conclusão veio de um log sem `GOW3_FILE_TRACE=1`. Medido agora: o diretório de paks é
+enumerado, os dois paks são abertos, e o motor roda com `-pak`. Nenhum erro de versão.
 
-Isso é consistente com a tela capturada (faixa de glifos em ~2% da imagem), mas **não está
-confirmado como causa** — confirmar exige ler o pak e ver a tela mudar.
+1. Suspender a hipótese de pak: ela está descartada por medição.
+2. `usrdt53l.dat` também está descartado: não existe no índice do pak nem no manifesto non-UFS.
+3. Atacar o aviso real de GPU: `SanitizeCopyLayers` clampa layers divergentes em **todos** os mips
+   (`vk_runtime.cpp:40`). Medir se a divergência 5→6 é legítima ou sintoma de descrição de imagem
+   errada — e se o clamp descarta dados que a cena precisa.
+4. Comparar capturas com `python scripts/frame_stats.py <a.raw> --diff <b.raw>` enquanto o jogo
+   roda mais tempo (o conteúdo cresce de 1,96% para 3,71% entre os frames 300 e 1200).
 
-A captura, entretanto, funciona; ela é o instrumento de verificação.
-
-Reprodução exata (o `env` é obrigatório; o prefixo inline não propaga neste shell):
+Reprodução (o `env` é obrigatório):
 
 ```bash
 cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
-env GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/dump"     GOW3_FRAME_DUMP_AT=300 GOW3_DUMP_SYNC=1     timeout 110 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 85
+env GOW3_FILE_TRACE=1 GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/dump"     GOW3_FRAME_DUMP_AT=1200 GOW3_DUMP_SYNC=1     timeout 160 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 130
 python scripts/frame_stats.py dump/output_000_1920x1080.raw
 ```
 
-1. Obter o formato do índice pak **v4** de fonte primária (v4 tem hash por entrada e tabela de
-   nomes separada; a tentativa de parse por nome falhou e não deve ser refeita por tentativa).
-2. Implementar montagem mínima em `runtime/src/`: abrir o índice, resolver caminho → (offset,
-   tamanho, compressão) e servir em `runtime_file_open`.
-3. Teste de aceitação: localizar `usrdt53l.dat` e `icudt53l.dat` **pelo nome** no índice, antes de
-   servir qualquer byte.
-4. Verificar com captura antes/depois: `python scripts/frame_stats.py <frame.raw>`.
-
-Critério de conclusão: o motor para de pedir arquivos que existem no pak, e um frame capturado
-mostra conteúdo além da faixa de glifos. Não declarar cena jogável sem movimento, input e áudio.
+Critério de conclusão: identificar se o clamp de layers descarta conteúdo, e obter um frame com
+cena coerente em área significativa da tela. Não declarar cena jogável sem movimento, input e áudio.
 
 A causa do fault já está medida (`docs/MEMORY_AUDIT.md`): o jogo resolve 8 funções do plugin Bink
 por `sceKernelDlsym` para slots em `.bss` e as chama sem testar nulo; o módulo existe em
