@@ -391,9 +391,17 @@ static int32_t place(void **inout, uint64_t size, int prot, int flags, uint64_t 
         if ((flags & MAP_NO_OVERWRITE) && overlaps(address,address+size,1)) return NO_MEMORY;
     } else {
         address=find_free(address,size,alignment);
-        if (!address) return NO_MEMORY;
+        if (!address) {
+            printf("Runtime: place NO_MEMORY (no free run) size=%" PRIu64 " align=0x%" PRIx64 " hint=%p kind=%d\n",
+                   size,alignment,(void *)(uintptr_t)*inout,kind);
+            return NO_MEMORY;
+        }
     }
-    if (host_map(address,size,host_prot(prot),kind==KIND_RESERVED,phys)) return NO_MEMORY;
+    if (host_map(address,size,host_prot(prot),kind==KIND_RESERVED,phys)) {
+        printf("Runtime: place NO_MEMORY (host_map failed) size=%" PRIu64 " at=%p kind=%d phys=0x%" PRIx64 "\n",
+               size,(void *)address,kind,phys);
+        return NO_MEMORY;
+    }
     void *mapped=(void *)address;
     drop_range(address,address+size);
     if (vma_insert(vma_index(address),(Vma){address,address+size,kind,prot,type,phys})) return NO_MEMORY;
@@ -469,6 +477,8 @@ static ABI int32_t direct_map(void **out, uint64_t size, int prot, int flags, in
     write_unlock();
     flush_hooks();
     if (!result) printf("Runtime: mapped direct memory %p, size=%" PRIu64 ", prot=0x%x\n", *out, size, prot);
+    else printf("Runtime: direct_map FAILED size=%" PRIu64 " prot=0x%x phys=0x%" PRIx64 " align=0x%" PRIx64 " -> 0x%08x\n",
+                size, prot, (uint64_t)physical, alignment, (unsigned)result);
     return result;
 }
 static ABI int32_t direct_map_named(void **out, uint64_t size, int prot, int flags, int64_t physical,
@@ -571,11 +581,18 @@ static ABI int32_t reserve_range(void **inout, uint64_t size, int flags, uint64_
     if (!inout || !size || size%PAGE || !valid_alignment(alignment)) return INVALID;
     write_lock();
     if ((flags & MAP_FIXED_FLAG) && overlaps((uintptr_t)*inout,(uintptr_t)*inout+size,0)) {
+        /* ignore_reserved=0: any live VMA blocks a fixed reservation, including direct memory
+         * the runtime mapped earlier. Report the occupant so the conflict is visible. */
+        size_t i=vma_index((uintptr_t)*inout);
+        if (i<vma_count) printf("Runtime: reserve_range refused %p+%" PRIu64 " (flags 0x%x); VMA at %p+%" PRIu64 " kind=%d prot=0x%x\n",
+                                *inout,size,(unsigned)flags,(void *)vmas[i].start,vmas[i].end-vmas[i].start,vmas[i].kind,vmas[i].prot);
         write_unlock(); return NO_MEMORY;
     }
     int32_t result=place(inout,size,0,flags,alignment,KIND_RESERVED,0,0);
     write_unlock();
     if (!result) printf("Runtime: reserved virtual range %p, size=%" PRIu64 "\n", *inout, size);
+    else printf("Runtime: reserve_range FAILED size=%" PRIu64 " align=0x%" PRIx64 " flags=0x%x -> 0x%08x\n",
+                size,alignment,(unsigned)flags,(unsigned)result);
     return result;
 }
 static int32_t protect_locked(uintptr_t start, uint64_t size, int prot, int type) {
@@ -707,10 +724,16 @@ static ABI int32_t pool_expand(int64_t low, int64_t high, uint64_t size, uint64_
     printf("Runtime: memory pool expanded by %" PRIu64 " bytes at 0x%" PRIx64 "\n",size,(uint64_t)*out);
     return 0;
 }
+/* sceKernelMemoryPoolReserve(address, size, alignment, flags, out) -- five arguments, matching
+ * the call site (edi=RDI low hint, esi=size, rdx=alignment, rcx=flags, r8=&out). The address is
+ * a reservation hint, not a fixed mapping: reserve_range places the range itself. */
 static ABI int32_t pool_reserve(void *address, uint64_t size, uint64_t alignment, int flags, void **out) {
     if (!out) return INVALID;
     *out=address;
-    return reserve_range(out,size,flags,alignment ? alignment : 64*1024);
+    int32_t r=reserve_range(out,size,flags,alignment ? alignment : 64*1024);
+    if (r) printf("Runtime: pool_reserve(address=%p, size=%" PRIu64 ", align=0x%" PRIx64 ", flags=0x%x) -> 0x%08x\n",
+                  address,size,alignment,(unsigned)flags,(unsigned)r);
+    return r;
 }
 /* Longest free run (at most want pages) in the pool; marks it used. */
 static int pool_take_locked(uint64_t want, uint64_t *phys, uint64_t *pages) {

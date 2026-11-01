@@ -1,0 +1,70 @@
+Host scheduling: 1 ms timer resolution (GOW3_TIMER_RES=0 keeps 15.6 ms)
+Host scheduling: power throttling off (GOW3_POWER_THROTTLE=1 keeps it)
+Window: Windowed
+GPU: NVIDIA GeForce RTX 5060 Laptop GPU, driver NVIDIA 621.1.0.0, Vulkan 1.4.357
+GPU: pageable video memory on (when the card is full, the driver moves memory to system RAM)
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_shader_explicit_vertex_parameter unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_EXT_shader_stencil_export unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_shader_image_load_store_lod unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_gcn_shader unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_shader_trinary_minmax unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_mixed_attachment_samples unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_EXT_shader_atomic_float2 unavailable.
+GPU: maintenance5 on, maintenance8 on, feedback loop layouts on, 2D views of 3D on
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=1, number_format=9 is not fully supported (vk_format=R8Srgb, missing features={ ColorAttachment })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=3, number_format=9 is not fully supported (vk_format=R8G8Srgb, missing features={ SampledImage | ColorAttachment | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=9, number_format=1 is not fully supported (vk_format=A2B10G10R10SnormPack32, missing features={ SampledImage | StorageImage | ColorAttachment | TransferSrc | TransferDst | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=9, number_format=5 is not fully supported (vk_format=A2B10G10R10SintPack32, missing features={ SampledImage | StorageImage | ColorAttachment | TransferSrc | TransferDst | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=13, number_format=4 is not fully supported (vk_format=R32G32B32Uint, missing features={ SampledImage | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=13, number_format=5 is not fully supported (vk_format=R32G32B32Sint, missing features={ SampledImage | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=13, number_format=7 is not fully supported (vk_format=R32G32B32Sfloat, missing features={ SampledImage | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=16, number_format=0 is not fully supported (vk_format=R5G6B5UnormPack16, missing features={ StorageImage | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=17, number_format=0 is not fully supported (vk_format=A1R5G5B5UnormPack16, missing features={ StorageImage | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=18, number_format=0 is not fully supported (vk_format=R5G5B5A1UnormPack16, missing features={ StorageImage | ColorAttachment | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=19, number_format=0 is not fully supported (vk_format=B4G4R4A4UnormPack16, missing features={ StorageImage | ColorAttachment | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:915 CollectImageFormatInfo: Depth format z_format=1, stencil_format=1 is not fully supported (vk_format=D16UnormS8Uint, missing features={ DepthStencilAttachment })
+Swapchain: VSync on (Fifo)
+Scheduler 0000000053B711B8: commands recorded from thread '' (caller medievil-runtime.exe+0x113a95)
+GPU: deferred image readback disabled (64 copies, 64 MiB pending limit)
+GPU: draw preparation workers: 8 (+1 scanner, 24 hardware threads)
+Object motion: on (4194304 vertices per frame)
+Upscaler: FSR 3.1 available (on) on scene color before compute shader 000000009a9cf8a9
+Overlay: menu ready (Insert or R3+L2)
+Pipeline startup: on demand, no bulk warm-up
+GPU: window and Vulkan presenter ready; SDK 0x05008001, 327 HLE symbols
+GPU: vblank follows the display refresh rate, 165 Hz
+VideoOut: vblank 60 Hz, frame limit 0 FPS
+Guest TCB loads redirected to the TEB TLS slot: 2
+Mapped 106136876 bytes, 9 segments; applied 465785 relocations
+Starting linked module 0 at image offset 0x62a0000; native bindings=209
+Runtime: application heap API registered
+Runtime: direct allocation offset=0x0, size=6291456 bytes, type=0
+Runtime: mapped direct memory 0000001000000000, size=6291456, prot=0x2
+Runtime: direct allocation offset=0x600000, size=134217728 bytes, type=3
+Runtime: mapped direct memory 0000004000000000, size=134217728, prot=0x32
+Runtime: direct allocation offset=0x8600000, size=5161025536 bytes, type=0
+Runtime: memory pool expanded by 5161025536 bytes at 0x8600000
+Blocker: guest executed a PS4 syscall gate (int 0x44) at guest offset 0x62c1264
+  The runtime implements no int 0x44 handler, so the syscall cannot be
+  serviced and no return value exists. Identify the calling import instead
+  of assuming the fault is a memory error.
+  caller frame canary (rbp-0x30):  26b0aadb7267e800
+  runtime __stack_chk_guard value: 26b0aadb7267e800  (canary intact: abort came from a different check)
+  abort() argument (edi): 0164e5a8
+  rax=000000008002000c rbx=0000000805f01080 rcx=00007ff61d1e47c0 rdx=0000000000600000
+  rsi=0000000200000000 rdi=000000000164e5a8 rbp=000000000164e580 rsp=000000000164e580
+  unwind #0 guest offset 0x62c1264
+  [rsp+00] 000000000164e5e0 000000000164e5e0
+  [rsp+08] 0000000800df86cb guest offset 0xdf86cb
+  [rsp+10] ffffffffffffff00 ffffffffffffff00
+  [rsp+18] 0000000008600000 0000000008600000
+  [rsp+20] 0000000008600000 0000000008600000
+  [rsp+28] 0000001000000000 0000001000000000
+  [rsp+30] 26b0aadb7267e800 26b0aadb7267e800
+  [rsp+38] 0000000805f01058 guest offset 0x5f01058
+  #0 guest offset 0xdf86cb
+  #1 guest offset 0xdd9164
+  #2 guest offset 0x62c240b
+  #3 guest offset 0x62a06ed
+  #4 guest offset 0x62a003a
+  #5 cg-runtime.exe+0x3716

@@ -129,11 +129,28 @@ static LONG fatal_exception(EXCEPTION_POINTERS *info) {
     const CONTEXT *c=info->ContextRecord;
     char where[MAX_PATH+64];
     describe_address(where,sizeof(where),(uintptr_t)c->Rip);
-    if (is_ps4_syscall_gate(c))
+    if (is_ps4_syscall_gate(c)) {
         fprintf(stderr,"Blocker: guest executed a PS4 syscall gate (int 0x44) at %s\n"
                        "  The runtime implements no int 0x44 handler, so the syscall cannot be\n"
                        "  serviced and no return value exists. Identify the calling import instead\n"
                        "  of assuming the fault is a memory error.\n",where);
+        /* abort() reached here means something already decided to abort. Report the canary of
+         * the CALLER frame (the abort frame's own rbp-0x30 is unrelated data), and never infer
+         * the cause: a matching canary means the abort came from another check entirely. */
+        if (image) {
+            uintptr_t fp=(uintptr_t)c->Rbp, caller_fp=0;
+            uint64_t stored=0, expected=0;
+            SIZE_T got=0;
+            if (ReadProcessMemory(GetCurrentProcess(),(void *)fp,&caller_fp,sizeof(caller_fp),&got) && got==sizeof(caller_fp) && caller_fp) {
+                if (ReadProcessMemory(GetCurrentProcess(),(void *)(caller_fp-0x30),&stored,sizeof(stored),&got) && got==sizeof(stored))
+                    fprintf(stderr,"  caller frame canary (rbp-0x30):  %016llx\n",(unsigned long long)stored);
+                if (ReadProcessMemory(GetCurrentProcess(),(void *)runtime_canary_address(),&expected,sizeof(expected),&got) && got==sizeof(expected))
+                    fprintf(stderr,"  runtime __stack_chk_guard value: %016llx  (%s)\n",(unsigned long long)expected,
+                            stored==expected ? "canary intact: abort came from a different check"
+                                             : "canary overwritten in the caller frame");
+            }
+        }
+    }
     else if (record->ExceptionCode==EXCEPTION_ACCESS_VIOLATION && record->NumberParameters>=2)
         fprintf(stderr,"Fault: %s access to %p at %s (thread %lu)\n",
                 record->ExceptionInformation[0]==1 ? "write" : record->ExceptionInformation[0]==8 ? "execute" : "read",

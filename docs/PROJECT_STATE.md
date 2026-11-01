@@ -1,96 +1,70 @@
 # Estado do projeto
 
-Atualizado: 2026-11-01 UTC. **PROMPT 03 concluído até o primeiro bloqueio observável.**
-O código guest do jogo executou; nenhum frame foi renderizado.
+Atualizado: 2026-11-01 UTC. **PROMPT 04 não atingiu o critério: não existe primeira cena
+jogável.** O código guest executa, o Vulkan inicializa e as relocations são aplicadas, mas a
+execução para antes de qualquer frame, num conflito de reserva de memória.
 
 ## Onde o port está
 
-- Repositório independente na branch `bootstrap/windows`, runtime do MediEvil vendorizado em
-  `runtime/` (base `424f3ea`). Upstream não sobrescrito nem reorganizado.
-- Build Windows CLANG64 reproduzível (`bash build.sh`, `bash build.sh --test`), exit 0.
-- Pipeline sem dump funcionando: `--help`, `--check-config`, falta-de-jogo acionável,
-  `--audit-runtime`, `--vulkan-smoke`. 29 testes Python verdes.
-- `scripts/audit_game.py` gera manifesto JSON somente-leitura do dump.
-- AI Workbench integrado como ferramenta externa: skills em `.agents/`, `.claude/`,
-  `.openclaude/`; `.ai-workbench/` fora do Git; `AGENTS.md`/`CLAUDE.md` preservados com
-  bloco gerenciado anexado.
+- Branch `bootstrap/windows`, runtime do MediEvil vendorizado (base `424f3ea`). Sem merge.
+- Build reproduzível: `bash build.sh` e `bash build.sh --test`, ambos exit 0.
+- **39 testes Python**, exit 0. Smoke sem dump funcionando.
+- Dump `CUSA11875` (EU, APP_VER 01.07) identificado e auditado; pipeline executado até o boot.
 
-## Dump identificado e pipeline executado
+## Estágios comprovadamente atingidos
 
-`gamedump/CUSA11875` (edição europeia, 25 GB, ignorado pelo Git).
-
-| Campo | Valor |
+| Estágio | Evidência |
 |---|---|
-| `TITLE_ID` / `APP_VER` | `CUSA11875` / `01.07` |
-| `CONTENT_ID` | `EP9000-CUSA11875_00-CONCRETEGENIE000` |
-| `TITLE` | `Concrete Genie` |
-| `eboot.bin` | 108.601.759 bytes, SELF `0x0480` (não cifrado, não comprimido) |
-| SHA-256 | `06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51` |
-| Entry point | `0x37d58d0` |
-| Engine | Unreal Engine 4 + Bink 2 + `libSceAjm` |
+| SELF → ELF | 103.382.639 bytes, 988 imports, 463.753 relocations, 64 módulos |
+| Módulos ligados | 209 native bindings (libc, Fios2) |
+| Cobertura de imports | 811/988 (com shim GPU) |
+| Vulkan / janela | RTX 5060, Vulkan 1.4.357, swapchain, 327 HLE symbols |
+| Imagem mapeada | 106.136.876 bytes, 9 segmentos, 465.785 relocations aplicadas |
+| Memória guest | pools de 6 MiB + 128 MiB + 5.161.025.536 bytes |
+| **Primeiro frame** | **NÃO. Bloqueio abaixo.** |
 
-Pipeline real, com exit codes:
-
-1. `prepare` (SELF→ELF): 103.382.639 bytes, 988 imports, 463.753 relocations, 64 módulos — exit 0.
-2. `link` (`libc.prx`, `libSceFios2.prx`): 209 native bindings — exit 0.
-3. `--check-imports`: **811/988 imports resolvidos** (com shim GPU), 177 faltando — exit 1.
-4. Boot: Vulkan inicializado, 106 MB mapeados, 465.785 relocations aplicadas — **exit 3**.
-
-## Primeiro bloqueio observável
-
-`guest offset 0x62c1264` = `libc.prx+0x21264`, função `abort`. Bytes reais:
+## Bloqueio atual (P0)
 
 ```
-55 4889e5 cd44 bacccccccc b90b0002a0 90 0f0b
-   push rbp; mov rbp,rsp; INT 0x44; ... ; ud2
+pool_reserve(address=0x1000000000, size=8 GiB, flags=0x90) -> 0x8002000c (NO_MEMORY)
+reserve_range refused; VMA at 0x1000000000+6291456 kind=2 (KIND_DIRECT)
 ```
 
-O runtime não implementa o gate de syscall PS4 `INT 0x44`; a chamada nunca retorna e a
-execução cai no `ud2`. `abort` é exportado pela própria libc, não um import pendente.
+O guest pede reserva fixa de 8 GiB em `0x1000000000`; um mapeamento direto de 6 MiB do
+próprio runtime já ocupa essa base, porque `find_free` sempre começa em `USER_MIN`.
+A `libc` trata o erro como fatal, chama `abort`, cujo `INT 0x44` não tem handler e cai em
+`ud2`. Exit 3, determinístico em 3 execuções.
 
-Como o abort acontece, **a razão original da chamada se perde. Descobri-la é a próxima ação.**
+Detalhe e hipóteses refutadas: `docs/MEMORY_AUDIT.md`.
 
-Correção desta etapa (diagnóstico, não bypass): `is_ps4_syscall_gate()` em `probe.c` nomeia
-o bloqueio em vez de reportar "read access to ffffffff".
+## Correções de diagnóstico aplicadas
 
-## Cobertura de imports (medida, não estimada)
+- `is_ps4_syscall_gate()`: o gate `INT 0x44` passa a ser nomeado no relatório de falha, em vez
+  de aparecer como "read access to ffffffff".
+- Verificação de canário no frame do chamador, com as duas fontes lado a lado.
+- Logs de falha em `place`, `reserve_range`, `pool_reserve` (sucesso permanece silencioso).
 
-| Modo | Resolvidos | Faltando |
-|---|---|---|
-| `--cpu-only` | 679 / 988 | 309 |
-| com shim GPU | **811 / 988** | **177** |
+## O que NÃO foi feito e por quê
 
-Gaps concentrados em `libSceNpToolkit2` (79), `libSceHmd` (22), `libSceAudio3d` (14),
-`libSceVrTracker` (11), `libSceSocialScreen` (7), `libSceCamera` (7), `libSceHmdSetupDialog` (6),
-`libSceVrServiceDialog` (5), `libSceMove` (5). Tabela em `docs/evidence/prompt03/`.
+Os tópicos de áudio, controles, shader cache, frame pacing e captura de frame do Prompt 04
+**não foram auditados**. Todos dependem de uma cena visível: auditar shaders ou reprodução de
+áudio sem frame seria descrever código, não observar comportamento. Registrar isso como
+"feito" seria a mesma inflação de progresso que as regras do projeto proíbem.
 
 ## Estado de verificação
 
 | Item | Estado |
 |---|---|
-| Build nativo + testes nativos | PASSA, exit 0 |
-| Suíte Python (`tests/`) | PASSA, 29 testes, exit 0 |
-| `audit_game.py` no dump real | PASSA, manifesto escrito |
-| Smoke sem dump (help/config/audit/vulkan) | PASSA |
-| Código guest executado | **SIM** — módulos ligados, relocations aplicadas |
-| **Primeiro frame** | **NÃO** — bloqueio em `int 0x44` dentro de `abort` |
-| Menu, intro, gameplay | NÃO EXECUTADO |
-| Áudio, saves, câmera/gyro/Move/PSVR | NÃO EXECUTADO (apenas imports presentes) |
-| Flicker, iluminação, VRAM, frame pacing | NÃO EXECUTADO |
-
-## Limites conhecidos
-
-- Não se sabe por que `abort` foi chamado; o `INT 0x44` é sintoma, não causa.
-- 177 imports sem implementação; nenhum foi stubbado com retorno de sucesso cego.
-- `CUSA11834` (US) nunca foi vista em dump; permanece candidata do playbook.
-- `runtime/launcher/medievil_launcher.py` e `package.sh` ainda têm branding de MediEvil e
-  não são ponto de entrada suportado.
-- Suíte herdada `runtime/tests` segue vermelha por expectativas de GoW/MediEvil; não foi
-  "consertada" para parecer verde.
-- `profiles.py` mantém `CUSA11875` com `builds: {}`: a build foi identificada, não suportada.
+| Build + testes nativos | PASSA, exit 0 |
+| Suíte Python | PASSA, 39 testes, exit 0 |
+| Boot até o bloqueio | exit 3, causa nomeada |
+| **Frame / menu / gameplay** | **NÃO EXECUTADO** |
+| Áudio, controles, GPU visual | **NÃO AUDITADOS** |
+| Suíte herdada `runtime/tests` | vermelha por expectativas de GoW/MediEvil, não corrigida |
 
 ## Próxima ação
 
-Instrumentar `runtime_resolve` para registrar os últimos imports servidos e seus valores de
-retorno por thread, e dumpá-los no bloqueio. Isso nomeia o serviço cuja resposta levou ao
-`abort`. Critério completo em `docs/HANDOFF.md`.
+Determinar se o guest depende de `USER_MIN` para o pool: registrar leituras guest em
+`[0x1000000000, 0x1000600000)` após a chamada de `pool_reserve`. Sem leituras, o bloco de
+6 MiB pode ser realocado com segurança; com leituras, a ordem de inicialização deve ser
+invertida. Critério completo em `docs/HANDOFF.md`.

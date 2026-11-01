@@ -1,85 +1,52 @@
 # Handoff entre IAs
 
-- Data (UTC): 2026-10-31/11-01, sessão PROMPT 03 (auditoria do dump + primeiro boot).
+- Data (UTC): 2026-11-01, sessão PROMPT 04 (investigação do primeiro frame).
 - Branch: `bootstrap/windows`. Nenhum merge, rebase ou reset executado.
-- Upstream: runtime vendorizado do MediEvil em `424f3ea...`; `references/medievil` intacto.
+- **Critério do PROMPT 04 NÃO atingido: não existe primeira cena jogável.** Não houve frame.
 
-## Ferramenta externa integrada (AI Workbench)
+## Resultado da sessão
 
-`aiwh` v0.4.0.dev0 instalado, `aiwh doctor` exit 0. Executados nesta ordem:
-`aiwh audit`, `aiwh init --dry-run` (inspecionado), `aiwh init` (aplicado),
-`aiwh game-port --platform ps4 --track compatibility-runtime --save`, `aiwh resume`.
+O bloqueio do Prompt 03 (`abort` → `INT 0x44`) foi **atribuído a uma causa nomeada e medida**.
+O que mudou:
 
-- `aiwh init` **preservou** o conteúdo do Prompt 02 em `AGENTS.md` e `CLAUDE.md`: anexou
-  apenas um bloco gerenciado `<!-- AIWH:BEGIN -->` ao final. Verificado por diff semântico
-  das linhas originais. 15 skills em cada um de `.agents/`, `.claude/`, `.openclaude/`.
-- `.ai-workbench/` está ignorado no Git. O handoff transferível continua aqui.
-- `aiwh` **não** executou o jogo e não declara testes. Não instalei MCPs/plugins sugeridos.
-- Divergência registrada: `GAME_PORT_PLAN.md` diz "No executable bytes inspected" e
-  `CONTEXT.md` diz "No TODO items located". Ambas são falsas para este repositório — os
-  bytes do eboot foram inspecionados e o HANDOFF anterior tinha próxima ação explícita.
-  A avaliação automática não substitui a evidência.
-
-## Resultado central: build identificada, código guest executado, sem frame
-
-Dump `gamedump/CUSA11875` (EU, 25 GB, fora do Git).
-
-| Campo | Valor |
+| Antes | Agora |
 |---|---|
-| `TITLE_ID` / `APP_VER` | `CUSA11875` / `01.07` |
-| `CONTENT_ID` | `EP9000-CUSA11875_00-CONCRETEGENIE000` |
-| `eboot.bin` | 108.601.759 bytes, SELF `0x0480` (não cifrado) |
-| SHA-256 | `06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51` |
-| Entry point | `0x37d58d0` |
-| Engine | UE4 + Bink 2 + `libSceAjm` |
+| `Fault: read access to ffffffff` (enganoso) | `Blocker: PS4 syscall gate (int 0x44)` |
+| causa desconhecida | `pool_reserve` recusado por conflito de endereço |
+| hipótese de canário corrompido | **refutada**: canário íntegro |
+| hipótese de pool esgotado | **refutada**: `GOW3_DMEM_MB=8192` não muda nada |
 
-Pipeline executado até o boot:
-
-1. `prepare` → SELF→ELF: imagem de 103.382.639 bytes, **988 imports**, 463.753 relocations,
-   64 módulos. Exit 0.
-2. `link` com `libc.prx` + `libSceFios2.prx` → **209 native bindings**, 877 imports para o host.
-3. `--check-imports` (sem executar guest): 679/988 resolvidos em `--cpu-only`;
-   **811/988 com o shim GPU** → 177 faltando.
-4. Boot real: GPU Vulkan inicializada (RTX 5060), 106.136.876 bytes mapeados, 9 segmentos,
-   **465.785 relocations aplicadas**, pools de memória guest criados.
-5. **Falha** em `guest offset 0x62c1264` = `libc.prx+0x21264`, dentro de `abort`
-   (`L1SBTkC+Cvw#D#A`), exit code 3.
-
-### Causa raiz demonstrada no disassembly
+Causa raiz, com evidência:
 
 ```
-55            push rbp
-4889e5        mov rbp, rsp
-cd44          int 0x44        <- gate de syscall PS4, não tratado pelo runtime
-ba cccccccc   mov edx, 0xcccccccc
-b9 0b0002a0   mov ecx, 0xa002000b
-90            nop
-0f0b          ud2             <- fault observado aqui
+Runtime: pool_reserve(address=0000001000000000, size=8589934592, align=0x0, flags=0x90) -> 0x8002000c
+Runtime: reserve_range refused 0000001000000000+8589934592 (flags 0x90);
+         VMA at 0000001000000000+6291456 kind=2 prot=0x2
 ```
 
-`abort` é **exportado por libc**, não um import pendente: o linker ligou o código real.
-O runtime não implementa `INT 0x44`, então a syscall nunca retorna e a execução cai no `ud2`.
+O guest pede reserva de **8 GiB em endereço fixo** (`MAP_FIXED|MAP_NO_OVERWRITE`) em
+`0x1000000000`. Um mapeamento direto de **6 MiB** (`KIND_DIRECT`) já ocupa essa base, criado
+pelo próprio runtime via `find_free`, que sempre começa em `USER_MIN`.
 
-**Não se sabe ainda por que `abort` foi chamado** — essa informação se perde no abort.
+Detalhe completo em `docs/MEMORY_AUDIT.md`.
 
-Reprodutibilidade: duas execuções independentes, mesmo offset e mesmo exit 3.
+## Erro meu nesta sessão (registrado para não repetir)
 
-## Correção aplicada nesta etapa
+Reportei "canário corrompido" na primeira instrumentação. Estava errado: li `rbp-0x30` do
+frame do `abort`, não do chamador. Corrigido para ler o frame correto, o canário aparece
+íntegro. A conclusão errada teria consumido a sessão inteira num overflow inexistente.
 
-`runtime/src/probe.c`: `is_ps4_syscall_gate()` detecta `INT 0x44` no `Rip` e o relatório de
-falha passa a nomear o bloqueio em vez de reportar "read access to ffffffff". Não é um stub
-nem um bypass: a syscall continua não atendida, apenas passa a ser diagnosticada.
-Evidência antes/depois: `evidence/prompt03/boot-01-first-fault.txt` e
-`boot-02-blocker-named.txt`.
+## Por que a correção não foi aplicada
 
-## Entregáveis
+Há duas saídas e **nenhuma foi medida**:
 
-- `scripts/audit_game.py` — manifesto JSON somente-leitura, schema `concrete-genie-audit/1`.
-- `tests/test_audit_game.py` — 16 testes com fixtures sintéticas, sem dump.
-- `docs/DUMP_AUDIT.md` — auditoria completa do dump.
-- `docs/evidence/prompt03/` — manifest, logs de boot (antes/depois), imports por biblioteca,
-  build e testes.
-- `profiles.py` — `CUSA11875` com bloco `audited` (fatos) e `builds: {}` (ainda não suportada).
+1. Reservar o pool do guest antes do primeiro mapeamento direto (mudar a ordem de
+   inicialização). Risco: não se sabe se outro caminho depende do mapeamento em `USER_MIN`.
+2. Realocar o bloco de 6 MiB quando o guest reserva por cima. Risco: se algum ponteiro guest
+   já aponta para o endereço antigo, o resultado é corrupção silenciosa.
+
+Escolher sem medir trocaria um bloqueio nomeado por um bug de corrupção. Isso viola a regra
+de não resolver sintoma sem prova.
 
 ## Estado de verificação
 
@@ -87,28 +54,37 @@ Evidência antes/depois: `evidence/prompt03/boot-01-first-fault.txt` e
 |---|---|
 | `bash build.sh` | exit 0 |
 | `bash build.sh --test` | exit 0 |
-| `python -m unittest discover -s tests` | exit 0, **29 testes** |
-| `audit_game.py` no dump real | exit 0, manifesto escrito |
-| `audit_game.py` sem dump / dump inválido | exit 1, mensagem acionável |
-| Boot real | exit 3, bloqueio nomeado em `int 0x44` |
-| Pipeline `run.py` com o dump | exit 1, recusa fail-closed |
+| `python -m unittest discover -s tests` | exit 0, **39 testes** |
+| Boot até o bloqueio | exit 3, causa nomeada, determinístico (3 execuções) |
 | **Primeiro frame / menu / gameplay** | **NÃO EXECUTADO** |
+| Áudio, controles, shader cache, frame pacing | **NÃO AUDITADOS** — não há cena |
+
+Os itens de áudio, controles e GPU do Prompt 04 não foram tocados porque dependem de uma cena
+visível. Auditar shaders sem frame seria descrever código, não observar comportamento.
+
+## Entregáveis desta sessão
+
+- `docs/MEMORY_AUDIT.md` — cadeia causal completa, hipóteses testadas e refutadas.
+- `tests/test_memory_layout.py` — 10 testes que congelam constantes e o conflito medido.
+- Instrumentação em `probe.c` / `runtime.c` / `runtime_memory.c`: gate `INT 0x44` nomeado,
+  verificação de canário, logs de falha em `place`, `reserve_range`, `pool_reserve`.
+- `docs/evidence/prompt04/` — 10 logs de boot + build + testes.
 
 ## Próxima ação única, verificável
 
-Descobrir **por que a libc chama `abort()`**. O `INT 0x44` é sintoma; a causa está no
-caminho anterior. Sequência sugerida, sem adivinhar offsets:
+Determinar se o guest depende de `USER_MIN` para o pool. Com a instrumentação atual:
 
-1. Instrumentar `runtime_resolve` para registrar, por thread, os últimos N imports servidos
-   e o valor de retorno (ring buffer em memória, dumpado no bloqueio). Isso mostra qual
-   serviço foi chamado imediatamente antes do abort.
-2. Reexecutar o mesmo `boot-linked.bin` e correlacionar o último import com
-   `evidence/prompt03/imports-gpu-by-library.txt`.
-3. Só então decidir: implementar semântica real do serviço, ou registrar explicitamente o
-   stub com hipótese e teste — nunca um retorno de sucesso cego.
+1. Registrar toda leitura guest que caia em `[0x1000000000, 0x1000600000)` (o bloco de 6 MiB)
+   **depois** do ponto onde `pool_reserve` é chamado.
+2. Se nenhuma leitura ocorrer, a opção 2 (realocar) é segura e testável.
+3. Se houver leituras, a opção 1 (inverter a ordem) é a única, e exige reexecutar o pipeline
+   do início para pegar os endereços corretos.
 
-Critério de conclusão: o log nomeia o import cuja resposta levou ao abort, com o valor
-retornado e o estágio alcançado, e essa correlação está coberta por um teste.
+Critério de conclusão: o `0x8002000c` deixa de aparecer **e** o log mostra o boot avançando
+para um novo estágio nomeado — não basta o erro sumir.
 
-Não iniciar patches binários, GPU ou otimização antes disso. Nenhum offset de MediEvil,
-Matterfall ou GoW III deve ser importado.
+## Ferramentas
+
+`aiwh resume` executado no início da sessão. `aiwh audit` não foi reexecutado no fim.
+Workbench não executa testes nem substitui log; nenhuma recomendação dele foi usada como
+evidência de funcionamento.

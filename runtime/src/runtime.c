@@ -67,6 +67,8 @@ void runtime_start(uint64_t flags) {
 #endif
     stack_canary &= ~UINT64_C(255);
 }
+/* Exposed for the fault reporter: it compares the frame's stored canary against this value. */
+uintptr_t runtime_canary_address(void) { return (uintptr_t)&stack_canary; }
 void runtime_report(void) {
     printf("Runtime: _init_env=%zu, atexit=%zu, __cxa_atexit=%zu, registered handlers=%zu\n",
            calls_init, calls_atexit, calls_cxa, handler_count);
@@ -159,6 +161,7 @@ static ABI void guard_abort(uint64_t *guard) {
 }
 static ABI __attribute__((noreturn)) void stack_fail(void) {
     fputs("STOP: guest stack protector detected corruption\n", stderr);
+    fprintf(stderr, "  runtime canary: %016llx\n", (unsigned long long)stack_canary);
     exit(22);
 }
 static ABI void *guest_memset(void *dst, int value, size_t size) {

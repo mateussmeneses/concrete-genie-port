@@ -100,3 +100,22 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
 - **A avaliação automática do Workbench foi confrontada com a evidência.** `GAME_PORT_PLAN.md`
   afirma "No executable bytes inspected" e `CONTEXT.md` afirma "No TODO items located";
   ambas são falsas aqui. As recomendações foram tratadas como sugestão, não como resultado.
+
+## 2026-11-01 — PROMPT 04: causa do bloqueio de boot
+
+- **Diagnóstico antes de correção.** O bloqueio mudou de "abort sem causa" para
+  `pool_reserve` recusado por conflito de endereço em `USER_MIN`. Trocar um sintoma obscuro
+  por uma causa medida é o avanço da etapa; o boot continua bloqueado. Reversão: remover a
+  instrumentação.
+- **Duas hipóteses próprias foram refutadas por teste, não por argumento.** (1) canário
+  corrompido: falso, eu lia o frame errado do `abort`; (2) pool esgotado: falso,
+  `GOW3_DMEM_MB=8192` reproduz o mesmo bloqueio. Registro explícito para que a próxima sessão
+  não repita as duas.
+- **Não corrigi o conflito de layout.** As duas saídas (inverter a ordem de inicialização ou
+  realocar o bloco de 6 MiB) mudam a semântica de memória do guest sem prova de qual ele
+  espera. Escolher agora trocaria um bloqueio nomeado por corrupção silenciosa, o que viola a
+  regra de exigir evidência antes de alterar. A próxima ação é medir.
+- **Áudio, controles, shader cache e frame pacing não foram auditados.** Dependem de uma cena
+  visível; sem frame, qualquer afirmação sobre eles seria descrição de código apresentada como
+  observação. `tests/test_memory_layout.py` congela constantes e o conflito medido para que
+  uma mudança futura confronte o achado em vez de contorná-lo.

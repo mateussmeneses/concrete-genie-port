@@ -107,4 +107,6 @@ uintptr_t runtime_extra_resolve(const char *name);
 void runtime_extra_report(void);
 unsigned char *runtime_image_base(void);
 int runtime_sse4a_emulate(void *context_record);
+/* Address of the runtime's __stack_chk_guard value, for diagnosing a canary mismatch. */
+uintptr_t runtime_canary_address(void);
 #endif
