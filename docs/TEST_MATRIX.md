@@ -193,7 +193,20 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
-**P0-24: áudio — cadeia aberta, mixer rodando, conteúdo ausente**
+**P0-25: áudio silencioso — CAUSA RAIZ IDENTIFICADA (NGS2 é stub que escreve zeros)**
+
+- `sceNgs2SystemRender` faz `memset(buffers[i].buffer,0,size)` — o synth do jogo apaga o buffer.
+- Os **13 imports NGS2** deste eboot são stubs; `sceNgs2VoiceGetState` zera o estado ("stopped").
+- NGS2, **não Ajm**, é o mixer deste jogo. Ajm só é consultado: todos os 94 jobs são
+  `STATISTICS_INSTANCE` (`instance=524288`), que retornam cedo por projeto.
+- Duas conclusões minhas anteriores corrigidas: (a) "o guest não submete batch Ajm" — submete
+  40.800; (b) "`Ajm batches` nunca impresso logo não decodifica" — a linha só sai ao encerrar, e a
+  execução foi cortada por timeout.
+- `peak 0.0000`, `0/938 loud` é a assinatura de buffer apagado, não de saída de áudio quebrada.
+- Implementar NGS2 = sintetizador com voice graph/waveforms/pans, não correção de uma linha.
+- Evidência: `boot-99-ajm-trace.txt`, `boot-100-ajm-jobs.txt`.
+
+**P0-24: áudio — cadeia aberta, mixer rodando, conteúdo ausente (histórico)**
 
 - Defeito corrigido: `runtime_audio3d.c` recusava todo `PortOpen`. O guest não caía para estéreo —
   logava `brbDriverBase::Initialize3D(): FAILED TO OPEN 3D AUDIO PORT!` e nunca chamava

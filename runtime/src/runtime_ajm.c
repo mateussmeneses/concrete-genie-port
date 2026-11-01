@@ -337,6 +337,20 @@ static int parse_job(const unsigned char *p, uint32_t size, Job *job) {
 }
 static void run_job(Context *ctx, uint32_t id, Job *job) {
     ++jobs_run;
+    /* Which job ran, whether it succeeded, and how much it produced. A run of zero-output jobs with
+     * a non-zero result is a decoder failing; zero outputs with success is a job with nothing to do.
+     * Those are different diagnoses and the summary counters cannot tell them apart. */
+    {
+        static const int tr=-1; static int on; static unsigned long calls;
+        if (tr==-1) on=getenv("GOW3_TRACE_AJM")!=NULL;
+        const int trace_now = on && (++calls<=20 || (calls%500)==0);
+        if (trace_now)
+            fprintf(stderr,"Ajm: job instance=%u input_count=%d in0=%llu out0=%llu flags=%llx\n",
+                    id, job->input_count,
+                    (unsigned long long)(job->input_count?job->inputs[0].size:0),
+                    (unsigned long long)(job->output_count?job->outputs[0].size:0),
+                    (unsigned long long)job->flags);
+    }
     unsigned char *side=job->output_control.size ? job->output_control.address : NULL;
     unsigned char *side_end=side ? side+job->output_control.size : NULL;
     SidebandResult *result=NULL;
@@ -463,6 +477,8 @@ static ABI int32_t ajm_finalize(uint32_t id) {
     return 0;
 }
 static ABI int32_t ajm_module_register(uint32_t id, uint32_t codec, int64_t reserved) {
+    { static const int tr=-1; static int on; if (tr==-1) on=getenv("GOW3_TRACE_AJM")!=NULL;
+      if (on) fprintf(stderr,"Ajm: ModuleRegister id=%u codec=%u\n",id,codec); }
     if (reserved || codec>=24) return ERR_INVALID_PARAMETER;
     pthread_mutex_lock(&lock);
     Context *c=context(id);
@@ -516,6 +532,10 @@ static ABI uint32_t ajm_instance_codec(uint32_t instance) { return (instance>>14
 static ABI int32_t ajm_batch_start(uint32_t id, unsigned char *buffer, uint32_t size, int priority,
                                    BatchError *error, uint32_t *out) {
     (void)priority;
+    { static const int tr=-1; static int on; static unsigned long calls;
+      if (tr==-1) on=getenv("GOW3_TRACE_AJM")!=NULL;
+      if (on && (++calls<=5 || (calls%200)==0))
+        fprintf(stderr,"Ajm: BatchStart id=%u size=%u (call %lu)\n",id,size,calls); }
     if (size & 7) return ERR_MALFORMED_BATCH;
     pthread_mutex_lock(&lock);
     Context *c=context(id);

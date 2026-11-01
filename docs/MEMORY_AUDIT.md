@@ -1,3 +1,76 @@
+# CAUSA RAIZ DO SILÊNCIO: o synth de áudio do jogo é um stub que escreve zeros
+
+## O caminho até aqui, e duas conclusões minhas que estavam erradas
+
+| O que eu disse | O que a medição mostrou |
+|---|---|
+| "o guest não submete batch Ajm" | **falso**: submete 40.800 `BatchStart` de 88 bytes |
+| "`Ajm batches` nunca impresso logo não decodifica" | **enganoso**: a linha de resumo só é impressa ao encerrar, e a execução foi cortada por timeout |
+
+Instrumentando `run_job`, a verdade apareceu:
+
+```
+Ajm: job instance=524288 input_count=0 in0=0 out0=0 flags=80008001
+```
+
+`524288` = `0x80000` = `STATISTICS_INSTANCE`. **Todos os 94 jobs são consultas de estatística**, que
+retornam cedo por projeto. Ajm não carrega o áudio deste jogo — ele só é consultado.
+
+## A causa raiz
+
+O mixer deste jogo é **NGS2**, e `sceNgs2SystemRender` — a função que *produz* o áudio — é um stub
+que apaga o buffer:
+
+```c
+static ABI int32_t ngs2_render(uintptr_t system, Ngs2RenderBuffer *buffers, uint32_t count) {
+    (void)system;
+    for (uint32_t i=0;buffers && i<count;++i) if (buffers[i].buffer)
+        memset(buffers[i].buffer,0,buffers[i].size);   /* <- silencia o jogo */
+    ++ngs2_renders;
+    return 0;
+}
+```
+
+Os 13 imports NGS2 deste eboot estão todos implementados assim:
+
+```
+sceNgs2CalcWaveformBlock      sceNgs2PanGetVolumeMatrix   sceNgs2PanInit
+sceNgs2ParseWaveformData      sceNgs2RackCreateWithAllocator
+sceNgs2RackDestroy            sceNgs2RackGetVoiceHandle
+sceNgs2SystemCreateWithAllocator  sceNgs2SystemDestroy
+sceNgs2SystemRender           sceNgs2VoiceControl
+sceNgs2VoiceGetState          sceNgs2VoiceGetStateFlags
+```
+
+`sceNgs2VoiceGetState` zera o estado ("stopped"), então o guest não tem razão para acreditar que uma
+voz toca.
+
+## Por que isso explica exatamente o que foi medido
+
+```
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.76 ms,
+                    min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+```
+
+O caminho de saída está **correto**: pacing exato, sem starvation, port WASAPI real. O sintetizador
+entrega silêncio porque é um stub. `peak 0.0000` é a assinatura de um buffer apagado, não de um
+sistema de áudio quebrado.
+
+## O que isso muda no plano
+
+Implementar NGS2 não é "mais um import": é um sintetizador com voice graph, waveforms, pans e
+matrizes de volume. Não é uma correção de uma linha, e fingir que é seria pior que registrar o
+estado real.
+
+Duas direções, ambas mensuráveis:
+
+1. **Mapear o que o guest realmente usa** — quais waveforms, quantas vozes, que formato de saída.
+   O guest já chama `ParseWaveformData`/`CalcWaveformBlock`; se ele fornecer as amostras, um render
+   simples de mistura de vozes com volume e pan é viável sem reproduzir o NGS2 inteiro.
+2. **Verificar se há um caminho de áudio pré-mixado** (stream/bink) que traga conteúdo sem NGS2.
+
+Medir antes: quantas vozes ficam ativas e se `ParseWaveformData` recebe dados válidos.
+
 # Áudio: a cadeia abriu, o mixer roda, e o que falta é conteúdo decodificado
 
 ## Dois defeitos reais encontrados medindo, não supondo

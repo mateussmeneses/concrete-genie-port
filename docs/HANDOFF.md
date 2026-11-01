@@ -142,38 +142,40 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Descobrir por que o guest não submete batches Ajm (áudio roda mas sai silêncio).
+Decidir entre as duas rotas para o áudio, depois de medir qual é viável.
 
-**Feito nesta sessão (áudio):** dois defeitos reais, ambos medidos.
+**Causa raiz do silêncio, identificada nesta sessão:** o mixer deste jogo é **NGS2**, e
+`sceNgs2SystemRender` é um stub que apaga o buffer:
 
-1. `runtime_audio3d.c` recusava todo `PortOpen`, assumindo que o jogo cairia para estéreo. Ele não
-   cai: loga `brbDriverBase::Initialize3D(): FAILED TO OPEN 3D AUDIO PORT!` e nunca chama
-   `sceAudioOutOutput`. Recusar silenciava o jogo inteiro. Corrigido: port entregue, mistura sem
-   posicionamento.
-2. **31 imports sem nome** (não só Ajm) travavam o boot em `STOP: first unsupported PS4 import`.
-   Todos identificados pela tabela auditada `runtime/tools/aerolib.inl` — nenhum por palpite — e
-   implementados em `runtime/src/runtime_late.c`.
-
-**Estado medido do áudio:**
-
-```
-Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.76 ms,
-                    min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
-brbDriver::Initialize(): NUM CHANNELS ( 8 ) CLAMPED TO 2.
+```c
+memset(buffers[i].buffer,0,buffers[i].size);   /* runtime_extra.c, ngs2_render */
 ```
 
-Pacing correto, `starved 0`, mas **todos os buffers são zeros**. `Ajm batches` nunca é impresso: o
-guest não decodifica nada. O silêncio é ausência de conteúdo, não falha de saída.
+Os 13 imports NGS2 do eboot são stubs; `sceNgs2VoiceGetState` zera o estado ("stopped"), então o
+guest não tem motivo para acreditar que uma voz toca.
 
-Adicionei `peak`/`loud` ao stats porque "buffers entregues" e "buffers com som" são medições
-diferentes — uma porta alimentada com zeros reporta pacing perfeito.
+**Duas conclusões minhas corrigidas** (registradas em MEMORY_AUDIT):
+- "o guest não submete batch Ajm" — **falso**, submete 40.800 `BatchStart`.
+- "`Ajm batches` nunca impresso logo não decodifica" — **enganoso**; a linha de resumo só sai ao
+  encerrar e a execução foi cortada por timeout. Instrumentando `run_job`: todos os 94 jobs são
+  `STATISTICS_INSTANCE` (`instance=524288`), que retornam cedo por projeto. Ajm não é o mixer.
 
-**Próximo passo único:** rastrear quem chama `sceAjmBatchStartBuffer` e se
-`sceAjmModuleRegister` recebeu o codec, imprimindo `jobs`/`frames_decoded` por janela. Se o guest
-nunca chama, o problema está antes (registro de codec ou falta de arquivo de áudio); se chama e
-`frames_decoded` fica 0, o defeito está no decodificador.
+**O caminho de saída está correto** e isso importa: `938 buffers/5s (expected 937)`, `starved 0`,
+`max gap 6.76 ms`, WASAPI real. O que falta é o sintetizador, não a saída.
+
+**Próximo passo único — medir antes de escolher:**
+
+1. Quantas vozes ficam ativas e se `sceNgs2ParseWaveformData`/`CalcWaveformBlock` recebem dados
+   válidos. Se o guest fornece as amostras, um render simples (mistura de vozes com volume e pan)
+   produz áudio sem reproduzir o NGS2 inteiro.
+2. Se houver conteúdo pré-mixado (stream/bink) que dispense NGS2.
+
+Rota 1 é preferível se as waveforms chegarem válidas, porque é incremental e verificável pelo mesmo
+`peak`/`loud` já instrumentado.
 
 **Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
+**Verificado e funcionando:** cena 3D a 30 FPS, input move a câmera (99,94% dos pixels diferem vs
+controle sem input), 8.100+ frames, boot sem `STOP` de import.**Ainda não verificado:** pintura (R2), save/load, colisão, direção do mapeamento de input.
 
 **Verificado nesta sessão: input move a câmera.**
 
