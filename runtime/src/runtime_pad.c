@@ -491,6 +491,15 @@ static ABI int32_t pad_read_state(int32_t handle, PadData *data) {
     pthread_mutex_lock(&lock);
     sample(data); ++reads;
     pthread_mutex_unlock(&lock);
+    /* Whether the guest polls the pad at all separates "the menu ignores input" from "the guest
+     * never asks for input", which need different fixes. */
+    static size_t next_report;
+    if (reads == 1 || reads >= next_report) {
+        next_report = reads + 600;
+        printf("Runtime: pad read #%zu: buttons=0x%08x lx=%u ly=%u rx=%u ry=%u\n", reads,
+               data->buttons, data->left_x, data->left_y, data->right_x, data->right_y);
+        fflush(stdout);
+    }
     return 0;
 }
 /* Buffered read: the port samples once per call, so one entry is returned. */

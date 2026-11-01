@@ -10,7 +10,7 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | **menu principal alcançado; gameplay não testado** |
+| Bloqueio | `abort` sem causa | **boot estaciona no frame ~1800 (pós-menu)** |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **36** |
 | Leitura do dump | 0 arquivos | **4.654 leituras, 109.826.114 bytes** |
@@ -142,7 +142,29 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Testar input e navegação no menu — o jogo já chega nele.
+Descobrir por que o boot estaciona no frame ~1800.
+
+O avanço desta sessão: `sceSaveDataGetParam` era o import que barrava; implementado, o boot saiu de
+`exit 20` (frame 1200) para `exit 124` (frame 1800). Agora ele **para de apresentar** em ~1800 sem
+fault e sem erro — sintoma diferente, ainda não diagnosticado.
+
+Suspeitas em ordem de probabilidade:
+1. **Espera de IO/save** — `sceSaveData*` foi recentemente ligado; um mount ou leitura pode estar
+   bloqueando. Medir com `GOW3_FILE_TRACE=1` se há um open pendente depois do frame 1800.
+2. **Saturação ao entrar em 3D** — 2,8 M draws num único frame; o pipeline pode estar levando
+   minutos por frame em vez de travar. Medir o intervalo entre apresentações.
+3. **Diálogo modal** — o jogo pode estar esperando confirmação de um diálogo do sistema.
+
+Reprodução:
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_FILE_TRACE=1 GOW3_DUMP_DIR="C:/projetos/concrete-genie-port/.cg/audit/tl9"     GOW3_FRAME_DUMP_AT=1900,2400,3000 GOW3_DUMP_SYNC=1     timeout 230 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 200
+```
+
+Critério de conclusão: o contador de frames passa de 1800 e uma captura mostra conteúdo novo.
+Depois disso, testar input no menu (o guest já lê o pad: `pad read #1801`, com drift real do
+DualSense em `lx=130 ly=120 rx=96 ry=136`).
 
 O menu principal é alcançado por volta do frame 1800. O próximo passo deixa de ser diagnóstico de
 renderização e passa a ser interação: apertar um botão e ver o menu responder.

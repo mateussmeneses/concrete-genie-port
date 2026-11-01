@@ -1,3 +1,77 @@
+# `sceSaveDataGetParam`: import faltante que barrava a progressão
+
+## O que aconteceu
+
+Depois do menu, o boot parava em:
+
+```
+STOP: first unsupported PS4 import: XgvSuIdnMlw#libSceSaveData (index 139)
+API: name not resolved; see analysis.json import_name_hints
+```
+
+Identificado por aerolib: **`sceSaveDataGetParam`** — o par de leitura do
+`sceSaveDataSetParam`, que já existia. O jogo o chama ao montar a lista de slots de save.
+
+Duas causas empilhadas:
+1. **Sem implementação.** Só o setter existia.
+2. **NID ausente da tabela de nomes.** `XgvSuIdnMlw` não estava em `import_names.inc`, então o
+   resolver não conseguia mapear o índice para o nome — mesmo que a função existisse, nada a
+   ligaria. Foi preciso adicionar as duas coisas.
+
+## Implementação
+
+`save_get_param` é simétrico ao setter, com os mesmos 5 tipos (ALL, título, subtítulo, detalhe,
+user_param), devolvendo `ERR_PARAMETER` para tipo desconhecido ou buffer curto em vez de escrever
+além do limite.
+
+## Resultado medido
+
+Antes: `exit 20` no import 139 (~frame 1200).
+Depois: `exit 124` (timeout), alcançando o frame 1800 — **passou do bloqueio**.
+
+O boot agora **estaciona em torno do frame 1800** em vez de parar num import. Não há fault; o
+processo simplesmente não avança. Isso é um sintoma diferente e ainda não diagnosticado: pode ser
+espera de save/IO, diálogo modal, ou o salto para geometria 3D saturado (2,8 M draws num frame).
+
+# Input: o guest lê o pad; e dois achados novos
+
+## O guest realmente consulta o input
+
+`scePadReadState` é chamado 1800+ vezes por execução. E os valores não são neutros:
+
+```
+Runtime: pad read #1:   buttons=0x00000000 lx=128 ly=128 rx=128 ry=128
+Runtime: pad read #601: buttons=0x00000000 lx=130 ly=120 rx=96  ry=136
+```
+
+`lx=130 ly=120 rx=96 ry=136` é **drift real do DualSense físico** — ou seja, o estado do
+SDL3 chega ao guest. O caminho de input funciona; `buttons=0` porque ninguém apertou nada durante
+aquela execução.
+
+## Achado 1: tela preta depois do menu (P0)
+
+| Frame | Não-preto | Draws no frame |
+|---|---|---|
+| 1800 | **100%** (menu, paleta dourada) | ~950.000 |
+| 1900 | **0,00%** (preta) | 3.587.201 total |
+
+Frame 1900 submete **3,58 milhões de draws** e produz uma imagem inteiramente preta. Isso não é
+"nada foi desenhado" — é muito desenhado e nada aparece. Bugs plausíveis: alvo de renderização
+errado, barreira faltando, ou o clamp de `SanitizeCopyLayers` descartando conteúdo.
+
+## Achado 2: `GOW3_PAD_FILE` trava a execução (P0)
+
+Com `GOW3_PAD_FILE` apontando para um arquivo (mesmo vazio), a execução parou no frame 700 e
+**saiu sem fault e sem erro**. Sem a variável, a mesma build chega ao frame 5500.
+
+```
+sem GOW3_PAD_FILE : flips=5500  (exit 124, timeout)
+com GOW3_PAD_FILE : flips=700   (saiu)
+```
+
+Isso é um bug real no caminho de input scriptado, não uma medição inválida: a variável deveria ser
+inerte quando o arquivo está vazio. Registrado como suspeita medida; a causa não foi isolada.
+
 # O jogo chega ao MENU PRINCIPAL — medido por contagem de draws
 
 ## Medição que separa "tela de loading" de "cena"

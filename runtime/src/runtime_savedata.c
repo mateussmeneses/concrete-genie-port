@@ -191,6 +191,36 @@ static ABI int32_t save_umount(const MountPoint *point) {
     pthread_mutex_unlock(&lock);
     return slot>=0 ? 0 : ERR_NOT_FOUND;
 }
+/* sceSaveDataGetParam(mountPoint, paramType, buffer, bufferSize): the read counterpart of
+ * sceSaveDataSetParam. The game calls it while building its save slot list, so leaving it
+ * unimplemented stops the boot at the import trap right after the menu. */
+static ABI int32_t save_get_param(const MountPoint *point, uint32_t type, void *buffer, uint32_t size) {
+    if (!initialized) return ERR_NOT_INITIALIZED;
+    if (!buffer) return ERR_PARAMETER;
+    pthread_mutex_lock(&lock);
+    const int slot=slot_of(point);
+    if (slot<0) { pthread_mutex_unlock(&lock); return ERR_NOT_MOUNTED; }
+    Param p; read_param(slots[slot].meta,&p);
+    int32_t result=0;
+    switch (type) {
+    case 0: /* ALL: the caller sizes the whole struct. */
+        if (size<sizeof(Param)) { result=ERR_PARAMETER; break; }
+        memcpy(buffer,&p,sizeof(p));
+        break;
+    /* The string forms write at most `size` bytes, NUL-terminated, and report the size
+     * actually written so the caller can distinguish "empty" from "truncated". */
+    case 1: snprintf((char *)buffer,size,"%s",p.title); break;
+    case 2: snprintf((char *)buffer,size,"%s",p.subtitle); break;
+    case 3: snprintf((char *)buffer,size,"%s",p.detail); break;
+    case 4:
+        if (size<sizeof(p.user_param)) { result=ERR_PARAMETER; break; }
+        memcpy(buffer,&p.user_param,sizeof(p.user_param));
+        break;
+    default: result=ERR_PARAMETER; break;
+    }
+    pthread_mutex_unlock(&lock);
+    return result;
+}
 static ABI int32_t save_set_param(const MountPoint *point, uint32_t type, const void *buffer, uint64_t size) {
     if (!initialized) return ERR_NOT_INITIALIZED;
     if (!buffer) return ERR_PARAMETER;
@@ -335,7 +365,8 @@ static const RuntimeExport exports[]={
     {"sceSaveDataInitialize",save_initialize}, {"sceSaveDataInitialize2",save_initialize},
     {"sceSaveDataInitialize3",save_initialize}, {"sceSaveDataTerminate",save_terminate},
     {"sceSaveDataMount",save_mount}, {"sceSaveDataMount2",save_mount2}, {"sceSaveDataUmount",save_umount},
-    {"sceSaveDataSetParam",save_set_param}, {"sceSaveDataSaveIcon",save_icon}, {"sceSaveDataDelete",save_delete},
+    {"sceSaveDataSetParam",save_set_param}, {"sceSaveDataGetParam",save_get_param},
+    {"sceSaveDataSaveIcon",save_icon}, {"sceSaveDataDelete",save_delete},
     {"sceSaveDataDirNameSearch",save_search},
     {"sceSaveDataSetupSaveDataMemory",memory_setup}, {"sceSaveDataGetSaveDataMemory",memory_get},
     {"sceSaveDataSetSaveDataMemory",memory_set},

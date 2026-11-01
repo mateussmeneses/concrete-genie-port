@@ -173,7 +173,23 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Evidência: `docs/evidence/prompt04/boot-70-draws.txt`, `boot-71-scene.txt`.
 - **Não é gameplay:** sem input, áudio ou movimentação testados.
 
-**P0-15: conteúdo cresce entre frames — investigação anterior**
+**P0-15: `sceSaveDataGetParam` — RESOLVIDO**
+
+- Sintoma: `exit 20`, `STOP: ... XgvSuIdnMlw#libSceSaveData (index 139)`.
+- Duas causas: a função não existia, e o NID `XgvSuIdnMlw` não estava em `import_names.inc`
+  (sem isso o resolver não liga nada, mesmo com a função presente).
+- Correção: `save_get_param` (5 tipos, simétrico ao setter) + entrada na tabela de nomes.
+- Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
+  `docs/evidence/prompt04/boot-77-past-savedata.txt`.
+
+**P0-16: boot estaciona no frame ~1800 — ABERTO**
+
+- Sem fault e sem erro; o processo para de apresentar em ~1800.
+- Suspeitas: espera de save/IO, diálogo modal, ou saturação ao entrar em geometria 3D
+  (2,8 M draws num único frame).
+- Bloqueia a próxima etapa (gameplay).
+
+**P0-17: conteúdo cresce entre frames — investigação anterior**
 
 - Frame 300: 1,96% não-preto, caixa `(512,432,1412,584)`, cores `#75622e`/`#024d76`.
 - Frame 1200: **3,71%** não-preto, caixa `(148,224,1772,736)`, cores `#ffffff` e outras.
