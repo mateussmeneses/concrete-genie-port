@@ -142,32 +142,40 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Instrumentar `sceAjmInstanceCreate` para saber se o motor chega a criar instância de decodificação.
+Retomar a jogabilidade (pintura/save) em vez do áudio: não há defeito de runtime de áudio a corrigir.
 
-**Estabelecido nesta sessão, por medição:**
+**Medido nesta sessão — `sceAjmInstanceCreate` nunca é chamado.** Com `GOW3_AUDIO_TRACE=1` (já
+existente), a contagem de `Audio trace` foi **0**. O motor não cria decodificador, não abre `.at9`, e
+entrega buffers zerados.
+
+**Tabela de eliminação do áudio** (tudo medido, nada suposto):
 
 | Camada | Estado |
 |---|---|
-| Port WASAPI 8ch→stereo | correto (`938 buffers/5s`, `starved 0`) |
-| Ganho / remap | correto (neutro) |
-| Buffer do guest | **zeros** (`raw_peak 0.0000` antes de converter) |
+| Saída/pacing | `938 buffers/5s (expected 937)`, `starved 0`, gap 6.4 ms |
+| Ganho | `volume=32768`/`VOLUME_0DB=32768` → 1.0 |
+| Remap de canal | identidade |
+| Estado do port | `output=0x01`, canais corretos |
+| Init do AudioOut | `call 1 -> 0` (uma vez, sucesso) |
 | User event do driver | **corrigido** (`EVENT QUEUE FULL` 4 → 0) |
-| Pak do jogo | **aberto** (`concretegenie-ps4_0_p.pak`) |
-| Assets de áudio | **existem**: 1.358 `.at9` + 417 `.bnk` |
-| Threads de áudio | `snd_stream_parsing_thread`, `snd_stream_reader_thread`, `AudioThread` |
+| Instância Ajm | **nunca criada** |
+| Asset `.at9` | **nenhum aberto** (130 aberturas de arquivo) |
+| Assets no pak | **existem**: 1.358 `.at9` + 417 `.bnk`, ATRAC9 = `codec=1` |
+| NGS2 | 0 chamadas |
+| Buffer do guest | `raw_peak 0.0000` |
 
-O jogo usa áudio **em streaming**, não sintetizado — por isso NGS2 nunca é chamado. Os assets são
-ATRAC9, exatamente o codec que o Ajm registrou (`codec=1`). O formato fecha.
+**Conclusão:** o runtime de áudio está correto em todas as camadas que controla. O silêncio é o motor
+não tocando nada. Corrigir exigiria rastrear código do guest em execução — não é um patch de import, e
+inventar um seria pior que registrar o limite.
 
-**O defeito:** o guest **nunca abre um `.at9`**, apesar de 130 aberturas de arquivo (i18n, binários,
-pak). Não é o decodificador, nem a saída, nem os dados — é o motor decidindo que não há nada para
-tocar.
+**Decisão:** parar de investir no áudio por ora e voltar ao critério do Prompt 04, que é jogabilidade.
+O áudio está auditado e documentado; falta conteúdo do motor, não infraestrutura.
 
-**Próximo passo único:** instrumentar `sceAjmInstanceCreate` para verificar se alguma instância de
-decodificação é criada. Se nenhuma é, o motor nunca decidiu tocar; a causa está acima do Ajm. Se
-alguma é criada mas nenhum `.at9` é aberto, a falha está na resolução do stream.
+**Próximo passo único:** pintura (R2) — o mecanismo central do jogo. Usar `GOW3_PAD_FILE` com R2 e
+comparar **o mesmo índice de frame** contra controle sem input (o método que revelou o movimento de
+câmera; diff entre frames consecutivos não serve porque a cena anima sozinha).
 
-**Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
+**Método que está funcionando:****Método que está funcionando:****Método que está funcionando:** instrumentar entrada (contagem + argumentos) em vez de ler o stub e
 concluir. Foi assim que a hipótese NGS2 caiu e que este defeito apareceu.
 
 **Verificado e funcionando:** cena 3D a 30 FPS**Verificado e funcionando:** cena 3D a 30 FPS; input move a câmera (99,94% dos pixels diferem vs

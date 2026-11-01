@@ -1,3 +1,54 @@
+# Áudio: cada camada do runtime verificada correta — o silêncio vem do conteúdo do motor
+
+## Eliminação completa, uma camada por vez
+
+| Suspeita | Medição | Veredito |
+|---|---|---|
+| Saída/pacing | `938 buffers/5s (expected 937)`, `starved 0`, gap 6.4 ms | correto |
+| Ganho de volume | `volume=32768` / `VOLUME_0DB=32768` → 1.0 | correto |
+| Remap de canal | identidade quando não há conteúdo | correto |
+| Estado do port | `audio_state` reporta `output=0x01`, canais certos | correto |
+| Dupla inicialização | `AudioInit: call 1 -> 0` — uma vez, sucesso | correto |
+| User event do driver | corrigido: `EVENT QUEUE FULL` 4 → 0 | **corrigido** |
+| Instância de decodificação | `sceAjmInstanceCreate` **nunca chamado** | motor não decodifica |
+| Abertura de asset | **nenhum `.at9` aberto** em 130 aberturas | motor não pede |
+| Assets no container | 1.358 `.at9` + 417 `.bnk` | existem |
+| Codec | ATRAC9 no pak = `codec=1` registrado | confere |
+| NGS2 | 0 chamadas em 4 entradas | não é o mixer |
+| Buffer entregue | `raw_peak 0.0000` na entrada | **zeros do guest** |
+
+## A conclusão, agora sustentada por eliminação
+
+O runtime de áudio está correto em **todas** as camadas que ele controla. O guest:
+
+1. inicializa AudioOut uma vez com sucesso,
+2. abre 4 portas e as alimenta no ritmo exato,
+3. **nunca cria instância de decodificação**,
+4. **nunca abre um asset de áudio**,
+5. e entrega buffers zerados.
+
+Isso é o comportamento de um motor cujo subsistema de som não chegou a tocar nada — não de uma
+falha no runtime. As três hipóteses que eu havia levantado e que foram refutadas por medição:
+NGS2 como mixer (0 chamadas), falta de assets (1.358 existem), e falha na API de stream
+(`snd_stream_*` roda).
+
+## Por que não corrigi
+
+Não há um defeito de runtime identificado para corrigir. As opções restantes são investigar o estado
+interno do motor (por que ele decide não tocar), o que exige rastrear código do guest em execução —
+não um patch de import. Registro isso como o limite honesto desta auditoria em vez de inventar uma
+correção.
+
+## O que esta auditoria entregou de concreto
+
+- `EVENT QUEUE FULL` do driver de áudio eliminado (bug real, medido antes/depois).
+- 31 imports antes sem nome implementados, incluindo dois que causavam falha visível
+  (`sceKernelAddUserEvent`, `sceAjmMemoryRegister`).
+- Port 3D entregue de verdade em vez de recusado — sem isso o jogo logava
+  `FAILED TO OPEN 3D AUDIO PORT` e nem inicializava o áudio.
+- Instrumentação permanente (`GOW3_TRACE_AUDIO_IN`, `GOW3_TRACE_NGS2`, `GOW3_TRACE_AJM`,
+  `GOW3_TRACE_LATE`, `peak`/`loud`) para que a próxima sessão continue de onde parou.
+
 # Áudio: infraestrutura completa, assets existem, e o guest nunca os pede
 
 ## O que está estabelecido por medição

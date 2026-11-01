@@ -96,6 +96,15 @@ static ABI int32_t audio_init(void) {
     int32_t r=initialized ? ERR_ALREADY_INIT : 0;
     initialized=1;
     pthread_mutex_unlock(&table_lock);
+    /* A second AudioOutInit returning ALREADY_INIT is correct per the API, but a caller that treats
+     * any non-zero init result as fatal would abandon its audio subsystem and then still pump silent
+     * buffers. Counting it distinguishes "the guest asked twice" from "the guest never asked". */
+    {
+        static const int tr=-1; static int on; static unsigned long calls;
+        if (tr==-1) on=getenv("GOW3_TRACE_AUDIO_IN")!=NULL;
+        if (on && (++calls<=5 || (calls%100)==0))
+            fprintf(stderr,"AudioInit: call %lu -> %d\n",calls,r);
+    }
     return r;
 }
 static ABI int32_t audio_open(int32_t user, int32_t type, int32_t index, uint32_t length, uint32_t freq, uint32_t param) {

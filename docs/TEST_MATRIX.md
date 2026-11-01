@@ -193,6 +193,16 @@ import). O bloqueio anterior era determinístico em 3 execuções.
   **0,0 ms**; frames 2.100 → **9.900**; capturas pós-menu pretas → **100% de conteúdo**.
 - Evidência: `boot-92-fix.txt`.
 
+**P0-29: áudio — todas as camadas do runtime verificadas corretas (silêncio vem do motor)**
+
+- Eliminação por medição: saída (`938 buffers/5s`, `starved 0`), ganho (1.0), remap (identidade),
+  estado do port (`output=0x01`), init única (`AudioInit: call 1 -> 0`) — **todos corretos**.
+- `sceAjmInstanceCreate` **nunca chamado**; **nenhum `.at9` aberto** em 130 aberturas; assets existem
+  (1.358 `.at9`), codec confere (ATRAC9 = `codec=1`); NGS2 com 0 chamadas; buffer do guest zerado.
+- **Nenhum defeito de runtime identificado.** O motor não chega a tocar nada; investigar exige
+  rastrear código do guest em execução, não um patch de import.
+- Evidência: `boot-106-ajm-instances.txt`, `boot-107-audio-init.txt`.
+
 **P0-28: áudio — infraestrutura completa, assets existem, guest nunca os pede**
 
 - Pak **aberto**: `open(.../concretegenie-ps4_0_p.pak)`.

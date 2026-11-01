@@ -1,0 +1,715 @@
+Host scheduling: 1 ms timer resolution (GOW3_TIMER_RES=0 keeps 15.6 ms)
+Host scheduling: power throttling off (GOW3_POWER_THROTTLE=1 keeps it)
+Window: Windowed
+GPU: NVIDIA GeForce RTX 5060 Laptop GPU, driver NVIDIA 621.1.0.0, Vulkan 1.4.357
+GPU: pageable video memory on (when the card is full, the driver moves memory to system RAM)
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_shader_explicit_vertex_parameter unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_EXT_shader_stencil_export unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_shader_image_load_store_lod unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_gcn_shader unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_shader_trinary_minmax unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_AMD_mixed_attachment_samples unavailable.
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:309 operator(): Extension VK_EXT_shader_atomic_float2 unavailable.
+GPU: maintenance5 on, maintenance8 on, feedback loop layouts on, 2D views of 3D on
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=1, number_format=9 is not fully supported (vk_format=R8Srgb, missing features={ ColorAttachment })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=3, number_format=9 is not fully supported (vk_format=R8G8Srgb, missing features={ SampledImage | ColorAttachment | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=9, number_format=1 is not fully supported (vk_format=A2B10G10R10SnormPack32, missing features={ SampledImage | StorageImage | ColorAttachment | TransferSrc | TransferDst | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=9, number_format=5 is not fully supported (vk_format=A2B10G10R10SintPack32, missing features={ SampledImage | StorageImage | ColorAttachment | TransferSrc | TransferDst | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=13, number_format=4 is not fully supported (vk_format=R32G32B32Uint, missing features={ SampledImage | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=13, number_format=5 is not fully supported (vk_format=R32G32B32Sint, missing features={ SampledImage | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=13, number_format=7 is not fully supported (vk_format=R32G32B32Sfloat, missing features={ SampledImage | TransferSrc | TransferDst })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=16, number_format=0 is not fully supported (vk_format=R5G6B5UnormPack16, missing features={ StorageImage | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=17, number_format=0 is not fully supported (vk_format=A1R5G5B5UnormPack16, missing features={ StorageImage | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=18, number_format=0 is not fully supported (vk_format=R5G5B5A1UnormPack16, missing features={ StorageImage | ColorAttachment | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:905 CollectImageFormatInfo: Surface format data_format=19, number_format=0 is not fully supported (vk_format=B4G4R4A4UnormPack16, missing features={ StorageImage | ColorAttachment | StorageReadWithoutFormat | StorageWriteWithoutFormat })
+GPU [Render.Vulkan] <Warning> vk_instance.cpp:915 CollectImageFormatInfo: Depth format z_format=1, stencil_format=1 is not fully supported (vk_format=D16UnormS8Uint, missing features={ DepthStencilAttachment })
+Swapchain: VSync on (Fifo)
+Scheduler 000000005179C5A8: commands recorded from thread '' (caller medievil-runtime.exe+0x116385)
+GPU: deferred image readback disabled (64 copies, 64 MiB pending limit)
+GPU: draw preparation workers: 8 (+1 scanner, 24 hardware threads)
+Object motion: on (4194304 vertices per frame)
+Upscaler: FSR 3.1 available (on) on scene color before compute shader 000000009a9cf8a9
+Overlay: menu ready (Insert or R3+L2)
+Pipeline startup: on demand, no bulk warm-up
+GPU: window and Vulkan presenter ready; SDK 0x05008001, 327 HLE symbols
+GPU: vblank follows the display refresh rate, 165 Hz
+VideoOut: vblank 60 Hz, frame limit 0 FPS
+Swapchain: present #1 at 0 ms (0.00 fps avg) -> Success
+Swapchain: present #2 at 15 ms (133.33 fps avg) -> Success
+Swapchain: present #3 at 32 ms (93.75 fps avg) -> Success
+Guest TCB loads redirected to the TEB TLS slot: 2
+Mapped 106409920 bytes, 12 segments; applied 465938 relocations
+Starting linked module 0 at image offset 0x62a0000; native bindings=210
+Runtime: application heap API registered
+Runtime: direct allocation offset=0x0, size=6291456 bytes, type=0
+Runtime: mapped direct memory 0000001200000000, size=6291456, prot=0x2 (guest hint 0000000000000000, flags 0x0)
+Runtime: direct allocation offset=0x600000, size=134217728 bytes, type=3
+Runtime: mapped direct memory 0000004000000000, size=134217728, prot=0x32 (guest hint 0000004000000000, flags 0x90)
+Runtime: direct allocation offset=0x8600000, size=5161025536 bytes, type=0
+Runtime: memory pool expanded by 5161025536 bytes at 0x8600000
+Runtime: reserved virtual range 0000001000000000, size=8589934592
+Runtime: reserved virtual range 0000002000000000, size=8589934592
+Runtime: reserved virtual range 0000003000000000, size=1073741824
+Module 0 initializer returned 0
+Starting linked module 1 at image offset 0x63b0000; native bindings=210
+Module 1 initializer returned 0
+Starting linked module 2 at image offset 0x6540000; native bindings=210
+Module 2 initializer returned 0
+Entering original x86-64 code at guest offset 0x37d58d0
+Runtime: _init_env returned (verified libc implementation: RET)
+AdditionalArgs before fixup = ../../../ConcreteGenie/ConcreteGenie.uproject 
+AdditionalArgs after fixup = ../../../ConcreteGenie/ConcreteGenie.uproject -pak
+File root is /app0/!
+Runtime: open(/app0/symbols/shipping-symbols.bin) -> not found
+Runtime: open(/app0/build/ps4/symbols/shipping-symbols.bin) -> not found
+Runtime: open(/app0/concretegenie/symbols/shipping-symbols.bin) -> not found
+Failed to locate symbol files on /app0 or /app0/concretegenie/symbols s!
+Runtime: open(shipping-symbols.bin) -> not found
+Failed to load symbols from shipping-symbols.bin!
+Runtime: open(shipping-symbolmetadata.txt) -> not found
+FIOS2: built with SDK version 0x05008001
+Runtime: guest thread 'SceFiosCallback' created (stack=65536, prio=260)
+Runtime: guest thread 'SceFiosIO' created (stack=81920, prio=260)
+Runtime: internal system module 0xd7 loaded (host implementation)
+Runtime: guest thread 'SceFiosIO /' created (stack=81920, prio=260)
+Runtime: AppContent host provider loaded; references=1
+Runtime: AppContent initialized; offline base-game profile, no mounted add-ons
+Runtime: temporary data mounted at /temp0 -> C:/projetos/concrete-genie-port/.cg/audit/run/user/temp0
+Runtime: open(/app0/deepfiles) -> not found
+Runtime: system module 0x83 loaded (host implementation)
+Runtime: PlayGo initialized; 1 chunks, all installed locally
+Runtime: open(/app0/concretegenie/saved/paks) -> not found
+Runtime: open(/app0/engine/content/paks) -> not found
+Runtime: open(/app0/concretegenie/saved/paks) -> not found
+Runtime: open(/app0/engine/content/paks) -> not found
+Runtime: guest thread 'TaskGraphThreadNP 0' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadNP 1' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadNP 2' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadNP 3' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadHP 4' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadHP 5' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadHP 6' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadHP 7' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadBP 8' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadBP 9' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadBP 10' created (stack=393216, prio=700)
+Runtime: guest thread 'TaskGraphThreadBP 11' created (stack=393216, prio=700)
+Runtime: guest thread 'PoolThread 0' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 1' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 2' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 3' created (stack=262144, prio=700)
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/res_index.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/plurals.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/lang/en_us_posix.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/lang/en_us.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/en.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/region/en_us_posix.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/region/en_us.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/region/en.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/zoneinfo64.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/likelysubtags.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/en_us_posix.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/supplementaldata.res) -> not found
+Runtime: UserService initialized (user 1 logged in)
+Runtime: open(/app0/engine/saved/config/ps4/editorsettings.ini) -> not found
+Runtime: guest thread 'HttpManagerThread' created (stack=262144, prio=700)
+Runtime: system module 0x9c loaded (host implementation)
+Runtime: system module 0x85 loaded (host implementation)
+Runtime: UserService initialized (user 1 logged in)
+Runtime: system module 0xa6 loaded (host implementation)
+Runtime: system module 0xd3 loaded (host implementation)
+Runtime: system module 0x81 loaded (host implementation)
+Runtime: UserService initialized (user 1 logged in)
+Runtime: guest thread 'OnlineAsyncTaskThreadPS4 Defau' created (stack=262144, prio=700)
+Runtime: system module 0x102 loaded (host implementation)
+Runtime: system module 0x19 loaded (host implementation)
+NpToolkit2: Core::init refused (0x80550003); no local PSN in this build
+Runtime: guest thread 'OnlineAsyncTaskThreadNull Defa' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 4' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 5' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 6' created (stack=262144, prio=700)
+Runtime: guest thread 'PoolThread 7' created (stack=262144, prio=700)
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/ar.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/cs.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/da.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/de.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/el.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/en_gb.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/lang/en_001.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/en_001.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/region/en_gb.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/region/en_001.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/region/en_001.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/es_419.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/es.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/region/es_419.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/region/es.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/fi.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/fr.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/hu.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/it.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/ja.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/ko.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/nl.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/nb.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/nb.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/pl.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/lang/pt_br.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/pt.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/region/pt_br.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/region/pt.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/ro.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/ru.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/sv.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/th.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/tr.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/zh_hans.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/zh.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/lang/zh_hant.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: UserService initialized (user 1 logged in)
+Runtime: system module 0x96 loaded (host implementation)
+Runtime: system module 0x8f loaded (host implementation)
+Move: subsystem initialised; no motion controller present
+Runtime: guest thread 'SystemEventGatherThreadPS4' created (stack=262144, prio=700)
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/en_us.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/numberingsystems.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/curr/supplementaldata.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/icudt53l/curr/en_us.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/curr/en.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/concretegenie/saved/preferences/editorkeybindings.txt) -> not found
+Runtime: guest thread 'SubmitDoneAsyncTaskThreadPS4' created (stack=262144, prio=700)
+Runtime: guest thread 'SubmitGPUCommandsAsyncTaskThre' created (stack=262144, prio=700)
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/brkitr/en_us.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/brkitr/en.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: guest thread 'FMessageBus.Router' created (stack=262144, prio=700)
+Runtime: system module 0xa5 loaded (host implementation)
+Runtime: system module 0xa5 loaded (host implementation)
+Runtime: sceKernelLoadStartModule(binkpluginps4.prx) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx/binkpluginps4.prx) -> not available
+Runtime: sceKernelLoadStartModule(/app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx//app0/concretegenie/content/bink) -> not available
+Runtime: open(/app0/concretegenie/content/bink/binkpluginps4.prx) -> not found
+Runtime: sceKernelLoadStartModule(/app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx//app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(binkps4.prx) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx/binkps4.prx) -> not available
+Runtime: sceKernelLoadStartModule(/app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx//app0/concretegenie/content/bink) -> not available
+Runtime: open(/app0/concretegenie/content/bink/binkps4.prx) -> not found
+Runtime: sceKernelLoadStartModule(/app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx//app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(bink2ps4.prx) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx/bink2ps4.prx) -> not available
+Runtime: sceKernelLoadStartModule(/app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx//app0/concretegenie/content/bink) -> not available
+Runtime: open(/app0/concretegenie/content/bink/bink2ps4.prx) -> not found
+Runtime: sceKernelLoadStartModule(/app0/concretegenie/content/bink) -> not available
+Runtime: sceKernelLoadStartModule(/app0/prx//app0/concretegenie/content/bink) -> not available
+Dlsym: handle=0 name="BinkPluginInit" slot=000000080618f770
+Dlsym:   resolved -> 00007ff664f99b00
+Dlsym: handle=0 name="BinkPluginShutdown" slot=000000080618f778
+Dlsym:   resolved -> 00007ff664f99b10
+Dlsym: handle=0 name="BinkPluginOpen" slot=000000080618f750
+Dlsym:   resolved -> 00007ff664f99b20
+Dlsym: handle=0 name="BinkPluginClose" slot=000000080618f780
+Dlsym:   resolved -> 00007ff664f99b80
+Dlsym: handle=0 name="BinkPluginInfo" slot=000000080618f730
+Dlsym:   resolved -> 00007ff664f99b90
+Dlsym: handle=0 name="BinkPluginGoto" slot=000000080618f748
+Dlsym:   resolved -> 00007ff664f99ba0
+Dlsym: handle=0 name="BinkPluginProcessBinks" slot=000000080618f788
+Dlsym:   resolved -> 00007ff664f99bb0
+Dlsym: handle=0 name="BinkPluginLimitSpeakers" slot=000000080618f790
+Dlsym:   resolved -> 00007ff664f99bc0
+Dlsym: handle=0 name="BinkPluginLoop" slot=000000080618f738
+Dlsym:   resolved -> 00007ff664f99bd0
+Dlsym: handle=0 name="BinkPluginPause" slot=000000080618f740
+Dlsym:   resolved -> 00007ff664f99be0
+Dlsym: handle=0 name="BinkPluginDraw" slot=000000080618f798
+Dlsym:   resolved -> 00007ff664f99bf0
+Dlsym: handle=0 name="BinkPluginSetPerFrameInfo" slot=000000080618f7a0
+Dlsym:   resolved -> 00007ff664f99c00
+Dlsym: handle=0 name="BinkPluginScheduleToTexture" slot=000000080618f7a8
+Dlsym:   resolved -> 00007ff664f99c10
+Dlsym: handle=0 name="BinkPluginScheduleOverlay" slot=000000080618f7b0
+Dlsym:   resolved -> 00007ff664f99c20
+Dlsym: handle=0 name="BinkPluginAllScheduled" slot=000000080618f7b8
+Dlsym:   resolved -> 00007ff664f99c30
+Dlsym: handle=0 name="BinkPluginIOPause" slot=000000080618f7c0
+Dlsym:   resolved -> 00007ff664f99c40
+Dlsym: handle=0 name="BinkPluginTurnOnGPUAssist" slot=000000080618f7c8
+Dlsym:   resolved -> 00007ff664f99c50
+Dlsym: handle=0 name="BinkPluginError" slot=000000080618f7d0
+Dlsym:   resolved -> 00007ff664f99c60
+Dlsym: handle=0 name="BinkPluginVolume" slot=000000080618f7d8
+Dlsym:   resolved -> 00007ff664f99c70
+Dlsym: handle=0 name="BinkPluginSpeakerVolumes" slot=000000080618f7e0
+Dlsym:   resolved -> 00007ff664f99c80
+Dlsym: handle=0 name="BinkPluginSetHdrSettings" slot=000000080618f7e8
+Dlsym:   resolved -> 00007ff664f99c90
+Dlsym: handle=0 name="BinkPluginSetAlphaSettings" slot=000000080618f7f0
+Dlsym:   resolved -> 00007ff664f99ca0
+Dlsym: handle=0 name="BinkPluginSetPath" slot=000000080618f7f8
+Dlsym:   resolved -> 00007ff664f99cb0
+Bink: plugin path set to "/app0/concretegenie/content/bink" (no video loaded)
+Project file not found: ../../../ConcreteGenie/ConcreteGenie.uprojectBink Error: (null)
+Texture cache: shared image memory on (NVIDIA GeForce RTX 5060 Laptop GPU)
+Runtime: pad opened for user 1 (SDL gamepad or keyboard)
+Runtime: guest thread 'RHIThread' created (stack=524288, prio=700)
+Scheduler 000000005179C5A8: commands recorded from thread 'gow3:DrawRec' (caller medievil-runtime.exe+0x1ccc90)
+Runtime: guest thread 'RenderThread 0' created (stack=262144, prio=700)
+Scheduler 000000005179C5A8: commands recorded from thread 'shadPS4:GpuCommandProcessor' (caller medievil-runtime.exe+0x70abf)
+Runtime: guest thread 'RTHeartBeat 0' created (stack=262144, prio=700)
+Runtime: SystemService: splash screen hidden
+Runtime: guest thread 'FAsyncLoadingThread' created (stack=262144, prio=700)
+Runtime: system module 0xd4 loaded (host implementation)
+Runtime: system module 0xeb loaded (host implementation)
+Hmd: subsystem initialised; no PSVR headset present
+AudioInit: call 1 -> 0
+Runtime: audio backend wasapi
+GPU: spare image memory block ready (type 1, 0 ms)
+Runtime: audio port 0 opened (type 0, 8 ch, float, 256 frames, downmixed to stereo)
+
+
+**********   BRB WARNING REPORT   **********
+
+brbDriver::Initialize(): NUM CHANNELS ( 8 ) CLAMPED TO 2.
+********************************************
+
+Runtime: system module 0xa7 loaded (host implementation)
+Audio3d: subsystem ready; ports mix to stereo without positional rendering
+Runtime: audio port 0 opened (type 0, 8 ch, float, 256 frames, downmixed to stereo)
+Runtime: audio port 1 opened (type 0, 8 ch, float, 256 frames, downmixed to stereo)
+Runtime: audio port 17 opened (type 4, 1 ch, float, 256 frames)
+Runtime: Ajm context initialized (ATRAC9 via LibAtrac9, MP3 via FFmpeg)
+Runtime: guest thread 'brbDriver' created (stack=131072, prio=256)
+Runtime: guest thread 'brbClient' created (stack=131072, prio=256)
+Runtime: semaphore id=1, attr=1, initial=1, max=8
+AudioIn: port 0 call 1 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 2 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 3 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 4 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 5 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 6 raw_peak 0.0000 frames 256 ch 1 float 1
+SCREAM (BRB2) Version 7.25.3.88607 Built on Mar  6 2019 at 17:06:06
+Runtime: guest thread 'snd_stream_parsing_thread' created (stack=65536, prio=700)
+Runtime: guest thread 'snd_stream_reader_thread' created (stack=65536, prio=700)
+Runtime: guest thread 'AudioThread' created (stack=262144, prio=700)
+Runtime: AppContent parameter 1 = 1
+Runtime: system module 0xa0 loaded (host implementation)
+Runtime: save data 'SystemSave' mounted at /savedata0 (existing, read-only)
+Runtime: save data 'SharedSave' mounted at /savedata0 (existing, read-only)
+Runtime: guest thread 'SlateLoadingThread1' created (stack=262144, prio=700)
+Runtime: system module 0xed loaded (host implementation)
+Runtime: system module 0xa4 loaded (host implementation)
+VrTracker: disabled; no headset or tracked controller
+Runtime: guest thread 'FPS4Tracker::CameraThread' created (stack=1048576, prio=700)
+Camera: no camera attached
+Flip: guest submitted-and-flipped #1 (count=1, vo=1, buf=0, mode=1)
+GPU [Render.Vulkan] <Warning> emit_spirv.cpp:459 operator(): Float32 denorm flushing is not supported by the GPU
+Present: PrepareFrame #1 (addr=0x4000000000, 1920x1080, pitch=1920)
+Flip: guest submitted-and-flipped #2 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #2 (addr=0x4001020000, 1920x1080, pitch=1920)
+Flip: guest submitted-and-flipped #3 (count=1, vo=1, buf=0, mode=1)
+Present: PrepareFrame #3 (addr=0x4000000000, 1920x1080, pitch=1920)
+Output resolution: 1920x1080 (live)
+AudioIn: port 0 call 1000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #100 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 2000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #200 (count=1, vo=1, buf=1, mode=1)
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/en_gb.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/en_001.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/en.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/curr/en_gb.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/curr/en_001.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: gamepad connected: DualSense Wireless Controller (USB 054c:0ce6, 1 open)
+Runtime: pad read #1: buttons=0x00000000 lx=128 ly=128 rx=128 ry=128
+Audio stats port 1: 941 buffers/5s (expected 937), max gap 6.08 ms, min queued 0 bytes, starved 1, peak 0.0000, 0/941 loud
+Audio stats port 17: 941 buffers/5s (expected 937), max gap 6.07 ms, min queued 0 bytes, starved 1, peak 0.0000, 0/941 loud
+Audio stats port 0: 942 buffers/5s (expected 937), max gap 6.29 ms, min queued 0 bytes, starved 1, peak 0.0000, 0/942 loud
+AudioIn: port 17 call 3000 raw_peak 0.0000 frames 256 ch 1 float 1
+Swapchain: present #300 at 6498 ms (46.17 fps avg) -> Success
+Flip: guest submitted-and-flipped #300 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #300 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 0 call 4000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #400 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 5000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #500 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.12 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.12 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.63 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Swapchain: present #600 at 11498 ms (52.18 fps avg) -> Success
+AudioIn: port 17 call 6000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #600 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #600 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 0 call 7000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #700 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 8000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #800 (count=1, vo=1, buf=1, mode=1)
+Runtime: pad read #601: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.60 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.60 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.62 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Swapchain: present #900 at 16499 ms (54.55 fps avg) -> Success
+Flip: guest submitted-and-flipped #900 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #900 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 9000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #1000 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 10000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #1100 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 11000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.14 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.14 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.42 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Swapchain: present #1200 at 21499 ms (55.82 fps avg) -> Success
+Flip: guest submitted-and-flipped #1200 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #1200 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 12000 raw_peak 0.0000 frames 256 ch 1 float 1
+Runtime: guest thread 'RenderThread 1' created (stack=262144, prio=700)
+Runtime: guest thread 'RTHeartBeat 1' created (stack=262144, prio=700)
+AudioIn: port 0 call 13000 raw_peak 0.0000 frames 256 ch 8 float 1
+Runtime: guest thread 'FSaveLoadWorker' created (stack=262144, prio=700)
+Runtime: save data 'CheckPoint1' mounted at /savedata0 (existing, read-only)
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/keytypedata.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l/timezonetypes.res) -> not found
+Runtime: open(/app0/engine/content/internationalization/usrdt53l.dat) -> not found
+Runtime: save data 'CheckPoint1' mounted at /savedata0 (existing, read-only)
+GPU: spare image memory block ready (type 1, 2 ms)
+Flip: guest submitted-and-flipped #1300 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 14000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.28 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.28 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.44 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #1400 (count=1, vo=1, buf=1, mode=1)
+Runtime: pad read #1201: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+AudioIn: port 17 call 15000 raw_peak 0.0000 frames 256 ch 1 float 1
+Swapchain: present #1500 at 28016 ms (53.54 fps avg) -> Success
+Flip: guest submitted-and-flipped #1500 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #1500 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 0 call 16000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #1600 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.30 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.31 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.57 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 1 call 17000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 18000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 19000 raw_peak 0.0000 frames 256 ch 8 float 1
+Barriers: 1025 image barriers in one batch (largest so far)
+Barriers: 2049 image barriers in one batch (largest so far)
+Barriers: 3073 image barriers in one batch (largest so far)
+Barriers: 4097 image barriers in one batch (largest so far)
+Barriers: 5121 image barriers in one batch (largest so far)
+Barriers: 6145 image barriers in one batch (largest so far)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.14 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.14 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.37 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 1 call 20000 raw_peak 0.0000 frames 256 ch 8 float 1
+GPU [Render.Vulkan] <Warning> emit_spirv.cpp:516 operator(): Float64 denorm preserving is not supported by the GPU
+AudioIn: port 17 call 21000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 22000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #1700 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.18 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.19 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.30 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 1 call 23000 raw_peak 0.0000 frames 256 ch 8 float 1
+Swapchain: present #1800 at 42533 ms (42.32 fps avg) -> Success
+Flip: guest submitted-and-flipped #1800 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #1800 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 24000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 25000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.55 ms, min queued 6656 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.56 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.29 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #1900 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 26000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 27000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #2000 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 28000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.64 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.63 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.72 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Runtime: pad read #1801: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+Swapchain: present #2100 at 52533 ms (39.97 fps avg) -> Success
+AudioIn: port 1 call 29000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #2100 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #2100 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 30000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.31 ms, min queued 6656 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.47 ms, min queued 3072 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.02 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 0 call 31000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #2200 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 32000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 33000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #2300 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.53 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.53 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.17 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 0 call 34000 raw_peak 0.0000 frames 256 ch 8 float 1
+Swapchain: present #2400 at 62535 ms (38.38 fps avg) -> Success
+AudioIn: port 1 call 35000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #2400 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #2400 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 36000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.42 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.42 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.13 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 0 call 37000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #2500 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 38000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #2600 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 39000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.54 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.54 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.38 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Runtime: pad read #2401: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+AudioIn: port 0 call 40000 raw_peak 0.0000 frames 256 ch 8 float 1
+Swapchain: present #2700 at 72535 ms (37.22 fps avg) -> Success
+Flip: guest submitted-and-flipped #2700 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #2700 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 1 call 41000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 42000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.53 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.52 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.01 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #2800 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 43000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 44000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #2900 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 45000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.24 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.24 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.60 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Swapchain: present #3000 at 82535 ms (36.35 fps avg) -> Success
+AudioIn: port 0 call 46000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #3000 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #3000 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 1 call 47000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.51 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.51 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.74 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 17 call 48000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #3100 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 49000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 50000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #3200 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.33 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.33 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.72 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Runtime: pad read #3001: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+AudioIn: port 17 call 51000 raw_peak 0.0000 frames 256 ch 1 float 1
+Swapchain: present #3300 at 92534 ms (35.66 fps avg) -> Success
+AudioIn: port 0 call 52000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #3300 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #3300 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 1 call 53000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.61 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.62 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.75 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #3400 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 54000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 55000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #3500 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 56000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.70 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.70 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.89 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 17 call 57000 raw_peak 0.0000 frames 256 ch 1 float 1
+Swapchain: present #3600 at 102535 ms (35.11 fps avg) -> Success
+Flip: guest submitted-and-flipped #3600 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #3600 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 0 call 58000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 59000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.49 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.54 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.60 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #3700 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 60000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 61000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #3800 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.16 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.17 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.27 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 1 call 62000 raw_peak 0.0000 frames 256 ch 8 float 1
+Runtime: pad read #3601: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+Swapchain: present #3900 at 112537 ms (34.66 fps avg) -> Success
+AudioIn: port 17 call 63000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #3900 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #3900 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 0 call 64000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.22 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.28 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.64 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 1 call 65000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #4000 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 66000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 67000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #4100 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.34 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.34 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.79 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 1 call 68000 raw_peak 0.0000 frames 256 ch 8 float 1
+Swapchain: present #4200 at 122536 ms (34.28 fps avg) -> Success
+Flip: guest submitted-and-flipped #4200 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #4200 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 69000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 70000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.23 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.22 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.61 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #4300 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 71000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 72000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #4400 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 73000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 7.09 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 7.09 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.10 ms, min queued 8192 bytes, starved 0, peak 0.0000, 0/938 loud
+Runtime: pad read #4201: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+Swapchain: present #4500 at 132536 ms (33.95 fps avg) -> Success
+AudioIn: port 1 call 74000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #4500 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #4500 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 75000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.36 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.36 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.43 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 0 call 76000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #4600 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 77000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 78000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #4700 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.31 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.32 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.68 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 0 call 79000 raw_peak 0.0000 frames 256 ch 8 float 1
+Swapchain: present #4800 at 142520 ms (33.68 fps avg) -> Success
+AudioIn: port 1 call 80000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #4800 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #4800 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 17 call 81000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.48 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.48 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.55 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 0 call 82000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #4900 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 83000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #5000 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 84000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.55 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.55 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.18 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Runtime: pad read #4801: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+AudioIn: port 0 call 85000 raw_peak 0.0000 frames 256 ch 8 float 1
+Swapchain: present #5100 at 152536 ms (33.43 fps avg) -> Success
+Flip: guest submitted-and-flipped #5100 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #5100 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 1 call 86000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 17 call 87000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 7.05 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 7.05 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 7.02 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #5200 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 88000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 89000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #5300 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 90000 raw_peak 0.0000 frames 256 ch 1 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.51 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.52 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.62 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Swapchain: present #5400 at 162537 ms (33.22 fps avg) -> Success
+AudioIn: port 0 call 91000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #5400 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #5400 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 1 call 92000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.57 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.56 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.79 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 17 call 93000 raw_peak 0.0000 frames 256 ch 1 float 1
+Flip: guest submitted-and-flipped #5500 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 0 call 94000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 95000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #5600 (count=1, vo=1, buf=1, mode=1)
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.42 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.41 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.42 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Runtime: pad read #5401: buttons=0x00000000 lx=133 ly=123 rx=128 ry=128
+AudioIn: port 17 call 96000 raw_peak 0.0000 frames 256 ch 1 float 1
+Swapchain: present #5700 at 172537 ms (33.04 fps avg) -> Success
+AudioIn: port 0 call 97000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #5700 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #5700 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 1 call 98000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.51 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.65 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.47 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #5800 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 99000 raw_peak 0.0000 frames 256 ch 1 float 1
+AudioIn: port 0 call 100000 raw_peak 0.0000 frames 256 ch 8 float 1
+Flip: guest submitted-and-flipped #5900 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 1 call 101000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.57 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.58 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.71 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+AudioIn: port 17 call 102000 raw_peak 0.0000 frames 256 ch 1 float 1
+Swapchain: present #6000 at 182539 ms (32.87 fps avg) -> Success
+Flip: guest submitted-and-flipped #6000 (count=1, vo=1, buf=1, mode=1)
+Present: PrepareFrame #6000 (addr=0x4001020000, 1920x1080, pitch=1920)
+AudioIn: port 0 call 103000 raw_peak 0.0000 frames 256 ch 8 float 1
+AudioIn: port 1 call 104000 raw_peak 0.0000 frames 256 ch 8 float 1
+Audio stats port 1: 938 buffers/5s (expected 937), max gap 6.42 ms, min queued 6400 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 17: 938 buffers/5s (expected 937), max gap 6.45 ms, min queued 3200 bytes, starved 0, peak 0.0000, 0/938 loud
+Audio stats port 0: 938 buffers/5s (expected 937), max gap 6.57 ms, min queued 8448 bytes, starved 0, peak 0.0000, 0/938 loud
+Flip: guest submitted-and-flipped #6100 (count=1, vo=1, buf=1, mode=1)
+AudioIn: port 17 call 105000 raw_peak 0.0000 frames 256 ch 1 float 1
