@@ -7,7 +7,7 @@ os dois bloqueios resolvidos e o bloqueio atual. **Nenhum frame foi renderizado.
 
 | Etapa | Antes desta sessão | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa (`INT 0x44`) | import `NpToolkit2` não implementado |
+| Bloqueio | `abort` sem causa (`INT 0x44`) | `NpToolkit2::Core::init` (serviço, não construtor) |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** |
 | Threads guest | 0 | **22** (inclui `TaskGraphThreadNP 0..N` do UE4) |
 | Arquivos lidos do dump | 0 | **174 leituras, 10.107.208 bytes** |
@@ -59,7 +59,41 @@ Runtime: AppContent host provider loaded; references=1
 Runtime: AppContent initialized; offline base-game profile, no mounted add-ons
 ```
 
-## Bloqueio atual — `NpToolkit2::Request::InitParams`
+## Bloqueio 3 — resolvido: construtor `InitParams`
+
+Tamanho medido no próprio frame do guest, sem adivinhação:
+
+```
+0x40c762a  leaq -0x398(%rbp), %rbx   ; base do InitParams
+0x40c7631  movq %rbx, %rdi
+0x40c7634  callq <ctor>
+0x40c76c1  leaq -0x260(%rbp), %rdi   ; objeto SEGUINTE no mesmo frame
+```
+
+`0x398 - 0x260 = 0x138` = **312 bytes**. O objeto termina 560 bytes abaixo do canário
+(`rbp-0x30`), então zerá-lo não pode tocar a proteção de pilha.
+
+Implementado em `runtime/src/runtime_np.c`: **somente construtores**. O guest trata o retorno
+por `testl %eax,%eax; je <continua>`, e o objeto é um agregado que o chamador preenche depois.
+
+## Bloqueio 4 — ABERTO: `NpToolkit2::Core::init`
+
+```
+STOP: first unsupported PS4 import: LLdnqVnnNBQ#libSceNpToolkit2 (index 657)
+API: _ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE
+```
+
+`Core::init` **não é construtor**: é o serviço que inicializa o subsistema PSN. O guest trata o
+retorno por `testl %eax,%eax; je <continua>; xorl %ebx,%ebx; jmp <falha>` — ou seja, devolver 0
+faz o jogo seguir tratando o PSN como inicializado.
+
+**Não foi respondido.** Dar sucesso cego aqui é exatamente o stub que as regras do projeto
+proíbem: as 79 funções de `libSceNpToolkit2` incluem caminhos que passariam a acreditar num
+subsistema que nunca foi inicializado, e a falha apareceria muito depois, sem rastro. A decisão
+de qual política offline adotar (recusar com erro tratado, ou implementar um PSN local mínimo
+com estado) é de arquitetura e precisa ser registrada antes de codificar.
+
+### Bloqueio anterior (contexto histórico) — `NpToolkit2::Request::InitParams`
 
 ```
 STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)
@@ -97,7 +131,7 @@ medições juntas dão a resposta correta.
 |---|---|
 | `bash build.sh` | exit 0 |
 | `bash build.sh --test` | exit 0 |
-| `python -m unittest discover -s tests` | exit 0, **43 testes** |
+| `python -m unittest discover -s tests` | exit 0, **50 testes** |
 | Boot até o bloqueio atual | exit 20, import nomeado |
 | **Primeiro frame / menu / gameplay** | **NÃO EXECUTADO** |
 
@@ -119,4 +153,5 @@ Critério: o `STOP` deixa de aparecer e o boot avança para um estágio novo e n
 
 `docs/evidence/prompt04/`: `boot-13-hint.txt` (hint do guest), `boot-14-ra.txt` (call site),
 `boot-15-window-fix.txt` (janela aplicada), `boot-16-content-profile.txt` (22 threads, 174
-leituras, bloqueio atual), `build.txt`, `build-test.txt`.
+leituras), `boot-17-np-ctor.txt` (construtor implementado, avanço para `Core::init`),
+`build.txt`, `build-test.txt`.

@@ -16,7 +16,7 @@ MSYS2 CLANG64 clang 22.1.7, Vulkan 1.4.350, SDL3 3.4.10, libavcodec 62.28.101, P
 |---|---|---|---|
 | Build nativo | `bash build.sh` | PASS, exit 0 | `prompt04/build.txt` |
 | Testes nativos | `bash build.sh --test` | PASS, exit 0 | `prompt04/build-test.txt` |
-| Suíte Python | `python -m unittest discover -s tests` | PASS, **39 testes**, exit 0 | `prompt04/python-tests.txt` |
+| Suíte Python | `python -m unittest discover -s tests` | PASS, **50 testes**, exit 0 | `prompt04/python-tests.txt` |
 | Smoke sem dump | `--help`, `--check-config`, `--audit-runtime`, `--vulkan-smoke` | PASS, exit 0 | `bootstrap/` |
 | Falta de jogo | `python run.py` | PASS (exit 1), mensagem acionável | `bootstrap/missing-game.txt` |
 | Rejeição da build | `python run.py --game-dir <dump>` | PASS (exit 1), fail-closed | `bootstrap/dump-unvalidated.txt` |
@@ -58,13 +58,20 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Correção: gerar `content.bin` com `content_profile.prepare` e passar `--content-profile`.
 - Verificação: `AppContent initialized; offline base-game profile`, referências=1.
 
-**P0-3: import `NpToolkit2::Request::InitParams` não implementado — ABERTO**
+**P0-3: construtor `NpToolkit2::Request::InitParams` — RESOLVIDO**
 
-- Sintoma: `STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)`,
-  exit 20.
-- Construtor C++ chamado na inicialização de PSN do UE4 mesmo offline.
-- Não implementado: falta o tamanho exato da struct `InitParams`; zeração com tamanho
-  adivinhado pode atingir o canário da pilha do guest.
+- Sintoma: `STOP: ... vbh-MWtjMh4#libSceNpToolkit2 (index 659)`, exit 20.
+- Tamanho medido no frame do guest: `rbp-0x398` até `rbp-0x260` = **312 bytes**, 560 bytes
+  abaixo do canário. `runtime/src/runtime_np.c` implementa só construtores.
+- Verificação: o `STOP` do construtor desapareceu; boot avançou para `Core::init`.
+
+**P0-4: `NpToolkit2::Core::init` (serviço) não implementado — ABERTO**
+
+- Sintoma: `STOP: ... LLdnqVnnNBQ#libSceNpToolkit2 (index 657)`, exit 20.
+- É o serviço que inicializa o PSN. O guest faz `testl %eax,%eax; je <continua>`, então
+  devolver 0 o faria tratar o PSN como pronto.
+- Não respondido: exigiria que as 79 funções de NpToolkit2 operassem sobre um subsistema que
+  nunca foi inicializado. Precisa de decisão de arquitetura registrada.
 - Detalhe: `docs/MEMORY_AUDIT.md`.
 
 ### P1 — não alcançados

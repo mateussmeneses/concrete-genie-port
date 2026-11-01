@@ -119,3 +119,18 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
   visível; sem frame, qualquer afirmação sobre eles seria descrição de código apresentada como
   observação. `tests/test_memory_layout.py` congela constantes e o conflito medido para que
   uma mudança futura confronte o achado em vez de contorná-lo.
+
+## 2026-11-01 — PROMPT 04 (continuação): construtores NpToolkit2
+
+- **Tamanho de struct vem do frame do guest, não de um palpite.** `InitParams` ocupa
+  `rbp-0x398 .. rbp-0x260` = 312 bytes, medido em dois `leaq` no mesmo frame. Zeroing com
+  tamanho errado atingiria o canário a `rbp-0x30`; o valor medido termina 560 bytes antes.
+  Reversão: remover `runtime_np.c`.
+- **Só construtores são respondidos.** `runtime_np.c` registra apenas símbolos `C1Ev`/`C2Ev`, e
+  um teste rejeita qualquer entrada que não seja construtor. Motivo: um construtor inicializa
+  memória do chamador (sem contrato de serviço), enquanto um serviço exige semântica real.
+- **`Core::init` NÃO recebeu sucesso cego, apesar de o guest aceitar 0.** O call site faz
+  `testl %eax,%eax; je <continua>`, então devolver 0 "funcionaria" — mas as 79 funções de
+  `libSceNpToolkit2` passariam a operar sobre um subsistema nunca inicializado, e a falha
+  apareceria longe da causa. A decisão de política offline (recusar com erro tratado vs.
+  implementar PSN local com estado) precisa ser tomada e registrada antes de codificar.

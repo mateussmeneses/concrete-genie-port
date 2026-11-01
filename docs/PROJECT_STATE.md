@@ -30,9 +30,13 @@ mapeamento escolhido pelo runtime — corrigido com `find_free_unhinted()`; (2) 
 ausente no pipeline. Com ambos, o boot avança para:
 
 ```
-STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)
-API: _ZN3sce7Toolkit2NP2V24Core7Request10InitParamsC1Ev
+STOP: first unsupported PS4 import: LLdnqVnnNBQ#libSceNpToolkit2 (index 657)
+API: _ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE
 ```
+
+O construtor `InitParams` foi implementado com tamanho medido (312 bytes) em
+`runtime/src/runtime_np.c`. O bloqueio atual é o **serviço** `Core::init`, que não recebeu
+sucesso cego.
 
 Antes do bloqueio, o jogo cria **22 threads guest** (incluindo `TaskGraphThreadNP 0..N` do
 UE4), inicializa o AppContent e lê 174 vezes do dump (10.107.208 bytes). Exit 20.
@@ -58,7 +62,7 @@ Os tópicos de áudio, controles, shader cache, frame pacing e captura de frame 
 | Item | Estado |
 |---|---|
 | Build + testes nativos | PASSA, exit 0 |
-| Suíte Python | PASSA, 39 testes, exit 0 |
+| Suíte Python | PASSA, 50 testes, exit 0 |
 | Boot até o bloqueio | exit 3, causa nomeada |
 | **Frame / menu / gameplay** | **NÃO EXECUTADO** |
 | Áudio, controles, GPU visual | **NÃO AUDITADOS** |

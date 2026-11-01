@@ -256,6 +256,8 @@ uintptr_t runtime_resolve(const char *name, int is_data) {
     if (file) return file;
     uintptr_t extra = runtime_extra_resolve(name);
     if (extra) return extra;
+    uintptr_t np = runtime_np_resolve(name);
+    if (np) return np;
     return gow3gpu_resolve(name);
 }
 static const struct { const char *nid, *symbol; } import_names[]={

@@ -105,6 +105,8 @@ const char *runtime_thread_name(void *handle);
 uint64_t runtime_memory_flexible_available(void);
 uintptr_t runtime_extra_resolve(const char *name);
 void runtime_extra_report(void);
+/* NpToolkit2 constructors only (see runtime_np.c); no PSN service is stubbed. */
+uintptr_t runtime_np_resolve(const char *name);
 unsigned char *runtime_image_base(void);
 int runtime_sse4a_emulate(void *context_record);
 /* Address of the runtime's __stack_chk_guard value, for diagnosing a canary mismatch. */

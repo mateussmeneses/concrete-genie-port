@@ -10,12 +10,13 @@ Dois bloqueios resolvidos, com o boot parando três estágios mais adiante:
 
 | Métrica | Antes | Agora |
 |---|---|---|
-| Bloqueio | `abort` sem causa | import `NpToolkit2` nomeado |
+| Bloqueio | `abort` sem causa | `NpToolkit2::Core::init` (serviço) |
 | Reserva do pool 8 GiB | recusada (`NO_MEMORY`) | **concedida** (3 reservas) |
 | Threads guest | 0 | **22**, incluindo `TaskGraphThreadNP 0..N` (UE4) |
 | Leitura do dump | 0 arquivos | **174 leituras, 10.107.208 bytes** |
 | AppContent | não inicializava | **inicializado**, perfil offline |
 | Exit | 3 (fault) | 20 (import não implementado) |
+| Testes Python | 39 | **50** |
 
 ### Correção 1 — janela de memória do guest
 
@@ -34,21 +35,34 @@ O pipeline rodava `prepare` e `link` mas não `content_profile.prepare`, então 
 `STOP: AppContent needs --content-profile`. Gerado `content.bin` e passado com
 `--content-profile`.
 
+### Correção 3 — construtor `InitParams`
+
+Tamanho **medido**, não adivinhado, no frame do guest:
+
+```
+0x40c762a  leaq -0x398(%rbp), %rbx    ; base do InitParams
+0x40c76c1  leaq -0x260(%rbp), %rdi    ; objeto seguinte no mesmo frame
+```
+
+`0x398 - 0x260 = 0x138` = **312 bytes**; o objeto termina 560 bytes abaixo do canário.
+
+`runtime/src/runtime_np.c` implementa **apenas construtores** (`C1Ev`/`C2Ev`), com teste que
+rejeita qualquer símbolo que não seja construtor. Sem sucesso cego para serviços.
+
 ## Bloqueio atual
 
 ```
-STOP: first unsupported PS4 import: vbh-MWtjMh4#libSceNpToolkit2 (index 659)
-API: _ZN3sce7Toolkit2NP2V24Core7Request10InitParamsC1Ev
-Caller return offset: 0x40c7639; first argument: 0x15fd0b8
+STOP: first unsupported PS4 import: LLdnqVnnNBQ#libSceNpToolkit2 (index 657)
+API: _ZN3sce7Toolkit2NP2V24Core4initERKNS3_7Request10InitParamsE
 ```
 
-Construtor C++ `InitParams()` do NpToolkit2, chamado na inicialização de PSN do UE4 mesmo
-offline. Argumento é struct na pilha do guest (`rbp-0x398`, frame de `0x398` bytes).
+`Core::init` é o **serviço** que inicializa o subsistema PSN, não um construtor. O guest faz
+`testl %eax,%eax; je <continua>` e, com 0, passaria a tratar o PSN como inicializado.
 
-**Não implementado por decisão:** falta o tamanho exato da struct. Não há implementação de
-referência de `NpToolkit2` no repositório, e o guest só revela os campos que escreve depois
-da chamada (até `0x150`+16). Um construtor que zere um tamanho adivinhado pode atingir o
-canário em `rbp-0x30` e trocar um bloqueio nomeado por corrupção de pilha.
+**Não foi respondido por decisão.** As 79 funções de `libSceNpToolkit2` incluiriam caminhos que
+acreditariam num subsistema nunca inicializado, e a falha apareceria muito depois. Falta uma
+decisão de arquitetura registrada: recusar com erro tratado, ou implementar um PSN local mínimo
+com estado.
 
 ## Meia-verdade corrigida nesta sessão
 
@@ -73,14 +87,15 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Obter o tamanho de `Core::Request::InitParams` para esta build:
+Decidir e registrar a política de PSN offline para `Core::init`:
 
-1. Inspecionar `sce_module/libSceNpToolkit2.prx` (já no dump) por símbolos/informação de tipo.
-2. Se não houver, inferir pelos acessos do guest e implementar o construtor escrevendo apenas
-   os campos observados, documentando a limitação e cobrindo com teste.
+1. Avaliar o que o guest faz no ramo de falha (`0x40c791f`) — se degrada para modo offline
+   legítimo, recusar com erro é a resposta correta e barata.
+2. Se o jogo exige sucesso, implementar um PSN local mínimo **com estado** (init cria um
+   contexto; as chamadas seguintes validam contra ele e falham com código real, não com zero).
 
-Critério de conclusão: o `STOP` desaparece **e** o boot avança para um estágio novo e nomeado.
-Nunca implementar zera-memória com tamanho chutado.
+Critério de conclusão: o `STOP` desaparece, o boot avança para um estágio novo e nomeado, e o
+subsistema responde com códigos coerentes — não com sucesso cego.
 
 ## Reprodução
 
