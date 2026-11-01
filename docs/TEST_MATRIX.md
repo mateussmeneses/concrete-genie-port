@@ -182,7 +182,16 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
   `docs/evidence/prompt04/boot-77-past-savedata.txt`.
 
-**P0-19: passes de cor vazias na transição — ABERTO (instrumentado)**
+**P0-20: 0,7 FPS na transição — CAUSA MEDIDA (shader capture síncrono)**
+
+- `Frame stats: 0.7 FPS, worst frame 1416 ms; capture 3256 ms, workers 1322 ms,
+  GPU capture wait 3310 ms, 16003 pending draws; 7235 draws/frame; GPU thread idle 0.0%`.
+- `QueueShader` roda `TranslateProgram` **na thread da GPU** e faz `capture_job.Wait()`, então cada
+  draw que precisa tradução serializa a fila. Com 16.003 pendentes, o frame leva 1,4 s.
+- Draws por submissão: 46,9 (frame 1500) → 85,4 (1850) → **90,0** (2000).
+- Evidência: `boot-87-long-run.txt`, `boot-88-draws-per-sub.txt`.
+
+**P0-19: passes de cor vazias na transição — investigação**
 
 - `GOW3_TRACE_CLEAR=1` loga `BeginRendering` (anexos + clears) e `EndRendering` (draws no passe).
 - 43.935 passes de cor fechados: 36.964 (84%) com **0 draws**; o resto entre 1 e dezenas.

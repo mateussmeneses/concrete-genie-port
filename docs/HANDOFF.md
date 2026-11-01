@@ -142,7 +142,45 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Instrumentação de GPU pronta; falta capturar a transição completa.
+Reduzir o custo de shader capture: é a causa medida dos 0,7 FPS na transição.
+
+**Correção de três conclusões minhas:** "tela preta permanente" era falso (as capturas pretas
+pegaram frames que não terminaram dentro do timeout); "motor ocioso a 60 FPS" só vale antes do
+frame ~1500; e os "950 mil draws/frame" estavam na ordem de grandeza certa (~7.235/frame), ainda
+que o número estivesse errado.
+
+A causa, medida:
+
+```
+Frame stats: 0.7 FPS, worst frame 1416.3 ms
+  capture 3256.1 ms, workers 1322.7 ms, GPU capture wait 3310.4 ms, 16003 pending draws
+  7235 draws/frame, GPU thread idle 0.0%
+```
+
+`PipelineCache::QueueShader` (vk_pipeline_cache.cpp:486) executa `Shader::TranslateProgram` na
+thread da GPU e **espera** (`capture_job.Wait()`). Com 16.003 draws pendentes, cada tradução
+serializa a fila.
+
+Medição que deve vir antes da correção:
+
+1. Contar `TranslateProgram` chamados versus **hashes únicos** no regime lento. Se 16.003 pendentes
+   colapsam em poucas centenas de hashes, um cache por hash elimina o custo; se são milhares de
+   hashes distintos, o problema é variedade de estado de pipeline.
+2. Medir o custo médio de um `TranslateProgram` — se for ~1 ms, 16.003 deles explicam 1,4 s/frame.
+
+Duas alavancas possíveis (escolher depois de medir):
+- **Cache de shader por hash** — elimina repetição, sem mudar semântica.
+- **Tirar a tradução da thread da GPU** — mantém correção e libera a thread.
+
+Reprodução:
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_FRAME_STATS=1 GOW3_FRAME_DUMP_AT=1500,1850,2000 GOW3_DUMP_SYNC=1     timeout 400 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 370
+```
+
+Critério de conclusão: FPS volta a dezenas depois do frame 1800 e uma captura em 2500+ mostra
+conteúdo. Não otimizar antes de medir hashes.
 
 Adicionei dois pontos de medição, ambos atrás de `GOW3_TRACE_CLEAR=1`:
 - `Scheduler::BeginRendering` → anexos e clears de cada passe.

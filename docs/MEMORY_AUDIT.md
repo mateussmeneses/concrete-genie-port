@@ -1,3 +1,105 @@
+# CAUSA RAIZ MEDIDA: shader capture síncrono serializa 7.235 draws/frame
+
+## A medição que nomeia o gargalo
+
+`GOW3_FRAME_STATS=1` no regime lento (frame ~2000):
+
+```
+Frame stats: 0.7 FPS, worst frame 1416.3 ms
+  async: capture 3256.1 ms, workers 1322.7 ms, GPU capture wait 3310.4 ms, 16003 pending draws
+  GPU thread 0.00 us/draw, 7235 draws/frame, idle 0.0%
+```
+
+E a razão draws/submissão, agora instrumentada:
+
+| Frame | Draws totais | Submissões | Draws/submissão |
+|---|---|---|---|
+| 1500 | 613.326 | 13.079 | 46,9 |
+| 1850 | 3.143.862 | 36.830 | 85,4 |
+| 2000 | 4.228.414 | 47.007 | **90,0** |
+
+## O mecanismo
+
+`PipelineCache::QueueShader` (vk_pipeline_cache.cpp:486) roda `Shader::TranslateProgram` **na
+thread da GPU** e **espera** por ela:
+
+```cpp
+if (!capture_job.Start(*capture_compiler, [this, build, binding] {
+        PhaseTimer capture{g_gow3_capture_ns};
+        ...
+        build->ir.emplace(Shader::TranslateProgram(...));
+```
+
+Com **7.235 draws por frame** e **16.003 draws pendentes**, cada draw que precisa de tradução bloqueia
+a thread da GPU. O custo não está na GPU (idle 0% de uso útil), está nessa serialização.
+
+## Correção das minhas três conclusões anteriores
+
+| O que eu disse | O que a medição mostra |
+|---|---|
+| "tela preta permanente" | falsa: o frame 1900 tem 100%; as capturas "pretas" eram frames que **não terminaram** dentro do timeout |
+| "60 FPS, motor ocioso esperando" | só vale antes do frame ~1500; depois é **0,7 FPS saturado** |
+| "~950 mil draws/frame" | número errado, mas a ordem de grandeza **era real**: são ~7.235/frame |
+
+A única coisa que se sustenta é que o problema é de **desempenho na transição**, não de estado nem de
+input.
+
+## Próximo passo
+
+Duas alavancas, ambas mensuráveis:
+
+1. **Cache de shader por hash.** Se o mesmo par (código, runtime) é traduzido repetidamente, um cache
+   por hash elimina a repetição. Medir quantos `TranslateProgram` distintos ocorrem para 16.003
+   draws pendentes.
+2. **Tirar a tradução da thread da GPU.** O `capture_job.Wait()` logo abaixo torna a captura
+   síncrona por desenho; paralelizar mantém a correção mas libera a thread.
+
+Medir antes de escolher: contar `TranslateProgram` por hash único no regime lento.
+
+# CORREÇÃO 3: não é tela preta — é 2,47 milhões de draws num único frame
+
+## O que a execução longa mostrou
+
+| Frame | Tempo acumulado | fps médio | Intervalo |
+|---|---|---|---|
+| 1500 | 27 s | 55,2 | — |
+| 1800 | 141 s | 12,7 | 114 s para 300 frames |
+| 2100 | **451 s** | **4,65** | **310 s para 300 frames** |
+
+E os draws acumulados:
+
+```
+Draws: frame 1900, 2470665 total
+```
+
+**2.470.665 draws** entre os frames 1800 e 1900 — um único frame carregando mais de dois milhões
+de draws.
+
+## Por que os frames "pretos" eram falsos
+
+As capturas em 2500+ deram 0% porque **esses frames nunca terminaram de renderizar** dentro do
+`timeout`. O jogo não estava mostrando preto: estava levando minutos por frame. A captura em 1900,
+que teve tempo de completar, mostra **100% de conteúdo**.
+
+Correção das minhas conclusões anteriores: "tela preta permanente" e "motor ocioso esperando" estão
+ambas **erradas**. O motor está sobrecarregado de trabalho, não parado.
+
+## O que isso reabre
+
+A medição anterior de "60 FPS, 1 draw/frame, GPU ociosa" era do período **antes** da transição
+(frames < 1500). Depois dela, o jogo entra num regime de milhões de draws por frame.
+
+Hipótese agora testável: **redundância de draws**. 2,47 M draws para uma cena que deveria ter
+algumas centenas sugere que o port está reexecutando comandos ou que o game graph está sendo
+reprocessado. Não é "GPU lenta" — a GPU fica ociosa, então o custo está no **recording** dos draws.
+
+## Próximo passo
+
+Contar quantos draws o **guest** pede versus quantos o port **executa**. Se o guest pede 500 e o
+port executa 2,4 M, há multiplicação no caminho de submissão. `Gow3Stats::draws` é incrementado em
+`Rasterizer::Draw`, então medir a razão entre submissões do guest e draws executados é a medição
+que fecha isso.
+
 # Draws por passe de cor: a geometria É submetida, e chega à tela
 
 ## Medição (`GOW3_TRACE_CLEAR=1`, contando draws por `BeginRendering`/`EndRendering`)

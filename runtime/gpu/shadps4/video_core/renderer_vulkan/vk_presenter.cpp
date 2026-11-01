@@ -554,10 +554,17 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     if (!frame_dump_at.empty() &&
         std::binary_search(frame_dump_at.begin(), frame_dump_at.end(), presented_frames)) {
         const u64 draws = Gow3Stats::draws.load();
-        std::fprintf(stderr, "Draws: frame %llu, %llu total, %llu since previous capture\n",
+        const u64 subs = Gow3Stats::submissions.load();
+        const u64 dispatches = Gow3Stats::dispatches.load();
+        std::fprintf(stderr,
+                     "Draws: frame %llu, %llu total, %llu since previous capture; "
+                     "submissions=%llu dispatches=%llu (%.1f draws/submission)\n",
                      static_cast<unsigned long long>(presented_frames),
                      static_cast<unsigned long long>(draws),
-                     static_cast<unsigned long long>(draws - last_draws));
+                     static_cast<unsigned long long>(draws - last_draws),
+                     static_cast<unsigned long long>(subs),
+                     static_cast<unsigned long long>(dispatches),
+                     subs ? static_cast<double>(draws) / static_cast<double>(subs) : 0.0);
         last_draws = draws;
     }
     // gow3: GOW3_FRAME_DUMP_COUNT=N dumps N consecutive frames per trigger (flicker reports).
