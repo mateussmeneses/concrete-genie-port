@@ -1,7 +1,72 @@
 # Decisões
 
-- 2026-10-31: executar somente a auditoria PROMPT 01 do attachment. O playbook completo preservado na raiz contém etapas futuras; elas não são autorização para pular o baseline.
-- Manter bases em `references/medievil` e `references/matterfall`; raiz é repositório documental na branch `audit/base`. Nenhum runtime Concrete Genie criado nesta etapa.
-- Fixar MediEvil em 424f3ea8dbdcb02754a31e5225ef42e2f77f8e94 e Matterfall em afaa2b7e212437f04baff709f983a121477ffcdf. Reutilização é candidata, não compatibilidade comprovada.
-- Hipótese: a base contém infraestrutura reutilizável, mas exige separar políticas e alterações binárias de jogos antes de admitir Concrete Genie. Observáveis: gates no código, build original e testes sintéticos. Aceitação: matriz rastreável, build documentado, riscos explícitos. Reversão: nenhuma personalização de fonte; preservar checkouts e revisar documentação por Git.
-- Build pode aplicar os patches FSR que o próprio upstream fornece, após pré-check. Essa mutação esperada de submódulo é registrada e não é adaptação de jogo.
+Registro append-only. Cada entrada: data, decisão, motivo, reversão.
+
+## 2026-10-31 — PROMPT 01 (auditoria)
+
+- Executar somente a auditoria do playbook. As etapas futuras do texto não autorizam pular
+  o baseline. Reversão: nenhuma alteração de fonte.
+- Manter bases em `references/medievil` e `references/matterfall`; raiz é repositório
+  documental. Nenhum runtime de Concrete Genie criado nessa etapa.
+- Fixar MediEvil em `424f3ea8dbdcb02754a31e5225ef42e2f77f8e94` e Matterfall em
+  `afaa2b7e212437f04baff709f983a121477ffcdf`. Reutilização é candidata, não compatibilidade.
+- Build pode aplicar os patches FSR fornecidos pelo próprio upstream após `git apply --check`.
+  Essa mutação esperada de submódulo é registrada e não é adaptação de jogo.
+
+## 2026-10-31 — PROMPT 02 (bootstrap)
+
+- **Branch `bootstrap/windows`, sem merge automático.** O milestone tem branch própria para
+  que a revisão do diff seja possível antes de qualquer integração.
+- **Runtime vendorizado, não reorganizado.** `runtime/` continua com a estrutura do upstream;
+  a adaptação foi mínima e localizada (nomes de artefato, config, perfil, limpeza de hooks).
+  Reversão: `git checkout <commit> -- runtime/`.
+- **Perfis fail-closed por TITLE_ID + SHA-256.** `CUSA11834`/`CUSA11875` entram como
+  candidatos com `builds: {}`; qualquer build não registrada é rejeitada com o hash calculado
+  na mensagem. Motivo: sem dump inspecionado, aceitar um título seria declarar suporte
+  fictício. Reversão: remover a entrada de `PROFILES`.
+- **Hooks e patches de outro jogo removidos do runtime genérico.** Cheats, multiplicadores,
+  health bar, `apply_patches`, sites SSE4a fixos e `r.SetRes` de MediEvil saíram de
+  `probe.c`/`runtime_extra.c`/`runtime_sse4a.c`/`gow3_overlay.cpp`. Motivo: a regra "não
+  promover artefato de outro jogo a genérico"; deixar o código inerte ainda seria herança
+  enganosa. Emulação SSE4a por fault handler permanece (genérica, sem offsets de título).
+- **`--patches` passa a falhar explicitamente.** Antes aceitava um arquivo de patch sem
+  gate de build. Agora retorna erro porque nenhuma build está validada. Reversão: reintroduzir
+  o parser junto do gate de hash/bytes exigido por AGENTS.md.
+- **Config `CG_*` e dados isolados.** Prefixo do projeto, JSON validado, `.cg/` como padrão,
+  saves por `TITLE_ID` e cache por SHA-256. Motivo: separar save (durável) de cache (derivado)
+  e impedir que dados caiam em `runtime/` ou `references/`. Reversão: `--data-dir` explícito.
+- **Entrada neutra = `Launch Concrete Genie.cmd` → `run.py`.** O alvo `medievil-play`
+  ("Play MediEvil.exe", com ícone de MediEvil) e seus `.rc`/`play.c`/manifest de MediEvil
+  foram removidos; o manifest virou `runtime.manifest` e a identidade `cg.runtime`. Motivo:
+  o ponto de entrada não pode depender de branding/assets de outro jogo.
+- **`build.sh` corrigido em dois bugs reais.** (1) `$PWD` era passado a um git nativo, que não
+  resolve `/c/...`; o `--reverse --check` falhava e o script reportava "already applied" mesmo
+  em checkout limpo — patches nunca eram aplicados de fato. Agora usa `cygpath -m` e, se o
+  patch não aplica nem em reverso, o build **falha com exit 1** (nunca `--reject`).
+  (2) `windres` não criava arquivo temporário porque herdava `TMPDIR=/tmp`; o build agora
+  aponta `TMP`/`TEMP`/`TMPDIR` para `runtime/out/tmp`. Reversão: reverter `build.sh`.
+- **`.gitattributes` passa a ser versionado.** Sem ele, `core.autocrlf=true` converteu os
+  `.patch` para CRLF e eles nunca aplicariam (os alvos são LF). Motivo: build reproduzível.
+- **`winmm` ligado só nos alvos de teste.** `compat_win.c` chama `timeBeginPeriod`;
+  `services-test` e `pad-map-test` não linkavam. Correção mínima e documentada em BASELINE.
+- **Suíte herdada não foi "consertada".** `runtime/tests` segue vermelha; alterar expectativas
+  de GoW/MediEvil para ficar verde mascararia regressões. Só `test_probe.py` recebeu o caminho
+  do novo executável e o gate de `--patches`.
+
+## 2026-10-31 — dump local recebido (pós-bootstrap)
+
+- **O dump é `CUSA11875` (EU), não `CUSA11834` (US).** O playbook citava a edição americana
+  como candidata; o operador forneceu a europeia. Verificado por `sce_sys/param.sfo`
+  (`TITLE_ID`, `APP_VER=01.07`, `CONTENT_ID=EP9000-CUSA11875_00-CONCRETEGENIE000`) e SHA-256
+  de `eboot.bin` (`06f143de…33e51`, 108.601.759 bytes). As duas entram como candidatas
+  documentais; nenhuma é versão verificada.
+- **Identificar não é validar.** `CUSA11875` foi adicionada a `CANDIDATES` com `builds: {}`.
+  Motivo: um título reconhecido não pode liberar preparação, patches ou qualquer escrita sem
+  auditoria de imports/módulos. O pipeline recusa a build real com exit 1 e o hash na mensagem.
+  Reversão: remover a entrada; o comportamento fail-closed permanece.
+- **Dump nunca entra no índice.** `gamedump/` foi adicionado ao `.gitignore` junto de
+  `*.self`, `sce_module/`, `sce_sys/`, `*.pak`/`*.uasset`/`*.utoc` e padrões de save. Motivo:
+  25 GB de conteúdo comercial e risco de vazamento. Verificado com `git status --short`.
+- **`CANDIDATES` é o nome canônico; `PROFILES` fica como alias.** Motivo: o termo deixou de
+  ser "perfil de jogo suportado" e passou a ser "título candidato"; manter o alias evita
+  quebrar a suíte existente sem renomear tudo de uma vez.

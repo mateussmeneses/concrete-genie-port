@@ -1,25 +1,80 @@
+# --- Dados comerciais do jogo (nunca versionar) ---
+# Dump PS4/qualquer origem: executáveis, metadados, módulos e pacotes.
+*.pkg
+*.pfs
+*.prx
+*.sprx
+*.self
+*.elf
+eboot.bin
+boot*.bin
+param.sfo
+nptitle.dat
+sce_module/
+sce_sys/
+# Conteúdo empacotado de engine (UE4 e similares).
+*.pak
+*.uasset
+*.uexp
+*.ubulk
+*.utoc
+*.ucas
+# Saves e backups do jogo.
+savedata/
+savedata_backups/
+savegames/
+
+# --- Cópias locais do dump / diretórios de trabalho ---
+/dumps/
+/games/
+/gamedump/
 /references/
 /user/
 /.cg/
 /concrete-genie.json
-/dumps/
-/games/
-*.pkg
-*.prx
-*.sprx
-eboot.bin
-param.sfo
-*.elf
-*.log
-*.dmp
-*.spv
-__pycache__/
-*.pyc
-/out/
-/runtime/out/
 /runtime/user/
-/runtime/dist/
 /runtime/pgo/
 /runtime/fsr4_shaders/
 /runtime/fsr4_411/
-!docs/evidence/**/*.log
+
+# --- Build e caches derivados ---
+/out/
+/runtime/out/
+/runtime/dist/
+__pycache__/
+*.py[cod]
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.ninja_deps
+*.ninja_log
+/CMakeFiles/
+CMakeCache.txt
+
+# --- Logs e diagnósticos grandes (evidência pequena é versionada) ---
+*.log
+*.dmp
+*.mdmp
+*.trace
+*.etl
+*.spv
+/logs/
+/runtime/out/gpu-build.log
+# Evidências textuais pequenas que sustentam o baseline continuam rastreadas.
+!docs/evidence/**/*.txt
+!docs/evidence/**/*.json
+
+# --- Artefatos compactados ---
+*.zip
+*.7z
+*.tar.gz
+*.rar
+
+# --- Sistema e editores ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~

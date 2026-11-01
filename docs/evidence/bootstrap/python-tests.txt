@@ -1,0 +1,20 @@
+test_bad_config_is_rejected (test_bootstrap.BootstrapTests.test_bad_config_is_rejected) ... ok
+test_candidate_is_never_accepted_without_a_verified_build (test_bootstrap.BootstrapTests.test_candidate_is_never_accepted_without_a_verified_build) ... ok
+test_child_exit_code_is_propagated (test_bootstrap.BootstrapTests.test_child_exit_code_is_propagated) ... ok
+test_dump_and_data_must_not_overlap (test_bootstrap.BootstrapTests.test_dump_and_data_must_not_overlap) ... ok
+test_environment_isolates_legacy_settings (test_bootstrap.BootstrapTests.test_environment_isolates_legacy_settings) ... ok
+test_eu_candidate_is_recognised_but_still_unvalidated (test_bootstrap.BootstrapTests.test_eu_candidate_is_recognised_but_still_unvalidated) ... ok
+test_exact_build_and_required_modules (test_bootstrap.BootstrapTests.test_exact_build_and_required_modules) ... ok
+test_help_and_config_work_without_build_or_game (test_bootstrap.BootstrapTests.test_help_and_config_work_without_build_or_game) ... ok
+test_missing_game_is_actionable_and_does_not_create_state (test_bootstrap.BootstrapTests.test_missing_game_is_actionable_and_does_not_create_state) ... ok
+test_msys_style_paths_are_translated (test_bootstrap.BootstrapTests.test_msys_style_paths_are_translated) ... ok
+test_precedence_and_relative_paths (test_bootstrap.BootstrapTests.test_precedence_and_relative_paths) ... ok
+test_unknown_title_and_malformed_sfo_are_rejected (test_bootstrap.BootstrapTests.test_unknown_title_and_malformed_sfo_are_rejected) ... ok
+test_verified_fixture_routes_preparation_and_isolates_saves_from_cache (test_bootstrap.BootstrapTests.test_verified_fixture_routes_preparation_and_isolates_saves_from_cache) ... Starting verified build CUSA11834 01.00; no game patches enabled.
+ok
+test_help_and_runtime_audit (test_native.NativeSmokeTests.test_help_and_runtime_audit) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 1.974s
+
+OK

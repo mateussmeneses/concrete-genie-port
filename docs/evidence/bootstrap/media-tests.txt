@@ -1,0 +1,18 @@
+ninja: Entering directory `runtime/out/gpu'
+[0/2] Re-checking globbed directories...
+[1/8] Building C object CMakeFiles/mp3-test.dir/C_/projetos/concrete-genie-port/runtime/src/runtime_mp3.c.obj
+[2/8] Building C object CMakeFiles/videodec-test.dir/C_/projetos/concrete-genie-port/runtime/tests/test_videodec.c.obj
+[3/8] Building C object CMakeFiles/videodec-test.dir/C_/projetos/concrete-genie-port/runtime/src/compat_win.c.obj
+[4/8] Building C object CMakeFiles/mp3-test.dir/C_/projetos/concrete-genie-port/runtime/src/compat_win.c.obj
+[5/8] Building C object CMakeFiles/mp3-test.dir/C_/projetos/concrete-genie-port/runtime/tests/test_mp3.c.obj
+[6/8] Linking C executable videodec-test.exe
+[7/8] Linking C executable mp3-test.exe
+Runtime: Ajm context initialized (ATRAC9 via LibAtrac9, MP3 via FFmpeg)
+mp3 test: ok
+videodec test: ok
+[h264 @ 000002269a126980] Frame num change from 0 to 1
+[h264 @ 000002269a126980] Frame num change from 0 to 2
+[h264 @ 000002269a126980] Frame num change from 0 to 3
+[h264 @ 000002269a126980] Frame num change from 0 to 3
+[h264 @ 000002269a126980] Frame num change from 0 to 3
+EXIT_CODE=0

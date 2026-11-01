@@ -1,17 +1,101 @@
 # Handoff entre IAs
 
-- Data (UTC): 2026-10-31T23:02:13Z (evidências da sessão; atualização final no commit documental).
-- IA/sessão: Codex, auditoria PROMPT 01; subauditorias Research de runtime e comparação Matterfall.
-- Branch / HEAD SHA / dirty files: raiz `audit/base`; HEAD do checkpoint auditado: `6b3c845e9169b6da94bbb286ba1561d860b4b202`; atualização documental deste handoff em commit sucessor (obter HEAD corrente com `git rev-parse HEAD`). Antes do primeiro commit a raiz não tinha HEAD. Playbook original permanece arquivo do usuário, não incluído no commit. `user/` foi criado pelo smoke runtime na raiz (pastas e custom_trophy/Notice.txt); não contém dump e não foi incluído no commit. `references/` contém dois repositórios locais não rastreados pela raiz. MediEvil: somente `m gpu/third_party/fsr-vulkan` por patches de build; Matterfall limpo. Consultar `git status --short` nas três raízes antes de agir.
-- Base upstream SHA / submodule SHAs: MediEvil 424f3ea8dbdcb02754a31e5225ef42e2f77f8e94; Matterfall afaa2b7e212437f04baff709f983a121477ffcdf. Seis SHAs exatos em evidence/medievil-submodules.txt e tabela MATTERFALL_COMPARISON; Matterfall não inicializado.
-- Build alvo do jogo: TITLE_ID, APP_VER, eboot SHA-256: NÃO VALIDADOS. CUSA11834 candidato documental. Nenhum dump fornecido/inspecionado.
-- Estado atual: runtime original compila (exit 0); smoke Vulkan passa na NVIDIA; quatro unitários GPU passam. Loader com jogo, imports com jogo, menu, gameplay, áudio e imagem do jogo: NÃO EXECUTADOS. Python upstream não verde; services-test/pad-map-test falham no link. Nenhuma personalização Concrete Genie.
-- Última alteração com justificativa: documentação/evidências da auditoria e protocolo para continuidade; código preservado para manter baseline observável. Build aplicou apenas patches FSR distribuídos pelo upstream, após git apply --check.
-- Comandos executados e resultados observados: git status/branch/log inicialmente falharam por ausência de Git; clone das duas referências (exit 0), git init -b audit/base; leituras/rg; submodule update MediEvil (0); git apply --check dos dois patches (0); CXXFLAGS com forced includes + bash build.sh (0); unittest discover (1, 112/6 failures/7 errors/29 skips); ninja seis alvos (1, timeBeginPeriod); ninja quatro alvos GPU e binários (0); --help com espera explícita (1); --vulkan-only (0); gpu-check (0). Consultas CIM e vulkaninfo mediram ambiente. Comandos e limites detalhados em BASE_AUDIT/TEST_MATRIX.
-- Evidência: docs/evidence/build.txt, gpu-build.log, build-artifacts.json, python-tests.txt, native-tests.txt, gpu-unit-tests.txt, runtime-help.*, vulkan-smoke.*, gpu-check.txt, msys-packages.txt, vulkan-summary.txt, JSONs de hardware e snapshots Git. Referências estáticas nos três relatórios.
-- Hipótese ativa e como confirmá-la ou refutá-la: alvos services-test/pad-map-test falham por omitirem winmm, enquanto compat_win.c:124 chama timeBeginPeriod. Confirmar adicionando winmm somente à ligação desses alvos em checkout de desenvolvimento e executando ambos; refutar se o link ainda falhar ou surgir erro de contrato. Essa correção é próxima etapa, não realizada aqui.
-- Falhas e riscos conhecidos: suite herdada contém expectativas GoW removidas, pressupostos Linux e symlinks sem privilégio; loader tests ignorados por nome de executável; SSE4a/NpToolkit2 sem gate; sensores não implementados; layout UE4 específico; distribuição e GPU visual não verificadas. Não habilitar patches/override de MediEvil para Concrete Genie.
-- Próxima ação única, executável e verificável: criar checkout/branch de desenvolvimento a partir do SHA MediEvil fixado, preservar references/medievil como baseline e corrigir a dependência winmm dos dois alvos de teste em gpu/CMakeLists.txt. Executar no CLANG64 `ninja -C out/gpu services-test pad-map-test` e ambos os executáveis, com asserts ativos e exit codes capturados. Não iniciar renomeação/otimização junto desta correção.
-- Critério de conclusão da próxima ação: ambos os binários linkam e executam com exit 0, diff mínimo revisado, logs anexados e PROJECT_STATE/HANDOFF atualizados; se outro bloqueio surgir, registrar primeira falha concreta. Isso não conclui o port nem demonstra boot Concrete Genie.
+- Data (UTC): 2026-10-31, sessão PROMPT 02 (bootstrap) + inspeção inicial do dump.
+- IA/sessão: Hermes Agent. Sucessora da sessão Codex que produziu a auditoria PROMPT 01.
+- Branch: `bootstrap/windows`. HEAD de partida: `60f0aa7a626b6d224f96c510accafc5e88954d13`.
+  **Nenhum merge, rebase ou reset foi executado.** Commits desta etapa são locais.
+- Upstream: runtime vendorizado do MediEvil em
+  `424f3ea8dbdcb02754a31e5225ef42e2f77f8e94` (`runtime/`), checkout de inspeção em
+  `references/medievil`. Submódulos no SHA fixado; ver `docs/evidence/bootstrap/submodules.txt`.
 
-Revisão final: `git diff --cached --check` identificou dois espaços finais emitidos pelo Ninja em evidence/native-tests.txt (linhas 8 e 15); mantidos para preservar o log bruto. Os documentos Markdown passaram na verificação de whitespace. Nenhum merge/reset/rebase executado.
+## O que foi feito nesta etapa
+
+1. **Bootstrap independente** — branch própria, runtime vendorizado sem reorganização,
+   nomes genéricos (`cg-runtime`, `cg-gpu-check`, `concrete-genie.ini`, `runtime.manifest`,
+   identidade `cg.runtime`), config `CG_*`, dados isolados em `.cg/`.
+2. **Perfis por TITLE_ID, fail-closed** — `CUSA11834` (US) e `CUSA11875` (EU) como candidatos
+   com `builds: {}`. Qualquer eboot é recusado com o SHA-256 calculado na mensagem.
+3. **Hooks de outro jogo removidos** do runtime genérico (cheats, multiplicadores, health
+   bar, `apply_patches`, sites SSE4a fixos, `r.SetRes`). Emulação SSE4a por fault handler
+   permanece — é genérica, sem offsets de título.
+4. **Build reproduzível corrigido em três bugs reais** — descritos em `docs/BASELINE.md` e
+   `docs/DECISIONS.md`: patches que nunca aplicavam, `windres` sem temp dir, `winmm` ausente
+   nos alvos de teste. Nenhum `--reject`, nenhum exit code silenciado.
+5. **Smoke independente de dump** — `--help`, `--check-config`, falta de jogo, `--audit-runtime`,
+   `--vulkan-smoke`; todos validados sem arquivo comercial.
+6. **Governança multi-IA preenchida** — `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, e os sete
+   documentos em `docs/`.
+
+## Dump — o que foi efetivamente verificado
+
+O operador forneceu um dump local em `gamedump/CUSA11875` (25 GB, fora do controle de versão).
+
+| Campo | Valor verificado |
+|---|---|
+| Caminho | `gamedump/CUSA11875/` |
+| `TITLE_ID` | `CUSA11875` |
+| `TITLE` (param.sfo) | `Concrete Genie` |
+| `APP_VER` | `01.07` |
+| `VERSION` (param.sfo) | `01.00` |
+| `CONTENT_ID` | `EP9000-CUSA11875_00-CONCRETEGENIE000` |
+| `CATEGORY` | `gp` |
+| `eboot.bin` tamanho | 108.601.759 bytes |
+| `eboot.bin` SHA-256 | `06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51` |
+| Container | SELF (magic `4F 15 3D 1D`) |
+| Engine | Unreal Engine 4 (`ue4commandline.txt` → `ConcreteGenie.uproject`) |
+| Middleware | Bink 2 (`prx/bink2ps4.prx`, `binkpluginps4.prx`) |
+| Módulos `sce_module/` | libc, libSceFios2, libSceNpToolkit2, libSceJobManager, libSceAudioLatencyEstimation, libSceFace, libSceFaceTracker, libSceHand, libSceHandTracker, libSceHeadTracker, libSceS3DConversion, libSceSmart |
+
+Isso **identifica** a build. Não valida boot, imports, loader, menu ou gameplay.
+
+### Resultado do pipeline contra o dump real
+
+```
+$ python run.py --game-dir C:/projetos/concrete-genie-port/gamedump/CUSA11875
+Concrete Genie: Unvalidated build: CUSA11875 APP_VER=01.07
+eboot SHA-256=06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51.
+Candidate title only; inspect the dump before registering support. No patches applied.
+exit 1
+```
+Evidência: `docs/evidence/bootstrap/dump-unvalidated.txt`. Nenhum diretório de estado foi
+criado, nenhum byte do dump foi escrito — o hash foi recalculado depois e não mudou.
+
+## Estado de execução
+
+| Item | Resultado |
+|---|---|
+| `bash build.sh` | exit 0 |
+| `bash build.sh --test` | exit 0, seis testes nativos |
+| `python -m unittest discover -s tests -v` | exit 0, 14 testes |
+| `--help` / `--check-config` | exit 0 |
+| falta de jogo | exit 1 com mensagem acionável |
+| `--audit-runtime` | exit 0, "Runtime audit PASS" |
+| `--vulkan-smoke` | exit 0, NVIDIA RTX 5060, submission + readback 4096 B |
+| pipeline com dump real | exit 1, recusa fail-closed |
+| suíte herdada `runtime/tests` | exit 1 (GoW/MediEvil), não corrigida |
+| **boot / menu / gameplay / áudio / saves** | **NÃO EXECUTADO** |
+
+## Falhas e riscos conhecidos
+
+- `eboot.bin` é SELF; descriptografia/descompressão e relocations reais não foram testadas.
+- Módulos presentes incluem `libSceNpToolkit2`, `libSceFios2` e quatro módulos de
+  rastreamento de rosto/mão/cabeça (PSVR/câmera). Nenhum contrato foi implementado ou
+  verificado para eles nesta etapa.
+- `runtime/launcher/medievil_launcher.py` e `packaging/windows/package.sh` ainda têm branding,
+  updater e ícones de MediEvil. Não são ponto de entrada suportado; a entrada neutra é
+  `Launch Concrete Genie.cmd` → `run.py`.
+- Suíte herdada vermelha: não foi "consertada" para parecer verde.
+
+## Próxima ação única, verificável
+
+**PROMPT 03 — auditoria do dump.** Escrever `scripts/audit_game.py` que produza um manifesto
+JSON local (sem distribuir binários) com `TITLE_ID`, `APP_VER`, `CONTENT_ID`, SHA-256 de
+`eboot.bin`, tabela de imports/NIDs, módulos de `sce_module/`, codecs e sinais de UE4,
+validado contra `gamedump/CUSA11875` e com fixtures sintéticas para os testes.
+
+Critério de conclusão: o manifesto é reproduzível em duas execuções com o mesmo hash; os
+testes de parsing passam sem o dump; e nenhum binário comercial entra no índice do Git.
+Registrar a build em `CANDIDATES['CUSA11875']['builds']` **somente** após o manifesto
+justificar a lista de módulos — e ainda assim isso não equivale a boot validado.
+
+Não iniciar patch binário, GPU ou otimização antes disso.

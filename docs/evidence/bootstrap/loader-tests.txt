@@ -1,0 +1,23 @@
+test_base_relative_address_is_relocated (test_probe.LoaderTests.test_base_relative_address_is_relocated) ... ok
+test_check_imports_lists_missing_without_running (test_probe.LoaderTests.test_check_imports_lists_missing_without_running) ... ok
+test_failed_native_initializer_does_not_enter_game (test_probe.LoaderTests.test_failed_native_initializer_does_not_enter_game) ... ok
+test_host_contract_takes_priority_over_native_export (test_probe.LoaderTests.test_host_contract_takes_priority_over_native_export) ... ok
+test_illegal_instruction_reports_guest_offset (test_probe.LoaderTests.test_illegal_instruction_reports_guest_offset) ... ok
+test_invalid_content_profile_is_rejected (test_probe.LoaderTests.test_invalid_content_profile_is_rejected) ... ok
+test_native_initializer_and_export_return (test_probe.LoaderTests.test_native_initializer_and_export_return) ... ok
+test_native_metadata_and_bindings_are_validated (test_probe.LoaderTests.test_native_metadata_and_bindings_are_validated) ... ok
+test_np_toolkit_missing_import_stops_instead_of_returning_success (test_probe.LoaderTests.test_np_toolkit_missing_import_stops_instead_of_returning_success) ... ok
+test_original_instruction_reaches_named_import (test_probe.LoaderTests.test_original_instruction_reaches_named_import) ... ok
+test_out_of_bounds_relocation_is_rejected (test_probe.LoaderTests.test_out_of_bounds_relocation_is_rejected) ... ok
+test_raw_game_patch_option_is_disabled (test_probe.LoaderTests.test_raw_game_patch_option_is_disabled) ... ok
+test_runtime_returns_from_verified_init_env (test_probe.LoaderTests.test_runtime_returns_from_verified_init_env) ... ok
+test_strict_mode_skips_native_initialization_and_binding (test_probe.LoaderTests.test_strict_mode_skips_native_initialization_and_binding) ... ok
+test_truncated_image_is_rejected (test_probe.LoaderTests.test_truncated_image_is_rejected) ... ok
+test_unknown_capabilities_rejected (test_probe.LoaderTests.test_unknown_capabilities_rejected) ... ok
+test_unverified_runtime_stays_disabled (test_probe.LoaderTests.test_unverified_runtime_stays_disabled) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 1.562s
+
+OK
+EXIT_CODE=0

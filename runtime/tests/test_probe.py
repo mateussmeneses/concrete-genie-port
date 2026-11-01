@@ -2,11 +2,12 @@
 from paths import ROOT
 from pathlib import Path
 import struct
+import os
 import subprocess
 import tempfile
 import unittest
 
-EXE = ROOT / 'out/gow3-probe'
+EXE = ROOT / 'out/gpu/cg-runtime.exe'
 
 
 def package(code, relocs=(), names=(), capabilities=None):
@@ -50,8 +51,25 @@ class LoaderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'boot.bin'
             path.write_bytes(data)
+            env = {k: v for k, v in os.environ.items() if not k.upper().startswith('GOW3_')}
+            env['GOW3_GPU_USER_DIR'] = str(Path(tmp) / 'gpu')
+            env['GOW3_CONFIG'] = str(Path(tmp) / 'runtime.ini')
+            env['PATH'] = str(Path(env.get('CG_MSYS2_ROOT', 'C:/msys64')) / 'clang64/bin') + os.pathsep + env.get('PATH', '')
             return subprocess.run([str(EXE.resolve()), str(path), '--cpu-only', *options],
-                                  capture_output=True, text=True, timeout=5)
+                                  cwd=tmp, env=env, capture_output=True, text=True, timeout=10)
+
+    def test_np_toolkit_missing_import_stops_instead_of_returning_success(self):
+        data = package(b'\xff\x25\x02\0\0\0\x90\x90', [(8, 1, 0, 0)],
+                       ['fixture-missing#libSceNpToolkit2'])
+        result = self.run_image(data)
+        self.assertEqual(result.returncode, 20, result.stdout + result.stderr)
+        self.assertIn('first unsupported PS4 import: fixture-missing#libSceNpToolkit2', result.stdout)
+        self.assertNotIn('returns 0', result.stdout)
+
+    def test_raw_game_patch_option_is_disabled(self):
+        result = self.run_image(package(b'\xc3'), '--patches', 'not-read.bin')
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('game patches disabled', result.stderr)
 
     def test_original_instruction_reaches_named_import(self):
         # jmp [rip+2]; two padding bytes; relocated function pointer at +8
@@ -115,8 +133,8 @@ class LoaderTests(unittest.TestCase):
 
     def test_illegal_instruction_reports_guest_offset(self):
         r = self.run_image(package(b'\x0f\x0b'))
-        self.assertEqual(r.returncode, 132)
-        self.assertIn('at guest offset 0x0,', r.stderr)
+        self.assertEqual(r.returncode, 3 if os.name == 'nt' else 132)
+        self.assertIn('guest offset 0x0' if os.name == 'nt' else 'at guest offset 0x0,', r.stderr)
 
     def test_runtime_returns_from_verified_init_env(self):
         # Align stack, call _init_env through +32, then tail-jump to unknown +40.

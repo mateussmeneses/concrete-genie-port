@@ -26,7 +26,6 @@ namespace Gow3Overlay {
 extern std::atomic<bool> screenshot_requested;
 }
 extern "C" void runtime_restart(void); // src/probe.c: starts run.py again, ends this process
-extern "C" void runtime_ue4_request_setres(const char* text); // src/runtime_extra.c: live r.SetRes
 u32 Gow3DisplayRefreshHz(); // gow3gpu.cpp: the display refresh rate
 #include "common/elf_info.h"
 #include "imgui.h"
@@ -456,33 +455,7 @@ void PerformanceTab() {
                  "Fewer stutters in new areas; an object or effect may appear a moment later.");
         ImGui::EndTable();
     }
-    if (!IsGow3()) {
-        // MediEvil: the game's own resolution, switched live (as its debug menu does). The debug
-        // menu's gamepad navigation needs 1080p: switch there for cheats, then back.
-        ImGui::SeparatorText("Game resolution now");
-        static constexpr const char* labels[] = {"1080p", "1440p", "1800p", "4K"};
-        static constexpr const char* values[] = {"1920x1080", "2560x1440", "3200x1800", "3840x2160"};
-        // The 1440p, 1800p and 4K render resolutions supersample (r.ScreenPercentage up to 200):
-        // a larger output on top of that ran out of the PS4 memory budget (1800p at 200% needs
-        // 6400x3600 targets: crash). Those keep 1080p.
-        const bool supersampling = s.startup_render_resolution >= 3 && s.startup_render_resolution <= 5;
-        for (int i = 0; i < 4; ++i) {
-            if (i) {
-                ImGui::SameLine();
-            }
-            ImGui::BeginDisabled(supersampling && i > 0);
-            if (ImGui::Button(labels[i])) {
-                runtime_ue4_request_setres(values[i]);
-            }
-            ImGui::EndDisabled();
-        }
-        ImGui::TextWrapped(supersampling
-                               ? "Unavailable with the 1440p / 1800p / 4K render resolutions (they already "
-                                 "draw the scene larger; more would run out of game memory). Choose Native "
-                                 "or a native output mode to switch the output size here."
-                               : "Switches the game's output now. Use 1080p for the debug menu (R3), then "
-                                 "switch back.");
-    }
+
     ImGui::SeparatorText("Applied on restart");
     if (BeginRows("##restart")) {
         // God of War III: a resolution patch. Unreal Engine 4 games (MediEvil): the scene scale.
@@ -597,7 +570,7 @@ void Menu() {
     // gow3: the game's own title (param.sfo), not a fixed one.
     static const std::string heading = [] {
         const std::string_view title = Common::ElfInfo::Instance().Title();
-        return std::string(title.empty() ? "MediEvil" : title) + "  (Insert / R3+L2)";
+        return std::string(title.empty() ? "Concrete Genie" : title) + "  (Insert / R3+L2)";
     }();
     if (!ImGui::Begin(heading.c_str(), &keep_open, ImGuiWindowFlags_NoCollapse)) {
         ImGui::End();
@@ -648,7 +621,7 @@ void Menu() {
 
     ImGui::Separator();
     ImGui::PushTextWrapPos(0.0f);
-    ImGui::TextDisabled("%s", footer_help ? footer_help : "L1 / R1 or Q / E: switch tabs. Settings are saved in medievil.ini.");
+    ImGui::TextDisabled("%s", footer_help ? footer_help : "L1 / R1 or Q / E: switch tabs. Settings are saved in concrete-genie.ini.");
     ImGui::PopTextWrapPos();
     if (const int changes = RestartChanges()) {
         ImGui::TextColored(ImVec4(0.85f, 0.72f, 0.45f, 1.0f), "%d change%s need%s a restart (unsaved progress is lost).",

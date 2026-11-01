@@ -1,11 +1,62 @@
-# Protocolo do projeto
+# Protocolo do projeto — Concrete Genie PC port
 
-Antes de qualquer intervenção, leia `docs/PROJECT_STATE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/TEST_MATRIX.md` e `docs/HANDOFF.md`; confira `git status --short`, branch e histórico recente. O playbook fornecido está em `ConcreteGenie_Port_Playbook_MultiIA.md`; a etapa atual é PROMPT 01, auditoria sem personalizar código.
+Port independente de Concrete Genie (PS4) baseado no runtime auditado de MediEvil.
+Nenhuma build de jogo está validada: **CUSA11834 (US) e CUSA11875 (EU) são candidatos
+documentais**, nunca versões suportadas.
 
-Trabalhe com uma hipótese por intervenção: registre observáveis, aceitação e reversão. Preserve alterações existentes e upstream; reset, rebase e merge exigem comando explícito. Use branches pequenas e commits descritivos, sem merge automático.
+## Leitura obrigatória antes de qualquer intervenção
 
-Build de jogo só é suportada após inspecionar param.sfo, eboot.bin e SHA-256. CUSA11834 é candidato documental. Registre testes sem dump separadamente; gameplay sem execução é NÃO EXECUTADO. Patches de outros jogos permanecem desativados para Concrete Genie. Cada alteração binária exige build, arquivo/hash, RVA/VA, bytes antigos/novos, disassembly e verificação anterior à aplicação.
+1. `docs/PROJECT_STATE.md` — onde o projeto está agora.
+2. `docs/DECISIONS.md` — decisões tomadas e por quê (não reverter sem registrar).
+3. `docs/ROADMAP.md` — etapa atual e critérios de entrada da próxima.
+4. `docs/TEST_MATRIX.md` — o que foi realmente executado e o que não foi.
+5. `docs/BASELINE.md` — build reproduzível: dependências, comandos, exit codes.
+6. `docs/HANDOFF.md` — última sessão, próxima ação única.
+7. `docs/BASE_AUDIT.md` — auditoria do upstream MediEvil (rastreabilidade).
 
-Preserve árvore, submódulos e licenças. Confira CRLF/LF e execute git apply --check antes de patches legados. Priorize boot, memória, GPU e gameplay, incluindo stutter, caches, flickering, iluminação, VRAM/RAM, mouse, captura de input e distribuição Windows.
+Depois: `git status --short`, branch atual e `git log --oneline -10`.
 
-Ao encerrar, atualize PROJECT_STATE e HANDOFF com comandos, resultados, limitações e uma próxima ação verificável. Dados comerciais, saves e caches derivados do jogo ficam fora de commits. `references/` contém checkouts de inspeção, não o port personalizado; não os adicione por engano ao índice da raiz.
+## Regras invioláveis
+
+- **Boot só existe com evidência.** Sem `sce_sys/param.sfo` lido e SHA-256 de `eboot.bin`
+  calculado do dump local, nenhum estado além de "não executado" pode ser registrado.
+  Nunca escrever que o jogo deu boot, abriu menu ou rodou gameplay sem log correspondente.
+- **Não promover artefato de outro jogo a genérico.** Offsets, signatures, XML de patch,
+  cheats, hooks de orquestração, pools, `r.SetRes` e limites de heap de MediEvil/GoW III/
+  Matterfall permanecem específicos. Genérico é só o que a auditoria classificou como
+  infraestrutura reutilizável.
+- **Patch binário exige prova.** Arquivo, SHA-256 da build, RVA/VA, bytes antigos e novos,
+  disassembly e verificação anterior à aplicação. Nada de offset herdado.
+- **Falha explícita.** Não silenciar exit code, não usar `--reject` como solução padrão, não
+  transformar erro de build em aviso. Um patch que não aplica em nenhuma direção interrompe
+  o build com exit != 0.
+- **Upstream rastreável.** `runtime/` é cópia vendorizada do MediEvil em
+  `424f3ea8dbdcb02754a31e5225ef42e2f77f8e94`; `references/` guarda checkouts de inspeção.
+  Não reescrever histórico; merge, rebase e reset exigem comando explícito do operador.
+
+## Fluxo de trabalho
+
+- Uma hipótese por intervenção: registre observáveis, critério de aceitação e reversão.
+- Branches pequenas e commits descritivos; **sem merge automático**.
+- Ao encerrar, atualize `docs/PROJECT_STATE.md` e `docs/HANDOFF.md` com comandos, resultados,
+  limitações e uma próxima ação única verificável.
+- Preserve CRLF/LF conforme `.gitattributes`; rode `git apply --check` antes de patch legado.
+- Dados comerciais, saves, caches derivados e logs grandes ficam fora de commits
+  (ver `.gitignore`).
+
+## Prioridades técnicas
+
+Boot → memória → GPU → gameplay. Dentro de gameplay: stutter e caches, flickering,
+iluminação/sombras, VRAM/RAM, mouse e captura de input, distribuição em Windows limpo.
+
+## Build
+
+```bash
+# shell MSYS2 CLANG64
+bash build.sh          # submodules + patches + cg-runtime + cg-gpu-check
+bash build.sh --test   # + testes nativos
+python -m unittest discover -s tests -v
+```
+
+Dependências e versões medidas em `docs/BASELINE.md`. O build e os testes de bootstrap
+não precisam do jogo.

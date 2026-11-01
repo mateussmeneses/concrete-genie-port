@@ -1,0 +1,20 @@
+Runtime audit PASS: libc binding present; unknown imports unresolved.
+Game hooks: disabled; title-specific patch sites: none; UE4 setres: disabled.
+No game build validated; no guest code executed.
+Runtime: _init_env=0, atexit=0, __cxa_atexit=0, registered handlers=0
+Runtime: static guards acquired=0, released=0
+Runtime: guest threads created=0, exited=0, joined=0
+Runtime: mutexes created=0, locks=0, unlocks=0
+Runtime: condition variables created=0, waits=0, wakeups=0
+Runtime: rwlocks created=0, reads=0, writes=0, unlocks=0
+Runtime: semaphores created=0, deleted=0, acquired=0, signals=0, timeouts=0
+Runtime: AppContent references=0, initialized=0, parameter queries=0, list queries=0
+Runtime: direct memory allocations=0, maps=0, live=0, budget=5301600256
+Runtime: flexible maps=0, in use=0, protects=0, queries=0, regions=0
+Runtime: Ajm batches=0, jobs=0, ATRAC9 frames decoded=0
+Runtime: audio ports opened=0, buffers output=0
+Runtime: pad reads=0, gamepads=0 (none)
+Runtime: event flags created=0, NGS2 silent renders=0
+Runtime: save data mounts=0, memory writes=0
+Runtime: files opened=0, reads=0 (0 bytes), writes=0, not found=0
+Runtime: memory operations=0

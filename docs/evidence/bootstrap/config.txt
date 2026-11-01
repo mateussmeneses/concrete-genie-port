@@ -1,0 +1,5 @@
+{
+  "game_dir": null,
+  "data_dir": "C:\\projetos\\concrete-genie-port\\.cg"
+}
+Configuration valid; game support NOT VALIDATED.

@@ -1,0 +1,1 @@
+Concrete Genie: No eboot.bin in C:/projetos/concrete-genie-port/gamedump. Set CG_GAME_DIR or --game-dir to your dump folder.

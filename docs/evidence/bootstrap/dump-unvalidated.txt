@@ -1,0 +1,1 @@
+Concrete Genie: Unvalidated build: CUSA11875 APP_VER=01.07 eboot SHA-256=06f143de47f23a3ba0506e642148e2a553465bcf1e604d986ba246e5fb133e51. Candidate title only; inspect the dump before registering support. No patches applied.

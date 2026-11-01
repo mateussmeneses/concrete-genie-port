@@ -1,0 +1,328 @@
+test_draw_fills_and_clears_the_canvas (test_button_icons.ButtonIconTest.test_draw_fills_and_clears_the_canvas) ... ok
+test_every_game_button_has_a_playstation_icon (test_button_icons.ButtonIconTest.test_every_game_button_has_a_playstation_icon) ... ok
+test_every_gamepad_button_has_an_icon_in_both_styles (test_button_icons.ButtonIconTest.test_every_gamepad_button_has_an_icon_in_both_styles) ... ok
+test_styles_differ_where_the_controllers_do (test_button_icons.ButtonIconTest.test_styles_differ_where_the_controllers_do) ... ok
+test_lifecycle_and_output_boundaries (test_content.ContentTests.test_lifecycle_and_output_boundaries) ... skipped 'run bash build.sh --test first'
+test_missing_profile_does_not_report_loaded (test_content.ContentTests.test_missing_profile_does_not_report_loaded) ... skipped 'run bash build.sh --test first'
+test_other_modules_are_counted_independently (test_content.ContentTests.test_other_modules_are_counted_independently) ... skipped 'run bash build.sh --test first'
+test_invalid_sfo_parameter_rejected (test_content.ProfileTests.test_invalid_sfo_parameter_rejected) ... ok
+test_sfo_parameters_and_explicit_trial_profile (test_content.ProfileTests.test_sfo_parameters_and_explicit_trial_profile) ... ok
+test_confirmed_restart_becomes_the_last_good (test_graphics_options.GraphicsOptionsTest.test_confirmed_restart_becomes_the_last_good) ... ok
+AppContent profile: SKU=trial (probe setting), user params=[13, 0, 0, 4294967295], mounted add-ons=0
+Engine frame rate: back to 60 FPS once (above 60 is experimental; the launcher or the in-game menu can choose it again)
+test_defaults_and_invalid_values (test_graphics_options.GraphicsOptionsTest.test_defaults_and_invalid_values) ... FAIL
+test_environment (test_graphics_options.GraphicsOptionsTest.test_environment) ... ok
+test_patch_names (test_graphics_options.GraphicsOptionsTest.test_patch_names) ... ok
+Engine frame rate: back to 60 FPS once (above 60 is experimental; the launcher or the in-game menu can choose it again)
+test_unconfirmed_restart_is_tried_once_then_reverted (test_graphics_options.GraphicsOptionsTest.test_unconfirmed_restart_is_tried_once_then_reverted) ... ok
+test_write_keys_keeps_other_lines (test_graphics_options.GraphicsOptionsTest.test_write_keys_keeps_other_lines) ... ok
+test_both_styles_name_every_default_gamepad_button (test_launcher_controls.ControlMapTest.test_both_styles_name_every_default_gamepad_button) ... ok
+test_changed_buttons_in_table_order (test_launcher_controls.ControlMapTest.test_changed_buttons_in_table_order) ... ok
+test_environment (test_launcher_controls.ControlMapTest.test_environment) ... ok
+test_graphics_defaults_match_the_game (test_launcher_controls.ControlMapTest.test_graphics_defaults_match_the_game) ... FAIL
+test_new_cheats_default_to_disabled (test_launcher_controls.ControlMapTest.test_new_cheats_default_to_disabled) ... ok
+test_only_changes_from_the_defaults_are_kept (test_launcher_controls.ControlMapTest.test_only_changes_from_the_defaults_are_kept) ... ok
+test_pipeline_binary_cache_switch (test_launcher_controls.ControlMapTest.test_pipeline_binary_cache_switch) ... ok
+test_rejects_separators_unknown_buttons_and_bad_shapes (test_launcher_controls.ControlMapTest.test_rejects_separators_unknown_buttons_and_bad_shapes) ... ok
+test_settings_keys_kept (test_launcher_controls.ControlMapTest.test_settings_keys_kept) ... ok
+test_first_start_is_in_english (test_launcher_controls.ReleaseVersionTest.test_first_start_is_in_english) ... ok
+test_god_of_war_release_is_newer_than_the_inherited_tags (test_launcher_controls.ReleaseVersionTest.test_god_of_war_release_is_newer_than_the_inherited_tags) ... FAIL
+test_different_local_ids_bind_same_identity (test_link_libc.LinkTests.test_different_local_ids_bind_same_identity) ... ok
+test_fs_loads_outside_executable_segments_are_kept (test_link_libc.LinkTests.test_fs_loads_outside_executable_segments_are_kept) ... ok
+test_fs_thread_pointer_loads_are_rewritten_to_gs (test_link_libc.LinkTests.test_fs_thread_pointer_loads_are_rewritten_to_gs) ... ok
+test_relocation_outside_segments_rejected (test_link_libc.LinkTests.test_relocation_outside_segments_rejected) ... ok
+test_same_nid_wrong_library_version_does_not_bind (test_link_libc.LinkTests.test_same_nid_wrong_library_version_does_not_bind) ... ok
+test_tls_module_id_is_literal_not_image_pointer (test_link_libc.LinkTests.test_tls_module_id_is_literal_not_image_pointer) ... ok
+test_unsupported_tls_symbol_rejected (test_link_libc.LinkTests.test_unsupported_tls_symbol_rejected) ... ok
+test_01_02_patch_is_the_default (test_medievil_patches.MedievilPatchTests.test_01_02_patch_is_the_default) ... ok
+test_01_02_writes (test_medievil_patches.MedievilPatchTests.test_01_02_writes) ... ok
+test_profile_per_version (test_medievil_patches.MedievilPatchTests.test_profile_per_version) ... ok
+test_last_in_order_wins (test_mod_conflicts.ModConflictTest.test_last_in_order_wins) ... ok
+test_no_conflict_and_broken_mod (test_mod_conflicts.ModConflictTest.test_no_conflict_and_broken_mod) ... ok
+test_only_given_mods_count (test_mod_conflicts.ModConflictTest.test_only_given_mods_count) ... ok
+test_preset_skips_missing_and_appends_new (test_mod_conflicts.ModConflictTest.test_preset_skips_missing_and_appends_new) ... ok
+test_preset_with_bad_shape (test_mod_conflicts.ModConflictTest.test_preset_with_bad_shape) ... ok
+test_app0_wrapped_mod_discovered (test_mods.ModTests.test_app0_wrapped_mod_discovered) ... ok
+test_directory_conflict_does_not_modify_base (test_mods.ModTests.test_directory_conflict_does_not_modify_base) ... Mods: A: 1 files
+ok
+test_executable_replacement_rejected (test_mods.ModTests.test_executable_replacement_rejected) ... ok
+test_invalid_profile_fails (test_mods.ModTests.test_invalid_profile_fails) ... ok
+test_last_mod_wins_and_reordering_changes_winner (test_mods.ModTests.test_last_mod_wins_and_reordering_changes_winner) ... Mods: A: 1 files
+Mods: dvdroot_ps4\data\a.wad: A -> B
+Mods: B: 1 files
+Mods: 1 game files replaced, 0 added
+Mods: B: 1 files
+Mods: dvdroot_ps4\data\a.wad: B -> A
+Mods: A: 1 files
+Mods: 1 game files replaced, 0 added
+ok
+test_merge_replacement_new_file_and_directory_listing (test_mods.ModTests.test_merge_replacement_new_file_and_directory_listing) ... Mods: A: 2 files
+Mods: 1 game files replaced, 1 added
+ok
+test_mod_symlinks_rejected (test_mods.ModTests.test_mod_symlinks_rejected) ... ERROR
+test_no_mod_returns_original_game (test_mods.ModTests.test_no_mod_returns_original_game) ... ok
+test_other_case_replaces_the_game_file (test_mods.ModTests.test_other_case_replaces_the_game_file) ... Mods: Upper: 1 files
+Mods: 1 game files replaced, 0 added
+ok
+test_run_uses_overlay_propagates_exit_and_cleans_view (test_mods.ModTests.test_run_uses_overlay_propagates_exit_and_cleans_view) ... FAIL
+test_selection_disable_and_new_mod (test_mods.ModTests.test_selection_disable_and_new_mod) ... ok
+test_shadps4_sibling_folder_and_global_disable (test_mods.ModTests.test_shadps4_sibling_folder_and_global_disable) ... ok
+test_wrapped_layouts (test_mods.ModTests.test_wrapped_layouts) ... Mods: Archive: 1 files
+Mods: 1 game files replaced, 0 added
+Mods: Nested: 1 files
+Mods: 1 game files replaced, 0 added
+ok
+test_32_bit_and_malformed_icds_are_skipped (test_packaged_vulkan.PackagedVulkanTests.test_32_bit_and_malformed_icds_are_skipped) ... ok
+test_absolute_and_relative_icd_paths (test_packaged_vulkan.PackagedVulkanTests.test_absolute_and_relative_icd_paths) ... ok
+test_additional_user_icds_are_not_lost (test_packaged_vulkan.PackagedVulkanTests.test_additional_user_icds_are_not_lost) ... ok
+test_amd_intel_keep_bundled_drivers (test_packaged_vulkan.PackagedVulkanTests.test_amd_intel_keep_bundled_drivers) ... ok
+test_explicit_and_legacy_overrides_are_preserved (test_packaged_vulkan.PackagedVulkanTests.test_explicit_and_legacy_overrides_are_preserved) ... ok
+test_host_driver_can_be_supplied_outside_hidden_nix_store (test_packaged_vulkan.PackagedVulkanTests.test_host_driver_can_be_supplied_outside_hidden_nix_store) ... FAIL
+test_host_nvidia_and_compiler_are_exposed_without_host_libc (test_packaged_vulkan.PackagedVulkanTests.test_host_nvidia_and_compiler_are_exposed_without_host_libc) ... ERROR
+test_built_in_file_is_not_external (test_patches.ExternalPatchTests.test_built_in_file_is_not_external) ... ok
+test_selection_and_unsupported_lines (test_patches.ExternalPatchTests.test_selection_and_unsupported_lines) ... Patches: broken.xml: no element found: line 1, column 7
+Patches: skipped extra.xml/Mask: invalid literal for int() with base 0: ''
+Patches: skipped extra.xml/Mask: invalid literal for int() with base 0: ''
+ok
+test_eboot_build_check (test_patches.GameProfileTests.test_eboot_build_check) ... FAIL
+test_gow3_defaults_and_extras (test_patches.GameProfileTests.test_gow3_defaults_and_extras) ... ERROR
+test_gow3_patches_compile (test_patches.GameProfileTests.test_gow3_patches_compile) ... ERROR
+test_gow3_resolution_patch_replaces_texture_fix (test_patches.GameProfileTests.test_gow3_resolution_patch_replaces_texture_fix) ... ERROR
+test_profiles_by_title_id (test_patches.GameProfileTests.test_profiles_by_title_id) ... ERROR
+test_requirements_from_patch_notes (test_patches.GameProfileTests.test_requirements_from_patch_notes) ... ERROR
+test_bad_program_header_index_rejected (test_prepare.SelfTests.test_bad_program_header_index_rejected) ... ok
+test_encrypted_or_compressed_payload_rejected (test_prepare.SelfTests.test_encrypted_or_compressed_payload_rejected) ... ok
+test_file_offset_is_not_virtual_address (test_prepare.SelfTests.test_file_offset_is_not_virtual_address) ... ok
+test_libc_ret_contract_is_verified_from_symbol_and_code (test_prepare.SelfTests.test_libc_ret_contract_is_verified_from_symbol_and_code) ... ok
+test_missing_required_segment_rejected (test_prepare.SelfTests.test_missing_required_segment_rejected) ... ok
+test_report_with_non_latin_title_is_written_as_utf8 (test_prepare.SelfTests.test_report_with_non_latin_title_is_written_as_utf8) ... ok
+test_truncated_payload_rejected (test_prepare.SelfTests.test_truncated_payload_rejected) ... ok
+test_base_relative_address_is_relocated (test_probe.LoaderTests.test_base_relative_address_is_relocated) ... ok
+test_check_imports_lists_missing_without_running (test_probe.LoaderTests.test_check_imports_lists_missing_without_running) ... ok
+test_failed_native_initializer_does_not_enter_game (test_probe.LoaderTests.test_failed_native_initializer_does_not_enter_game) ... ok
+test_host_contract_takes_priority_over_native_export (test_probe.LoaderTests.test_host_contract_takes_priority_over_native_export) ... ok
+test_illegal_instruction_reports_guest_offset (test_probe.LoaderTests.test_illegal_instruction_reports_guest_offset) ... ok
+test_invalid_content_profile_is_rejected (test_probe.LoaderTests.test_invalid_content_profile_is_rejected) ... ok
+test_native_initializer_and_export_return (test_probe.LoaderTests.test_native_initializer_and_export_return) ... ok
+test_native_metadata_and_bindings_are_validated (test_probe.LoaderTests.test_native_metadata_and_bindings_are_validated) ... ok
+test_np_toolkit_missing_import_stops_instead_of_returning_success (test_probe.LoaderTests.test_np_toolkit_missing_import_stops_instead_of_returning_success) ... ok
+test_original_instruction_reaches_named_import (test_probe.LoaderTests.test_original_instruction_reaches_named_import) ... ok
+test_out_of_bounds_relocation_is_rejected (test_probe.LoaderTests.test_out_of_bounds_relocation_is_rejected) ... ok
+test_raw_game_patch_option_is_disabled (test_probe.LoaderTests.test_raw_game_patch_option_is_disabled) ... ok
+test_runtime_returns_from_verified_init_env (test_probe.LoaderTests.test_runtime_returns_from_verified_init_env) ... ok
+test_strict_mode_skips_native_initialization_and_binding (test_probe.LoaderTests.test_strict_mode_skips_native_initialization_and_binding) ... ok
+test_truncated_image_is_rejected (test_probe.LoaderTests.test_truncated_image_is_rejected) ... ok
+test_unknown_capabilities_rejected (test_probe.LoaderTests.test_unknown_capabilities_rejected) ... ok
+test_unverified_runtime_stays_disabled (test_probe.LoaderTests.test_unverified_runtime_stays_disabled) ... ok
+test_recursive_guard_fails_explicitly (test_runtime.RuntimeTests.test_recursive_guard_fails_explicitly) ... skipped 'run bash build.sh --test first'
+test_runtime_contracts (test_runtime.RuntimeTests.test_runtime_contracts) ... skipped 'run bash build.sh --test first'
+test_rwlock_lifecycle_and_ownership (test_runtime.RuntimeTests.test_rwlock_lifecycle_and_ownership) ... skipped 'run bash build.sh --test first'
+test_rwlock_multiple_readers_exclude_writer (test_runtime.RuntimeTests.test_rwlock_multiple_readers_exclude_writer) ... skipped 'run bash build.sh --test first'
+test_rwlock_timeouts_use_orbis_errors (test_runtime.RuntimeTests.test_rwlock_timeouts_use_orbis_errors) ... skipped 'run bash build.sh --test first'
+test_stack_corruption_is_not_ignored (test_runtime.RuntimeTests.test_stack_corruption_is_not_ignored) ... skipped 'run bash build.sh --test first'
+test_tls_bounds_are_checked (test_runtime.RuntimeTests.test_tls_bounds_are_checked) ... skipped 'run bash build.sh --test first'
+test_copies_savedata (test_save_backup.SaveBackupTest.test_copies_savedata) ... ok
+test_keeps_newest_ten (test_save_backup.SaveBackupTest.test_keeps_newest_ten) ... ok
+test_no_backup_without_saves (test_save_backup.SaveBackupTest.test_no_backup_without_saves) ... ok
+test_restore_backs_up_current_first (test_save_backup.SaveBackupTest.test_restore_backs_up_current_first) ... ok
+test_restore_oldest_when_full (test_save_backup.SaveBackupTest.test_restore_oldest_when_full) ... ok
+test_restore_rejects_unknown_or_unsafe_names (test_save_backup.SaveBackupTest.test_restore_rejects_unknown_or_unsafe_names) ... ok
+test_same_second_gets_unique_name (test_save_backup.SaveBackupTest.test_same_second_gets_unique_name) ... ok
+test_cancel_and_delete_wake_all_waiters (test_sema.SemaphoreTests.test_cancel_and_delete_wake_all_waiters) ... skipped 'run bash build.sh --test first'
+test_counts_errors_timeout_and_stale_ids (test_sema.SemaphoreTests.test_counts_errors_timeout_and_stale_ids) ... skipped 'run bash build.sh --test first'
+test_fifo_wakeup_and_token_reservation (test_sema.SemaphoreTests.test_fifo_wakeup_and_token_reservation) ... skipped 'run bash build.sh --test first'
+test_priority_wait_blocks_until_signal (test_sema.SemaphoreTests.test_priority_wait_blocks_until_signal) ... skipped 'run bash build.sh --test first'
+test_complete_model_and_wrong_initializer (test_upscaler_assets.UpscalerAssetsTests.test_complete_model_and_wrong_initializer) ... ok
+test_partial_model_is_not_reported_available (test_upscaler_assets.UpscalerAssetsTests.test_partial_model_is_not_reported_available) ... ok
+test_tier_depends_on_output_not_render_preset (test_upscaler_assets.UpscalerAssetsTests.test_tier_depends_on_output_not_render_preset) ... ok
+
+======================================================================
+ERROR: test_mod_symlinks_rejected (test_mods.ModTests.test_mod_symlinks_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_mods.py", line 79, in test_mod_symlinks_rejected
+    (a / 'dvdroot_ps4/escape').symlink_to(self.assets, target_is_directory=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py", line 1213, in symlink_to
+    os.symlink(target, self, target_is_directory)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 1314] O cliente n�o tem o privil�gio necess�rio: 'C:\\Users\\Mateus\\AppData\\Local\\Temp\\tmpnz4btbua\\CUSA01623\\dvdroot_ps4\\data' -> 'C:\\Users\\Mateus\\AppData\\Local\\Temp\\tmpnz4btbua\\mods\\A\\dvdroot_ps4\\escape'
+
+======================================================================
+ERROR: test_host_nvidia_and_compiler_are_exposed_without_host_libc (test_packaged_vulkan.PackagedVulkanTests.test_host_nvidia_and_compiler_are_exposed_without_host_libc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_packaged_vulkan.py", line 59, in test_host_nvidia_and_compiler_are_exposed_without_host_libc
+    (self.libs / "libGLX_nvidia.so.0").symlink_to(driver.name)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py", line 1213, in symlink_to
+    os.symlink(target, self, target_is_directory)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 1314] O cliente n�o tem o privil�gio necess�rio: 'libGLX_nvidia.so.580.1' -> 'C:\\Users\\Mateus\\AppData\\Local\\Temp\\tmpt98hubhv\\host-libs\\libGLX_nvidia.so.0'
+
+======================================================================
+ERROR: test_gow3_defaults_and_extras (test_patches.GameProfileTests.test_gow3_defaults_and_extras)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_patches.py", line 62, in test_gow3_defaults_and_extras
+    self.assertEqual(selected_patches(GOW3, '01.02', ''),
+                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\projetos\concrete-genie-port\runtime\scripts\patches.py", line 119, in selected_patches
+    names=[] if only else [m.get('Name') for m in ET.parse(xml).getroot().iter('Metadata')
+                                                  ~~~~~~~~^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 1227, in parse
+    tree.parse(source, parser)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 570, in parse
+    source = open(source, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\projetos\\concrete-genie-port\\runtime\\patches\\God_of_War_III_Remastered.xml'
+
+======================================================================
+ERROR: test_gow3_patches_compile (test_patches.GameProfileTests.test_gow3_patches_compile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_patches.py", line 85, in test_gow3_patches_compile
+    names = [m.get('Name') for m in ET.parse(GOW3).getroot().iter('Metadata')]
+                                    ~~~~~~~~^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 1227, in parse
+    tree.parse(source, parser)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 570, in parse
+    source = open(source, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\projetos\\concrete-genie-port\\runtime\\patches\\God_of_War_III_Remastered.xml'
+
+======================================================================
+ERROR: test_gow3_resolution_patch_replaces_texture_fix (test_patches.GameProfileTests.test_gow3_resolution_patch_replaces_texture_fix)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_patches.py", line 72, in test_gow3_resolution_patch_replaces_texture_fix
+    self.assertEqual(selected_patches(GOW3, '01.02', 'Resolution Patch - 4K'),
+                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\projetos\concrete-genie-port\runtime\scripts\patches.py", line 119, in selected_patches
+    names=[] if only else [m.get('Name') for m in ET.parse(xml).getroot().iter('Metadata')
+                                                  ~~~~~~~~^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 1227, in parse
+    tree.parse(source, parser)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 570, in parse
+    source = open(source, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\projetos\\concrete-genie-port\\runtime\\patches\\God_of_War_III_Remastered.xml'
+
+======================================================================
+ERROR: test_profiles_by_title_id (test_patches.GameProfileTests.test_profiles_by_title_id)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_patches.py", line 57, in test_profiles_by_title_id
+    self.assertEqual(game_profile('CUSA01623')[1:3], (GOW3, '01.02'))
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+======================================================================
+ERROR: test_requirements_from_patch_notes (test_patches.GameProfileTests.test_requirements_from_patch_notes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_patches.py", line 90, in test_requirements_from_patch_notes
+    self.assertEqual(patch_requirements(GOW3, ['Resolution Patch - 4K', 'Skip Any Video With X Button'], '01.02'),
+                     ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\projetos\concrete-genie-port\runtime\scripts\patches.py", line 132, in patch_requirements
+    for meta in ET.parse(xml).getroot().iter('Metadata'):
+                ~~~~~~~~^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 1227, in parse
+    tree.parse(source, parser)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Mateus\AppData\Local\Python\pythoncore-3.14-64\Lib\xml\etree\ElementTree.py", line 570, in parse
+    source = open(source, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\projetos\\concrete-genie-port\\runtime\\patches\\God_of_War_III_Remastered.xml'
+
+======================================================================
+FAIL: test_defaults_and_invalid_values (test_graphics_options.GraphicsOptionsTest.test_defaults_and_invalid_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_graphics_options.py", line 23, in test_defaults_and_invalid_values
+    self.assertEqual(options, {'render_resolution': 'native', 'engine_fps': '120', 'deferred_readback': '1',
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                               'stale_readback': '1', 'async_shaders': '1'})
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'ren[37 chars]s': '60', 'deferred_readback': '1', 'stale_rea[29 chars] '1'} != {'ren[37 chars]s': '120', 'deferred_readback': '1', 'stale_re[30 chars] '1'}
+  {'async_shaders': '1',
+   'deferred_readback': '1',
+-  'engine_fps': '60',
+?                 ^
+
++  'engine_fps': '120',
+?                 ^^
+
+   'render_resolution': 'native',
+   'stale_readback': '1'}
+
+======================================================================
+FAIL: test_graphics_defaults_match_the_game (test_launcher_controls.ControlMapTest.test_graphics_defaults_match_the_game)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_launcher_controls.py", line 78, in test_graphics_defaults_match_the_game
+    self.assertEqual((d['display_mode'], d['vsync'], d['fps_limit'], d['engine_fps']), ('windowed', '1', '0', '120'))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('windowed', '1', '0', '60') != ('windowed', '1', '0', '120')
+
+First differing element 3:
+'60'
+'120'
+
+- ('windowed', '1', '0', '60')
+?                         ^
+
++ ('windowed', '1', '0', '120')
+?                         ^^
+
+
+======================================================================
+FAIL: test_god_of_war_release_is_newer_than_the_inherited_tags (test_launcher_controls.ReleaseVersionTest.test_god_of_war_release_is_newer_than_the_inherited_tags)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_launcher_controls.py", line 87, in test_god_of_war_release_is_newer_than_the_inherited_tags
+    self.assertEqual(launcher.VERSION, '2.1.3')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '1.3.8' != '2.1.3'
+- 1.3.8
++ 2.1.3
+
+
+======================================================================
+FAIL: test_run_uses_overlay_propagates_exit_and_cleans_view (test_mods.ModTests.test_run_uses_overlay_propagates_exit_and_cleans_view)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_mods.py", line 155, in test_run_uses_overlay_propagates_exit_and_cleans_view
+    self.assertEqual(result.returncode, 7, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 7 : b''
+
+======================================================================
+FAIL: test_host_driver_can_be_supplied_outside_hidden_nix_store (test_packaged_vulkan.PackagedVulkanTests.test_host_driver_can_be_supplied_outside_hidden_nix_store)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_packaged_vulkan.py", line 105, in test_host_driver_can_be_supplied_outside_hidden_nix_store
+    self.assertIn("nvidia_icd.json", self.env["VK_DRIVER_FILES"])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'nvidia_icd.json' not found in '/bundled/radeon.json:/bundled/intel.json'
+
+======================================================================
+FAIL: test_eboot_build_check (test_patches.GameProfileTests.test_eboot_build_check)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\projetos\concrete-genie-port\runtime\tests\test_patches.py", line 81, in test_eboot_build_check
+    self.assertFalse(eboot_matches(folder, game_profile('CUSA01623')))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 114 tests in 1.932s
+
+FAILED (failures=6, errors=7, skipped=14)
+Linked native libc: base=0x10000, 1 fallback exports, TLS=32 bytes; eboot TLS=0 bytes, fs->gs patched=0
+Linked native libc: base=0x10000, 1 fallback exports, TLS=32 bytes; eboot TLS=0 bytes, fs->gs patched=0
+Linked native libc: base=0x10000, 1 fallback exports, TLS=32 bytes; eboot TLS=48 bytes, fs->gs patched=2
+Linked native libc: base=0x10000, 0 fallback exports, TLS=32 bytes; eboot TLS=0 bytes, fs->gs patched=0
+Linked native libc: base=0x10000, 1 fallback exports, TLS=32 bytes; eboot TLS=0 bytes, fs->gs patched=0
+Patches: external extra.xml/On (1 writes)
+Patches: external extra.xml/Off (1 writes)
+EXIT_CODE=1

@@ -1,0 +1,1 @@
+Concrete Genie: No game configured. Set CG_GAME_DIR or --game-dir to your local dump; see --help.

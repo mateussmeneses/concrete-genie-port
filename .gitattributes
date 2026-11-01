@@ -1,0 +1,16 @@
+# Line endings are load-bearing here: the third-party patches under
+# runtime/gpu/patches/fsr-vulkan must stay LF or `git apply` cannot match their LF targets,
+# and the scripts must stay LF to run under MSYS2 bash. Without this file a checkout with
+# core.autocrlf=true converts them to CRLF and the build silently stops applying patches.
+* text=auto
+
+*.sh text eol=lf
+*.patch text eol=lf
+*.cmd text eol=crlf
+
+# Binary evidence and assets: never converted.
+*.png binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.zip binary

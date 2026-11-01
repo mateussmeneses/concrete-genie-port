@@ -1,0 +1,16 @@
+usage: run.py [-h] [--config CONFIG] [--game-dir GAME_DIR]
+              [--data-dir DATA_DIR] [--check-config | --audit-runtime |
+              --vulkan-smoke]
+
+Concrete Genie bootstrap launcher. No game build has been validated yet.
+
+options:
+  -h, --help           show this help message and exit
+  --config CONFIG      JSON config (CG_CONFIG); relative paths use its
+                       directory
+  --game-dir GAME_DIR  Local dump folder (CG_GAME_DIR)
+  --data-dir DATA_DIR  Isolated output/cache/save directory (CG_DATA_DIR;
+                       default .cg)
+  --check-config       Validate configuration without a dump or build
+  --audit-runtime      Audit native resolver without guest execution
+  --vulkan-smoke       Submit and read back a Vulkan buffer, without a game
