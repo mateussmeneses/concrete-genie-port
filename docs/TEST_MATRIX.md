@@ -16,17 +16,38 @@ desde a amostra anterior. `scripts/frame_states.py` lê o log e imprime as faixa
 | `run5-verify` | `cross`, a cada 10 | black 1..431, fade 441..461, **scene 471..9601** | `.cg/audit/statemap/run5-verify.log` |
 | `boot-136` | `cross`+`options` | black 1..411, fade 416..461, **bright 466..9041** | `boot-136-framemap-options.txt` |
 
-**O estado não alterna.** Alcançada a cena, ela permanece até o timeout em todas as execuções com
-`cross`, em frames de início diferentes (471/561/621). A variação entre execuções é o ponto em que
-cada run para na sequência de boot — não instabilidade do jogo.
+**O estado não alterna *dentro* de uma execução**, mas **não é determinístico entre execuções**.
+Alcançada a cena, ela permanece até o timeout. Porém, com a mesma entrada `cross`, uma execução
+terminou em `bright` (`boot-140`) em vez de `scene`:
+
+| Execução | Entrada | Estado final |
+|---|---|---|
+| `boot-135` | `cross` | **scene** (621..9021) |
+| `boot-137` | `cross` | **scene** (561..9006) |
+| `boot-138` | `cross` | **scene** (471..9601) |
+| `boot-140` | `cross` | **bright** (496..9661) |
+| `boot-139` | `cross`, `options` no frame 461 | **scene** (461..24181) |
+| `boot-136` | `cross`+`options` | **bright** (466..9041) |
+
+A tela `bright` é a **mesma** nos dois casos que a alcançaram, e aparece **sem nenhum input**
+(`boot-140`). Portanto não se pode atribuir `bright` ao OPTIONS, e nenhum teste pode assumir que
+`cross` leva à cena.
 
 **Custo medido da instrumentação:** 3,09 ms por amostra (readback incluído), estável de 60 a 1.800
 amostras, com o jogo mantendo 30 FPS. A sonda não altera o estado que mede.
 
-**Consequência para os testes anteriores:** a execução `pz` (`cross`+`options`) passou para uma UI
-clara em 466 e nunca voltou à cena. O teste de pausa "a partir do frame 3000" media, portanto, uma
-tela de UI estática — não gameplay que ignorou OPTIONS. O veredito de pausa permanece
-**não observado**, agora com a causa da má interpretação identificada.
+## Testes ancorados por estado (`scripts/state_anchored_run.py`)
+
+Um índice de frame não identifica estado quando o ponto de parada varia. O driver espera `settle`
+amostras consecutivas do estado pedido e só então escreve o pad file, registrando a âncora no
+próprio log.
+
+`boot-139` — âncora em `scene` no frame 461, `options` aplicado depois, confirmado por
+`buttons=0x4000` → `buttons=0x4008`. A cena permaneceu `scene` por 23.700 frames.
+
+**Consequência para os testes anteriores:** o teste de pausa `pz` caiu em `bright`, estado que agora
+se sabe alcançável **sem input**. Ele não media gameplay pausado nem consequência de OPTIONS.
+**Pausa permanece não observada**, sem evidência de defeito.
 
 **Pintura — veredito inalterado:** negativa por três caminhos (R2 parado, R2+stick, R2+sensor
 verificado ativo). Esses cinco runs (grade 78/163/50) estavam na mesma cena 3D e seguem comparáveis.

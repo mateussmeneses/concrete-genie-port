@@ -184,3 +184,26 @@ Registro append-only. Cada entrada: data, decisão, motivo, reversão.
   `TEST_MATRIX.md` e `HANDOFF.md` afirmavam "nenhum frame renderizado" e "39/72 testes", o que
   contradizia evidência já commitada no mesmo branch. Corrigido com os números medidos; nenhuma
   conclusão alheia foi apagada, apenas atualizada contra a evidência.
+
+## 2026-11-01 — input ancorado por estado (state_anchored_run.py)
+
+- **O input é aplicado ao estado observado, não a um índice de frame.** `state_anchored_run.py`
+  espera N amostras consecutivas do estado pedido (`--settle`) e só então escreve o pad file. A
+  âncora é registrada no próprio log, para que a evidência carregue a procedência. Motivo: dois
+  testes anteriores foram mal interpretados por assumir que um frame fixo continha o estado que o
+  teste supunha. Reversão: o driver é um script; removê-lo não afeta o runtime.
+- **O driver recusa rodar se `GOW3_PAD_FILE` apontar para outro arquivo.** Na primeira tentativa
+  ele escrevia um arquivo enquanto o runtime lia outro, e o run parecia válido com
+  `buttons=0x00000000` em todas as leituras. Sem essa checagem o defeito era invisível no log.
+- **Correção do registro anterior sobre "instabilidade".** A sessão anterior commitou que a
+  variação entre execuções vinha só do ponto de parada do boot. A medição nova mostra que é
+  meia-verdade: com a **mesma entrada**, uma execução terminou em `bright` e não alcançou a cena.
+  As duas afirmações (`é estável quando alcança` e `não é determinístico entre execuções`) agora
+  estão registradas juntas, porque cada uma sozinha induz a um erro diferente.
+- **A tela `bright` não é efeito de OPTIONS.** Ela aparece com `cross` sozinho (`boot-140`), é a
+  mesma tela, e por isso não pode ser usada como evidência de que OPTIONS mudou o estado, nem de
+  pausa. Motivo: a comparação anterior atribuía a tela ao input, o que a medição refuta.
+- **`GOW3_FRAME_DUMP_EVERY` em vez de captura por índice.** Um índice fixo pode cair fora do estado
+  que se quer observar quando o ponto de chegada varia. A captura periódica, filtrada por
+  `GOW3_FRAME_DUMP_FROM`/`MAX`, produz a linha do tempo dentro do estado medido. Reversão:
+  variáveis de ambiente; sem elas o comportamento antigo permanece.

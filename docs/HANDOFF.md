@@ -1,28 +1,35 @@
 # Handoff entre IAs
 
 - Data (UTC): 2026-11-01, sessão PROMPT 04 (continuação).
-- Branch: `bootstrap/windows`, HEAD `0d21f2b` + esta sessão. Nenhum merge, rebase ou reset executado.
-- IA/sessão: agente Hermes (DeepSeek v4.1), sessão de instrumentação de estado por frame.
+- Branch: `bootstrap/windows`, HEAD `ca2cb59` + esta sessão. Nenhum merge, rebase ou reset executado.
+- IA/sessão: agente Hermes (DeepSeek v4.1), sessão de input ancorado por estado.
 - Base upstream / submódulos: MediEvil `424f3ea8dbdcb02754a31e5225ef42e2f77f8e94`;
   `git submodule status --recursive` em `docs/BASELINE.md`.
 - Build alvo: **CUSA11875** (EU), APP_VER `01.07`, `eboot.bin` SHA-256 `06f143de…33e51`
   (108.601.759 bytes). `CUSA11834` (US) é candidata documental, **não validada**.
-- Estado: build exit 0; testes nativos exit 0; **86 testes Python** exit 0; boot sem `STOP` de
-  import; cena 3D estável a 30 FPS; **sem áudio, sem pintura, sem save/load verificados**.
+- Estado: build exit 0; testes nativos exit 0; **95 testes Python** exit 0; boot sem `STOP` de
+  import; cena 3D estável a 30 FPS quando alcançada; **sem áudio, sem pintura, sem save/load
+  verificados**.
 
 ## Próxima ação única, verificável
 
-Ancorar cada teste de gameplay a uma amostra do mapa de estado, em vez de a um índice de frame fixo.
+Descobrir **o que decide entre a cena e a tela clara**, já que a medição mostra que não é o input.
 
-Procedimento: rodar com `GOW3_FRAME_MAP=1 GOW3_FRAME_MAP_EVERY=10`, ler a primeira faixa `scene`
-com `python scripts/frame_states.py <log>`, e só então escolher os frames de captura **dentro** dela,
-na mesma execução. Critério de aceitação: o log mostra a faixa `scene` cobrindo os frames
-escolhidos, e a captura seguinte é comparada com um controle da mesma faixa. Sem isso, qualquer
-resultado de pintura ou pausa pode cair em `bright`/`fade` e ser mal interpretado, como já ocorreu
-duas vezes.
-Critério do PROMPT 04 **NÃO atingido**: não existe primeira cena jogável demonstrada com input e
-  áudio. A cena 3D renderiza e é estável, mas a pintura não foi observada por nenhum caminho,
-  o áudio nunca tocou e o save/load não foi exercitado.
+Hipótese a testar: a execução que termina em `bright` **nunca conclui a carga**. Medir, por frame e
+em ambas as execuções, os pacotes de carga concluídos e o estado do `FAsyncLoadingThread`. Se a
+execução `bright` tiver 0 pacotes concluídos enquanto a `scene` avança, a causa é IO/carga; se ambas
+tiverem a mesma contagem, a causa é de renderização ou de estado do guest e a hipótese cai.
+
+Critério de aceitação: o log nomeia a diferença entre uma execução que chega a `scene` e uma que
+para em `bright`, com contadores concretos por frame — ou a hipótese é refutada com os mesmos
+contadores. Não declarar gameplay, pausa ou pintura antes disso: sem saber por que a cena às vezes
+não é alcançada, qualquer teste de gameplay tem 50% de chance de medir a tela errada.
+
+## Estado atual (critério e counts)
+
+Critério do PROMPT 04 **NÃO atingido**: não existe primeira cena jogável demonstrada com input,
+áudio e save. A cena 3D renderiza e é estável, mas a pintura não foi observada por nenhum caminho,
+o áudio nunca tocou e o save/load não foi exercitado.
 
 ## Onde o estado do jogo está agora (medido, não inferido)
 
@@ -32,16 +39,35 @@ erradas. Resumo de quatro execuções independentes:
 
 | Execução | Entrada | Estado observado |
 |---|---|---|
-| `boot-135` | `cross` | preto 1..586, fade 591..616, **cena 3D 621..9021**, 30 FPS |
+| `boot-135` | `cross` | preto 1..586, fade 591..616, **cena 3D 621..9021** |
 | `boot-137` | `cross` (repetição) | preto 1..511, fade 516..556, **cena 3D 561..9006** |
 | `run5-verify` | `cross`, amostra a cada 10 | preto 1..431, fade 441..461, **cena 3D 471..9601** |
-| `boot-136` | `cross` + `options` | preto 1..411, fade 416..461, **UI clara 466..9041** |
+| `boot-140` | `cross` (controle) | preto 1..441, fade 446..491, **UI clara 496..9661** |
+| `boot-139` | `cross`, `options` no frame 461 | preto 1..421, fade 426..456, **cena 3D 461..24181** |
+| `boot-136` | `cross` + `options` desde o início | preto 1..411, fade 416..461, **UI clara 466..9041** |
 
-O estado **não oscila**: uma vez alcançada a cena, ela permanece até o timeout. A variação entre
-execuções é o ponto de parada do boot, não instabilidade do jogo — o que confirma a correção 5.
+Dentro de uma execução o estado **não oscila**: alcançada a cena, ela permanece. **Entre execuções
+não é determinístico:** `boot-140`, com a mesma entrada `cross` das outras, terminou em UI clara.
+Essa tela é a mesma que aparece com `options` e aparece **sem input nenhum**, portanto não pode ser
+atribuída ao OPTIONS — e nenhum teste pode assumir que `cross` leva à cena.
 
 Custo da instrumentação, medido: **3,09 ms por amostra** (readback incluído), estável em 1.800
 amostras, com o jogo mantendo 30 FPS. Ela não muda o estado que mede.
+
+## Avanço desta sessão: input aplicado no estado certo, não no frame certo
+
+`scripts/state_anchored_run.py` espera `settle` amostras consecutivas do estado pedido e só então
+escreve o pad file, registrando a âncora no log. Ele recusa rodar quando `GOW3_PAD_FILE` e o arquivo
+que ele escreve divergem — defeito que fez uma execução inteira ler `buttons=0x00000000` e parecer
+válida.
+
+`boot-139`: âncora em `scene` no frame 461, `options` aplicado depois, confirmado no log do pad
+(`buttons=0x4000` → `buttons=0x4008`). A cena permaneceu `scene` por ~23.700 frames e continuou se
+movendo (delta médio de grade 0,48 contra 0,56 de um controle na mesma cena).
+
+**Consequência:** a tela clara do teste `pz` **não** é efeito de OPTIONS — ela também aparece com
+`cross` sozinho. O teste de pausa anterior media um estado de carregamento, não gameplay. **Pausa
+continua não observada**, sem evidência de defeito. A pintura segue negativa pelos três caminhos.
 
 ## Avanço desta sessão (medido)
 

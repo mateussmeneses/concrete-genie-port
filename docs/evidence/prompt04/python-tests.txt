@@ -1,9 +1,33 @@
 ...................................Starting verified build CUSA11834 01.00; no game patches enabled.
-...................ERROR: no 'FrameMap:' lines in C:\Users\Mateus\AppData\Local\Temp\tmpkbo1kz_0\empty.log
+...................ERROR: no 'FrameMap:' lines in C:\Users\Mateus\AppData\Local\Temp\tmp3s0nrk79\empty.log
 Hint: run the runtime with GOW3_FRAME_MAP=1.
 .ERROR: C:\projetos\concrete-genie-port\does-not-exist.log does not exist
-...............................
+...............................ERROR: C:\Users\Mateus\AppData\Local\Temp\tmp8rtof2qw\apply.txt is empty; it must list the input to apply
+.ERROR: GOW3_PAD_FILE is 'C:\Users\Mateus\AppData\Local\Temp\tmpiewrqbvi\other.txt' but this script writes 'C:\Users\Mateus\AppData\Local\Temp\tmpiewrqbvi\live.txt'.
+Set GOW3_PAD_FILE to the same path.
+.Run the runtime and apply scripted input at a *state*, not at a frame index.
+
+Why this exists: the frame a state begins on differs between runs (the boot stops at a different
+point each time), so "press R2 at frame 3000" can land in a menu, a loading fade or the 3D scene.
+Two earlier investigations were misread that way. This driver watches the ``FrameMap:`` samples the
+runtime already writes, waits until the requested state is actually on screen, holds for a settle
+margin, and only then writes the pad file. Every run then applies the input at the same observed
+state, which is what makes the comparison meaningful.
+
+It does not interpret the game. "scene" is a luminance-profile description of the presented image
+(see scripts/frame_states.py), not a claim that the player controls anything.
+
+Usage:
+    python scripts/state_anchored_run.py --log run.log --         runtime/out/gpu/cg-runtime.exe boot-linked.bin --app0 <dump> [...]
+
+    python scripts/state_anchored_run.py --log run.log --pad-file pad_live.txt         --at-state scene --settle 40 --before pad_idle.txt --apply pad_pause.txt         -- runtime/out/gpu/cg-runtime.exe ...
+
+Options must come before the ``--``; everything after it is the runtime command line.
+
+.ERROR: GOW3_PAD_FILE is '<unset>' but this script writes 'C:\Users\Mateus\AppData\Local\Temp\tmpfmhjs837\live.txt'.
+Set GOW3_PAD_FILE to the same path.
+......
 ----------------------------------------------------------------------
-Ran 86 tests in 2.533s
+Ran 95 tests in 2.216s
 
 OK

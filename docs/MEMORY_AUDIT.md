@@ -1,3 +1,64 @@
+# O estado NÃO é determinístico: a mesma entrada chega à cena ou ao loading
+
+## O que uma sessão anterior concluiu, e por que está incompleto
+
+Foi cometido (commit `0d21f2b`) que "a variação entre execuções vinha do ponto de parada de cada
+run, não do jogo oscilando". A medição nova mostra que isso é **meia-verdade**: o ponto de parada é
+real, mas com a **mesma entrada** o jogo às vezes **nunca alcança a cena**.
+
+Seis execuções, todas com `cross` mantido, classificadas pelo mapa de estado:
+
+| Execução | Entrada | Estado final | Regiões |
+|---|---|---|---|
+| `boot-135` | `cross` | **scene** | black 1..586, fade 591..616, scene 621..9021 |
+| `boot-137` | `cross` | **scene** | black 1..511, fade 516..556, scene 561..9006 |
+| `boot-138` | `cross` | **scene** | black 1..431, fade 441..461, scene 471..9601 |
+| `boot-140` (controle) | `cross` | **bright** | black 1..441, fade 446..491, **bright 496..9661** |
+| `boot-139` (âncora) | `cross`, `options` no frame 461 | **scene** | black 1..421, fade 426..456, scene 461..24181 |
+| `boot-136` | `cross`+`options` desde o início | **bright** | black 1..411, fade 416..461, bright 466..9041 |
+
+O controle `boot-140` tem a **mesma entrada** de `boot-135/137/138` e termina em `bright`. As telas
+`bright` são a mesma tela (`[[255,255,255],[252.5,239.1,254.2],[253.2,220.2,253.2]]`), então não são
+algo diferente: o jogo entra numa tela de carregamento clara e, em algumas execuções, não sai dela.
+
+## O que isso invalida
+
+- **"Estado estável, sem instabilidade" está errado como afirmação geral.** É estável *quando*
+  alcança a cena, e é justamente por isso que os testes de pintura eram comparáveis entre si. Mas
+  alcançar a cena não é garantido por manter `cross`.
+- **Testes que assumem frames fixos continuam inválidos.** Um índice de frame pode cair na cena ou
+  na tela clara, conforme a execução. A âncora por estado resolve isto; o índice não.
+- **A explicação da pausa muda de novo.** O teste de pausa anterior (`pz`, `options`) caiu em
+  `bright` — e agora se sabe que `bright` é alcançável com `cross` sozinho. Portanto não se pode
+  atribuir o `bright` ao OPTIONS: ele é um estado de carregamento do próprio jogo.
+
+## O que a âncora por estado permitiu medir
+
+`boot-139`: `cross` até a cena ser observada (frame 461, 60 amostras consecutivas de `scene`), e só
+então `options`. Confirmado no log do pad: `buttons=0x4000` antes, `buttons=0x4008` depois. A cena
+**permaneceu `scene` por 23.700 frames**, sem virar `bright`.
+
+Isso é diferente de `boot-136`, em que `options` desde o início levou a `bright`. Como `bright`
+também aparece sem `options` nenhum (`boot-140`), **não existe evidência de que OPTIONS cause a tela
+clara**. A hipótese "OPTIONS muda o estado" fica **não suportada**, não confirmada.
+
+## Pausa: o que se pode afirmar
+
+Comparando `boot-139` com o controle `boot-140` não é possível concluir sobre pausa, porque os dois
+caíram em estados diferentes. Comparando `boot-139` (`options` na cena) com as execuções que
+ficaram na cena sem `options`, a cena continua se movendo (delta médio de grade 0,48 vs 0,56 do
+controle) — sem congelamento.
+
+Conclusão honesta: **pausa continua não observada**. Não há evidência de que OPTIONS pause, nem de
+que esteja quebrado. O que a medição acrescenta é que a tela `bright` não pode ser usada como
+evidência de pausa, porque ela aparece sem input nenhum.
+
+## Próximo passo
+
+Instrumentar o que decide entre cena e tela clara — não é input, é estado de carregamento. Contar
+por frame os pacotes de carga concluídos e o estado do `FAsyncLoadingThread`: se a execução que cai
+em `bright` tem 0 pacotes concluídos, a causa é IO/carga, não renderização.
+
 # Pausa: OPTIONS não pausa a cena
 
 ## O teste, agora na faixa correta

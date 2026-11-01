@@ -38,15 +38,16 @@ draws. Quatro execuções independentes:
 | `boot-135` | `cross` | black 1..586 → fade 591..616 → **scene 621..9021** |
 | `boot-137` | `cross` (repetição) | black 1..511 → fade 516..556 → **scene 561..9006** |
 | `run5-verify` | `cross` (a cada 10) | black 1..431 → fade 441..461 → **scene 471..9601** |
+| `boot-140` | `cross` (controle) | black 1..441 → fade 446..491 → **bright 496..9661** |
+| `boot-139` | `cross`, `options` no frame 461 | black 1..421 → fade 426..456 → **scene 461..24181** |
 | `boot-136` | `cross`+`options` | black 1..411 → fade 416..461 → **bright 466..9041** |
 
-O estado **não alterna**: a cena, uma vez alcançada, permanece até o timeout. As diferenças de frame
-inicial são o ponto em que cada execução para no boot — não instabilidade do jogo. Isso encerra a
-hipótese de "instabilidade de estado" registrada em sessões anteriores e explica por que dois testes
-foram mal interpretados: eles capturaram a fase de UI.
-
-A execução com `options` sai da cena para uma UI clara no frame 466 e nunca volta — 8.500 frames
-parada ali. O teste de pausa feito nessa faixa media uma tela de UI, não gameplay pausado.
+O estado **não alterna dentro de uma execução** — uma vez alcançada a cena, ela permanece. Mas
+**entre execuções não é determinístico**: com a mesma entrada `cross`, uma execução terminou em
+`bright` (`boot-140`) em vez de `scene`. A tela `bright` é idêntica à observada com `options`, e
+aparece **sem nenhum input**, então não pode ser atribuída ao OPTIONS. Isso corrige pela metade a
+hipótese de "instabilidade" de sessões anteriores: o ponto de parada importa, mas nem toda execução
+chega à cena.
 
 Custo da instrumentação: **3,09 ms por amostra**, com o jogo mantendo 30 FPS. Não altera o estado.
 

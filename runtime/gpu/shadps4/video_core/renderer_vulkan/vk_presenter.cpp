@@ -664,12 +664,44 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
      * to decide WHETHER to dump would deadlock (it never leaves 0). */
     static u64 presented_frames = 0;
     ++presented_frames;
+    /* gow3: periodic capture (GOW3_FRAME_DUMP_EVERY=N) so one run yields a dense timeline over
+     * frames whose state the GOW3_FRAME_MAP log also records. Index-based capture cannot do this:
+     * the frame a state begins on differs between runs, so a fixed index may land outside it.
+     * GOW3_FRAME_DUMP_FROM skips the boot, GOW3_FRAME_DUMP_MAX bounds the disk cost
+     * (a 1080p raw frame is 8.3 MB). */
+    static const int dump_every = [] {
+        const char* env = std::getenv("GOW3_FRAME_DUMP_EVERY");
+        return env ? std::max(0, std::atoi(env)) : 0;
+    }();
+    static const u64 dump_from = []() -> u64 {
+        const char* env = std::getenv("GOW3_FRAME_DUMP_FROM");
+        const long value = env ? std::atol(env) : 0;
+        return value > 0 ? u64(value) : 0;
+    }();
+    static const long dump_max = [] {
+        const char* env = std::getenv("GOW3_FRAME_DUMP_MAX");
+        return env ? std::atol(env) : 0;
+    }();
+    static u64 dump_every_counter = 0;
+    static long dump_every_done = 0;
+    bool periodic_dump = false;
+    if (dump_every > 0 && presented_frames >= dump_from &&
+        (dump_max <= 0 || dump_every_done < dump_max)) {
+        if (++dump_every_counter >= u64(dump_every)) {
+            dump_every_counter = 0;
+            periodic_dump = true;
+            ++dump_every_done;
+        }
+    }
     /* Draws submitted since the previous frame. A title screen that only draws UI shows a tiny
      * number; a 3D scene shows hundreds. This distinguishes "the guest renders nothing 3D" from
      * "3D is submitted but looks wrong", which are very different problems. */
     static u64 last_draws = 0;
-    if (!frame_dump_at.empty() &&
-        std::binary_search(frame_dump_at.begin(), frame_dump_at.end(), presented_frames)) {
+    const bool dump_draws_line =
+        periodic_dump ||
+        (!frame_dump_at.empty() &&
+         std::binary_search(frame_dump_at.begin(), frame_dump_at.end(), presented_frames));
+    if (dump_draws_line) {
         const u64 draws = Gow3Stats::draws.load();
         const u64 subs = Gow3Stats::submissions.load();
         const u64 dispatches = Gow3Stats::dispatches.load();
@@ -704,6 +736,9 @@ Frame* Presenter::PrepareFrame(const Libraries::VideoOut::BufferAttributeGroup& 
     if (!frame_dump_at.empty() &&
         std::binary_search(frame_dump_at.begin(), frame_dump_at.end(), presented_frames)) {
         frame_dump_remaining = 1;
+    }
+    if (periodic_dump) {
+        frame_dump_remaining = frame_dump_count;
     }
     const bool frame_dump = frame_dump_remaining > 0;
     if (frame_dump) {
