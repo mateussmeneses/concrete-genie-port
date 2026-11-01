@@ -1,3 +1,113 @@
+# Dois defeitos distintos no re-enfileiramento de shader (medidos)
+
+Contagem separando os dois casos:
+
+```
+Requeue: hash b24e4118db94f59f queued 4000 times (perm 490);
+         same-perm=269447 diff-perm=147757
+```
+
+| Caso | Contagem | Significado |
+|---|---|---|
+| `same-perm` | **269.447** | mesma `perm_idx` re-enfileirada — trabalho puramente redundante |
+| `diff-perm` | **147.757** | `perm_idx` diferente a cada pedido — a lista de permutações cresce |
+
+## Defeito A (269 mil): falta de marcação de pendência
+
+`program->pending` só é atribuído no compile `initial`. No caminho de permutação:
+
+```cpp
+QueueShader(..., perm_idx, false, std::move(spec));
+return {};          // nada marca a permutação como pendente
+```
+
+O draw seguinte pede a **mesma** `perm_idx` e volta a enfileirar. É redundância pura, e marcar a
+permutação pendente elimina-a.
+
+## Defeito B (148 mil): a lista de permutações cresce sem convergir
+
+`perm_idx = program->modules.size()` **antes** do enfileiramento, e nada é inserido em `modules`
+até a compilação assíncrona publicar. Com draws concorrentes, cada um calcula um `size()` diferente
+e enfileira uma permutação "nova" que é, na prática, a mesma `spec`. Por isso `perm` chegou a
+28.474 para um único hash.
+
+## O que isso explica
+
+- 1.262.000 traduções para **409 hashes distintos** (razão 3.085×)
+- 16.003 draws pendentes
+- 1,4 s por frame (0,7 FPS) na transição
+
+## Correção proposta, ainda não aplicada
+
+Marcar a permutação como pendente **por `spec`**, num conjunto consultado antes de enfileirar:
+
+1. se a `spec` está no conjunto, retornar sem enfileirar (resolve o Defeito A);
+2. reservar o índice de forma estável por `spec`, em vez de `modules.size()` (resolve o B).
+
+Efeito esperado: 1.262.000 → ~409 enfileiramentos.
+
+**Não aplicado nesta sessão.** A mudança toca a concorrência entre a thread de desenho e o
+publicador assíncrono; fazê-la sem testes de estresse dedicados trocaria um problema de desempenho
+por um bug de correção. Os dois contadores e o trace ficam no código para quem for aplicar.
+
+# BUG CONFIRMADO: re-enfileiramento sem limite da mesma permutação de shader
+
+## A medição que provou
+
+Com `GOW3_TRACE_REQUEUE=1`, contando quantas vezes cada hash entra no caminho de
+`QueueShader` por permutação ausente:
+
+```
+Requeue: hash 0853e6d8742acb79 queued 75000 times (perm 27474)
+Requeue: hash 0853e6d8742acb79 queued 76000 times (perm 28474)
+Requeue: hash cf2fdf6464a845f9 queued 16000 times (perm  1365)
+```
+
+E o número da permutação **cresce junto**: 26.474 → 27.474 → 28.474 para o mesmo hash.
+
+## O mecanismo, no código
+
+`vk_pipeline_cache.cpp`, no caminho de permutação ausente:
+
+```cpp
+if (it == program->modules.end()) {
+    if (program->pending || ...) return {};
+    if (compile_async) {
+        QueueShader(*program, hw_stage, sw_stage, params, runtime_info, binding,
+                    perm_idx, false, std::move(spec));
+        return {};            // <- nada marca esta permutação como pendente
+    }
+```
+
+`program->pending` é atribuído **apenas** no compile `initial` (linha 560). Para uma permutação,
+nada a marca como pendente, e `perm_idx = program->modules.size()` **cresce a cada chamada**. Logo:
+
+1. o draw pede uma permutação;
+2. não existe, então enfileira com `perm_idx = N`;
+3. `return {}` — a permutação não entra em `modules` até o compilador assíncrono publicar;
+4. o próximo draw repete, com `perm_idx = N+1`;
+5. o acumulado chega a 28.474 permutações para um hash.
+
+Isso explica os números anteriores: **1.262.000 traduções para 409 hashes distintos** (razão 3.085×),
+16.003 draws pendentes e 1,4 s por frame.
+
+## Por que o cache por hash não resolve sozinho
+
+`program_cache` já existe e está correto — o hash **acerta** o programa. O que falha é a
+**permutação** dentro dele. Um cache por hash de programa não impede o re-enfileiramento; é preciso
+marcar a permutação como pendente.
+
+## Correção proposta (não aplicada)
+
+Registrar a permutação pendente no `Program` (um conjunto de `spec` em compilação, consultado no
+`if` do topo), de modo que um segundo draw com a mesma `spec` não volte a enfileirar. Efeito
+esperado: 1.262.000 → ~409 enfileiramentos.
+
+Não foi aplicada porque ainda não medi **qual campo da `spec` diverge** entre draws consecutivos do
+mesmo hash. Se a `spec` realmente varia (e os 28.474 valores forem legítimos), marcar por `spec`
+não ajuda — seria preciso verificar se `perm_idx` está sendo usado como chave de forma indevida.
+Aplicar a correção antes dessa medição seria chutar.
+
 # CAUSA RAIZ MEDIDA: shader capture síncrono serializa 7.235 draws/frame
 
 ## A medição que nomeia o gargalo

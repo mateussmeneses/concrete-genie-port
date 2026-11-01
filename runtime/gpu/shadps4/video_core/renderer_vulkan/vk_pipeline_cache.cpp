@@ -9,6 +9,7 @@
 #include <mutex>
 #include <ranges>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include "gow3_threads.h"
 
@@ -460,6 +461,31 @@ bool PipelineCache::QueueShader(Program& program, HwStage stage, SwStage l_stage
                                  Shader::Backend::Bindings binding, size_t permutation,
                                  bool initial,
                                  std::optional<Shader::StageSpecialization> specialization) {
+    /* The transition costs 1.4 s/frame because translation runs on the GPU thread. Whether a
+     * shader cache keyed by hash can help depends entirely on how many DISTINCT hashes sit behind
+     * the pending draws: if 16,003 pending draws collapse into a few hundred hashes, repetition is
+     * the cost; if they are thousands of distinct hashes, a cache cannot help and the pipeline
+     * state variety is the cost. Measure before choosing. */
+    {
+        static const bool trace = std::getenv("GOW3_TRACE_SHADER_KEYS") != nullptr;
+        if (trace) {
+            static std::mutex seen_mutex;
+            static std::unordered_set<uint64_t> seen;
+            static std::atomic<u64> total{0}, distinct{0};
+            const u64 n = ++total;
+            bool is_new = false;
+            {
+                std::scoped_lock lock{seen_mutex};
+                is_new = seen.insert(params.hash).second;
+            }
+            if (is_new) ++distinct;
+            if (n <= 5 || (n % 2000) == 0) {
+                std::fprintf(stderr, "ShaderKeys: %llu translations, %llu distinct hashes\n",
+                             static_cast<unsigned long long>(n),
+                             static_cast<unsigned long long>(distinct.load()));
+            }
+        }
+    }
     if (!compiler->HasCapacity()) {
         return false;
     }
@@ -1293,6 +1319,49 @@ PipelineCache::Result PipelineCache::GetProgram(PipelineSelection& sel, HwStage 
             return {};
         }
         if (compile_async) {
+            /* Diagnostic: a permutation queued repeatedly for the same program is the re-queue
+             * loop. Counting per hash tells a one-time compile apart from thousands of identical
+             * requests. */
+            {
+                static const bool trace = std::getenv("GOW3_TRACE_REQUEUE") != nullptr;
+                if (trace) {
+                    static std::mutex m;
+                    static std::unordered_map<uint64_t, u64> per_hash;
+                    u64 count = 0;
+                    {
+                        std::scoped_lock lock{m};
+                        count = ++per_hash[params.hash];
+                    }
+                    /* Whether the spec differs between consecutive requests for the same hash
+                     * decides the fix: if it is identical, the queue is a redundant loop and
+                     * marking the permutation pending removes it; if it differs, the specs are
+                     * genuinely distinct and a pending-set keyed by spec would not help. */
+                    static std::mutex spec_mutex;
+                    static std::unordered_map<uint64_t, size_t> last_perm;
+                    static std::atomic<u64> same_spec{0}, diff_spec{0};
+                    {
+                        std::scoped_lock lock{spec_mutex};
+                        const auto it = last_perm.find(params.hash);
+                        if (it == last_perm.end()) {
+                            last_perm.emplace(params.hash, perm_idx);
+                        } else if (it->second == perm_idx) {
+                            ++same_spec;
+                        } else {
+                            ++diff_spec;
+                            it->second = perm_idx;
+                        }
+                    }
+                    if (count <= 3 || (count % 1000) == 0) {
+                        std::fprintf(stderr,
+                                     "Requeue: hash %016llx queued %llu times (perm %zu); "
+                                     "same-perm=%llu diff-perm=%llu\n",
+                                     static_cast<unsigned long long>(params.hash),
+                                     static_cast<unsigned long long>(count), perm_idx,
+                                     static_cast<unsigned long long>(same_spec.load()),
+                                     static_cast<unsigned long long>(diff_spec.load()));
+                    }
+                }
+            }
             QueueShader(*program, hw_stage, sw_stage, params, runtime_info, binding, perm_idx, false,
                         std::move(spec));
             return {};

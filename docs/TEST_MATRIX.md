@@ -182,7 +182,20 @@ import). O bloqueio anterior era determinístico em 3 execuções.
 - Verificação: `exit 20` → `exit 124`, frame 1200 → 1800. Evidência:
   `docs/evidence/prompt04/boot-77-past-savedata.txt`.
 
-**P0-20: 0,7 FPS na transição — CAUSA MEDIDA (shader capture síncrono)**
+**P0-21: re-enfileiramento de shader — DOIS DEFEITOS MEDIDOS**
+
+- `GOW3_TRACE_SHADER_KEYS=1`: **1.262.000 traduções para 409 hashes distintos** (3.085× redundância).
+- `GOW3_TRACE_REQUEUE=1`: `same-perm=269.447` (mesma permutação re-enfileirada) e
+  `diff-perm=147.757` (permutação nova a cada pedido); `perm` chegou a 28.474 num hash.
+- Defeito A: `program->pending` só é setado no compile `initial`; no caminho de permutação nada a
+  marca, então o próximo draw repete.
+- Defeito B: `perm_idx = modules.size()` antes do enfileiramento; concorrência faz cada draw
+  calcular um índice distinto para a mesma `spec`.
+- **Correção não aplicada**: toca a concorrência entre thread de desenho e publicador assíncrono;
+  sem testes de estresse trocaria desempenho por correção. Contadores ficam no código.
+- Evidência: `boot-89-shader-keys.txt`, `boot-90-requeue.txt`, `boot-91-same-spec.txt`.
+
+**P0-20: 0,7 FPS na transição — causa imediata (shader capture síncrono)**
 
 - `Frame stats: 0.7 FPS, worst frame 1416 ms; capture 3256 ms, workers 1322 ms,
   GPU capture wait 3310 ms, 16003 pending draws; 7235 draws/frame; GPU thread idle 0.0%`.

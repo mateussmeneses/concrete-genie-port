@@ -142,7 +142,38 @@ visível. Os imports de PSVR/câmera/Move já estão registrados em
 
 ## Próxima ação única, verificável
 
-Reduzir o custo de shader capture: é a causa medida dos 0,7 FPS na transição.
+Aplicar a correção do re-enfileiramento de shader — os dois defeitos estão medidos.
+
+**Medido nesta sessão:**
+- 1.262.000 traduções para **409 hashes distintos** (3.085× redundância).
+- `same-perm=269.447` e `diff-perm=147.757`; `perm` chegou a **28.474** num único hash.
+
+**Defeito A** — `program->pending` só é setado no compile `initial`. No caminho de permutação,
+`QueueShader(...); return {};` não marca nada, então o próximo draw com a mesma permutação
+re-enfileira. Redundância pura.
+
+**Defeito B** — `perm_idx = program->modules.size()` é calculado **antes** do enfileiramento, e nada
+entra em `modules` até o publicador assíncrono rodar. Com draws concorrentes, cada um calcula um
+índice diferente para a mesma `spec`, e a lista cresce sem convergir.
+
+**Correção a aplicar** (não aplicada por mim: toca concorrência entre thread de desenho e
+publicador assíncrono — sem teste de estresse, trocaria desempenho por bug de correção):
+
+1. Um conjunto de `spec` em compilação, consultado antes de enfileirar; se presente, retornar.
+2. Reservar o índice por `spec` de forma estável, em vez de `modules.size()`.
+
+**Teste de aceitação:** `GOW3_TRACE_SHADER_KEYS=1` deve mostrar ~409 enfileiramentos (não 1,26 M) e
+`GOW3_TRACE_REQUEUE=1` deve mostrar `same-perm` e `diff-perm` próximos de zero, com FPS voltando a
+dezenas depois do frame 1800.
+
+Instrumentação já no código: `GOW3_TRACE_SHADER_KEYS`, `GOW3_TRACE_REQUEUE`, `GOW3_TRACE_CLEAR`.
+
+Reprodução:
+
+```bash
+cd .cg/audit/run && source ../../runtime/msys2-env.sh && export PATH="/c/msys64/clang64/bin:$PATH"
+env GOW3_TRACE_SHADER_KEYS=1 GOW3_TRACE_REQUEUE=1 GOW3_FRAME_STATS=1     timeout 360 ../../runtime/out/gpu/cg-runtime.exe     ../../.cg/audit/prepared/boot-linked.bin     --content-profile ../../.cg/audit/prepared/content.bin     --app0 "C:/projetos/concrete-genie-port/gamedump/CUSA11875"     --user ../../.cg/audit/run/user --timeout 330
+```
 
 **Correção de três conclusões minhas:** "tela preta permanente" era falso (as capturas pretas
 pegaram frames que não terminaram dentro do timeout); "motor ocioso a 60 FPS" só vale antes do
