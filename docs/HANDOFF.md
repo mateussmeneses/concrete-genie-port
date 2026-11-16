@@ -1,5 +1,113 @@
 # Handoff entre IAs
 
+- Data (UTC): 2026-11-09, sessão de diagnóstico da tela branca (capturas `bright` obtidas e comparadas).
+- Branch: `audit/base`, HEAD `6a3ba2a` + esta sessão (mudanças não commitadas: `run.py`,
+  `tests/test_native.py`, 6 scripts novos em `scripts/`). Nenhum merge, rebase, reset ou push.
+- IA/sessão: agente Hermes (DeepSeek v4.1), diagnóstico do caminho de apresentação.
+- Build alvo: **CUSA11875** (EU), APP_VER `01.07`, `eboot.bin` SHA-256 `06f143de…33e51`
+  (108.601.759 bytes). `CUSA11834` (US) é candidata documental, **não validada**.
+- Estado: **102 testes Python exit 0** (incluindo smoke nativo via bundle de DLLs); capturas
+  `bright` válidas obtidas e comparadas; **sem áudio, sem pintura, sem save/load verificados**;
+  **não jogável**.
+
+## Estágio identificado nesta sessão: a tela branca é o title screen do jogo
+
+A pergunta do handoff anterior ("por que a cena renderizada não chega ao swapchain") tinha uma
+premissa errada, agora refutada por captura: **o guest não renderiza a cena nesse estado — ele
+está parado na tela de título ("Press ✕")**, e o port apresenta essa imagem fielmente.
+
+Medido (verificador reproduzível: `python3 scripts/verify_bright_captures.py`):
+
+| Fonte | display == output | SHA-256 (16 hex) | Mean lum | Leitura |
+|---|---|---|---|---|
+| `pbc` (antiga, reavaliada) | sim (byte-idênticos) | `7aaff933c47fa13f` | 248,7 | title screen |
+| `bright-fresh/try1` (nova, perfil isolado) | sim | `7aaff933c47fa13f` | 248,7 | title screen |
+| `bright-fresh/try6-presscap` (nova) | sim | `7aaff933c47fa13f` | 248,7 | title screen |
+| `g1` (cena, controle) | sim | `0577a3c27ff01bbc` | 86,8 | cena 3D |
+
+- A inspeção visual dos PNGs (`.cg/audit/analysis/try6_frame2400.png`) confirma: logo
+  "CONCRETE GENIE", prompt "Press ✕", logo PixelOpus. A grade 3×3 calculada dos pixels
+  (`[[255,255,255],[252.5,239.1,254.2],[253.2,220.4,253.2]]`) é exatamente a grade `bright`
+  documentada nas sessões anteriores.
+- **`DisplayOverride`/upscaler nunca entram no caminho**: a linha `Display: host buffer`
+  (ramo `upscaled` de `vk_presenter.cpp`) aparece **zero vezes** em todos os logs; não existe
+  dump `present_*` em lugar nenhum. A matriz de decisão do §7 fecha na linha "Guest original já
+  contém branco": superfície guest, não apresentação.
+- Trabalho de GPU normalizado por frame (draws ÷ intervalo de amostragem): **7.230 draws/frame
+  nos dois estados** (bright e scene; `boot-140`, `io_run`, `white-loop/try1`, `boot-139`). O
+  title screen anima com esse custo (fundo/partículas), o que explica "mesma carga, imagem única"
+  sem envolver a cena 3D.
+- A captura de `bright` que faltava saiu na **1ª tentativa** com o runner novo
+  (`scripts/capture_bright_run.py`): manifesto, log próprio, perfil isolado
+  (`user-white`; saves de `.cg/audit/run/user` intactos), dumps 700/1500/2500, saída antecipada
+  após confirmação dos arquivos em disco.
+
+## O que a intermitência realmente é (medido em 5 execuções novas)
+
+| Execução | Input | Desfecho |
+|---|---|---|
+| `try1` | cross desde a leitura #1 | **título** (`bright` 941..3261) |
+| `try2` | nada (pad 0x0 todo o run) | **título** (`bright` 1681..12781) |
+| `try3` | nada | **cena direto** (1561..12781, 64 imagens distintas) |
+| `try4` | nada | **cena direto** (1501..12841) |
+| `try5` | nada até `bright` assentar, então cross | **título**; cross entregue no frame ~1801 (`pad file: buttons 0x4000` no log) e o título **não avançou** |
+
+Duas conclusões separadas, cada uma com a sua evidência:
+
+1. **Chegar ao título em si é não-determinístico** (`try2`/`try3`/`try4`: mesmo input nenhum,
+   desfechos diferentes). Não é efeito do input; provável corrida no boot do guest (os vídeos
+   Bink nunca carregam — "no video loaded" — e o título pode ser o caminho alternativo quando o
+   vídeo de abertura não passa). Hipótese registrada, não confirmada.
+2. **O press de cross não tira o jogo do título** (`try5`): o input chegou ao guest
+   (`pad read #6001: buttons=0x00004000`) e o título permaneceu por 11 mil frames. O press do
+   try5 chegou ~5 s após o título aparecer (âncora após 15 amostras) — pode ter perdido uma
+   janela curta de aceitação, ou o título espera outra coisa (sensor/PS Move? o Prompt 04 diz
+   que o jogo usa sensor). **Não declarado defeito de runtime**; o runtime entregou o botão.
+
+## Correções de ambiente aplicadas (não são correções do jogo)
+
+- `runtime/out/gpu/cg-runtime.exe` parou de iniciar (0xC0000135): o msys2 foi atualizado para
+  ffmpeg 9 (ABI 63) e o build usa ABI 62 (`libavcodec 62.28.101`, `docs/BASELINE.md`). Restaura-
+  se o conjunto ABI-62 do cache do pacman para `.cg/audit/ffmpeg-abi62/` e o
+  `scripts/make_runtime_bundle.py` monta `.cg/audit/run-bundle/` (102 DLLs + exe). Nada em
+  `/c/msys64` foi alterado.
+- `run.py` ganhou `runtime_executable()`: usa o bundle quando existe; `tests/test_native.py`
+  idem. Suíte: **102/102 OK** (antes desta correção: 100 OK + 2 falhas `0xC0000135`).
+
+## Próxima ação única, verificável
+
+**Descobrir o que o title screen aceita para avançar.** O press de cross comprovadamente chega
+ao guest (`try5`) e não avança; as hipóteses em ordem: (a) janela de aceitação curta — repetir
+`title_press_test.py` com `--settle 3`; (b) o título espera o vídeo de abertura (Bink) — auditar
+por que `BinkPluginOpen` recusa e se o jogo segue para o título exatamente quando o vídeo
+falharia; (c) o título espera PS Move/sensor — testar `gx=/gy=/gz=` via `GOW3_PAD_FILE`.
+
+Comando base (reproduz o caminho até o título e aplica o press ancorado):
+
+```bash
+cd /c/projetos/concrete-genie-port
+python3 scripts/make_runtime_bundle.py   # se .cg/audit/run-bundle não existir
+python3 scripts/title_press_test.py .cg/audit/bright-fresh/tryN-titlepress --timeout 350 --settle 3
+```
+
+Critério de aceitação: o log mostra `pad file: buttons 0x4000` dentro dos primeiros segundos do
+título e, ou o mapa de estado registra `scene` depois disso, ou o estado permanece `bright` com
+o press confirmado — o que fecha (a). Não avançar para (b)/(c) sem fechar (a).
+
+## Evidências desta sessão
+
+- Capturas: `.cg/audit/bright-fresh/try1` (700/1500/2500), `try6-presscap` (1700/2400/3600,
+  todos byte-idênticos ao title screen), `try2`…`try5-titlepress` (experimentos de input).
+- Análise: `.cg/audit/analysis/bright_pbc_display000.png`, `try6_frame2400.png`;
+  `python3 scripts/verify_bright_captures.py` (reproduz a tabela acima);
+  `python3 scripts/compare_bright_captures.py` (métricas completas do §7: diff absoluto por
+  canal bright-vs-scene 185/169/132, 99,67% de pixels diferentes, 27.358 vs ~59 mil cores).
+- Logs com proveniência: cada diretório de tentativa tem `manifest.json`, `run.log`, pad files.
+
+---
+
+# Handoff anterior (2026-11-01, PROMPT 04) — preservado abaixo
+
 - Data (UTC): 2026-11-01, sessão PROMPT 04 (continuação).
 - Branch: `bootstrap/windows`, HEAD `ca2cb59` + esta sessão. Nenhum merge, rebase ou reset executado.
 - IA/sessão: agente Hermes (DeepSeek v4.1), sessão de input ancorado por estado.

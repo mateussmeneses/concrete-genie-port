@@ -62,14 +62,26 @@ def runtime_environment(data, environ):
     msys = Path(environ.get("CG_MSYS2_ROOT", "C:/msys64")) / "clang64" / "bin"
     if os.name == "nt" and msys.is_dir():
         env["PATH"] = str(msys) + os.pathsep + env.get("PATH", "")
+    # The exe was linked against ffmpeg ABI 62 (libavcodec 62.28.101, docs/BASELINE.md); a msys2
+    # upgrade to ffmpeg 9 removes those DLLs and the runtime dies with 0xC0000135 before main.
+    # PATH entries alone do not fix it (the loader still fails on the ffmpeg import tree), so
+    # when the self-contained bundle exists it is used instead of the raw build output.
     return env
+
+
+def runtime_executable():
+    """Prefer the self-contained DLL bundle over the raw build output (see scripts/make_runtime_bundle.py)."""
+    bundle = ROOT / ".cg" / "audit" / "run-bundle" / "cg-runtime.exe"
+    if bundle.is_file():
+        return bundle
+    return RUNTIME
 
 
 def launch_runtime(arguments, data, environ):
     if not RUNTIME.is_file():
         raise ValueError(f"Runtime not built: {RUNTIME}. Run bash build.sh in MSYS2 CLANG64.")
     data.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run([str(RUNTIME), *map(str, arguments)], cwd=data,
+    result = subprocess.run([str(runtime_executable()), *map(str, arguments)], cwd=data,
                             env=runtime_environment(data, environ),
                             stdin=subprocess.DEVNULL)
     return result.returncode

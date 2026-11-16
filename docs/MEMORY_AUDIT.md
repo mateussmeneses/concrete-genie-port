@@ -1,4 +1,42 @@
-# A tela clara NÃO é um loading: é a cena renderizada e não apresentada
+# A tela clara NÃO é um loading: é a tela de título, apresentada fielmente
+
+## A correção desta sessão (2026-11-09): capturas obtidas, a leitura de "apresentação" cai
+
+A seção abaixo ("é a cena renderizada e não apresentada") estava errada na conclusão e certa no
+método. Com capturas reais do estado `bright` — as que faltavam — o quadro fechou:
+
+| Superfície | Conteúdo no estado `bright` |
+|---|---|
+| `display` (buffer guest via TextureCache) | **title screen** ("Press ✕") |
+| `output` (imagem final apresentada) | **o mesmo title screen, byte-idêntico** |
+| `present` (ramo `upscaled`/DisplayOverride) | **não existe**: `Display: host buffer` zero ocorrências em todos os logs |
+
+- O PNG do dump (`.cg/audit/analysis/try6_frame2400.png`) mostra o logo "CONCRETE GENIE", o
+  prompt "Press ✕" e o logo PixelOpus — inspeção visual, não inferência de luminância.
+- Todos os pares display/output do estado branco são **byte-idênticos**
+  (`7aaff933c47fa13f…`), em três fontes independentes: as capturas antigas `pbc`/`paintc`/`p2c`
+  (14 arquivos, antes descartadas como "controles inválidos") e as capturas novas
+  `bright-fresh/try1` e `try6-presscap` (perfil isolado, manifesto).
+- A grade 3×3 do título (`[[255,255,255],[252.5,239.1,254.2],[253.2,220.4,253.2]]`) é exatamente
+  a grade `bright` registrada nas sessões anteriores — os estados eram o mesmo screen o tempo
+  todo.
+- A matriz de decisão do diagnóstico fecha em **"Guest original já contém branco"**: o título
+  está no buffer do guest; o port o apresenta sem alterar um byte. Não há defeito de
+  apresentação, composição, pós-processamento nem sincronização Vulkan neste estado.
+- O trabalho de GPU igual nos dois estados (7.230 draws/frame após normalização) é do **title
+  screen animando** (fundo/partículas), não da cena 3D oculta — corrige também a leitura de que
+  "a cena renderiza por trás".
+
+O que permanece aberto mudou de pergunta: não é "por que a cena não chega ao swapchain", e sim
+**"o que o title screen aceita para avançar"** (press de cross chega ao guest e não avança —
+`try5`; chegar ao título em si é não-determinístico — `try2/3/4` sem input nenhum alternam
+título e cena). Detalhes e comandos em `docs/HANDOFF.md`.
+
+Verificador reproduzível: `python3 scripts/verify_bright_captures.py`.
+
+---
+
+## A leitura anterior (2026-11-01) — preservada, conclusão refutada pela captura
 
 ## A correção da correção
 

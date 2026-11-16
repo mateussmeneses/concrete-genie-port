@@ -16,7 +16,7 @@ class NativeSmokeTests(unittest.TestCase):
             for flag, expected in (("--help", "Usage: cg-runtime"),
                                    ("--audit-runtime", "Runtime audit PASS")):
                 with self.subTest(flag=flag):
-                    result = subprocess.run([str(run.RUNTIME), flag], cwd=data,
+                    result = subprocess.run([str(run.runtime_executable()), flag], cwd=data,
                                             env=run.runtime_environment(data, os.environ),
                                             capture_output=True, text=True, timeout=15)
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

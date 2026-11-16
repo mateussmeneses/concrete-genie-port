@@ -1,10 +1,42 @@
 # Matriz de testes
 
-Atualizado: 2026-11-01 UTC. Dump `CUSA11875`. **Há frames renderizados e uma cena 3D estável; não
-há cena jogável verificada** (sem pintura, áudio ou save/load observados).
-Evidências em `docs/evidence/`.
+Atualizado: 2026-11-09 UTC. Dump `CUSA11875`. **O estado `bright` foi capturado e identificado: é
+o title screen do jogo, presente no buffer guest e apresentado byte-idêntico em `output` — não é
+defeito de apresentação.** Há cena 3D estável quando o boot a alcança; **não há cena jogável
+verificada** (sem pintura, áudio ou save/load observados). Evidências em `docs/evidence/` e
+`.cg/audit/bright-fresh/`.
 
-## Mapa de estado por frame — instrumentação e resultado
+## Capturas do estado `bright` — a medição que faltava (2026-11-09)
+
+A linha anterior ("present congelado = defeito de apresentação") foi refutada por captura. Os
+dumps do estado branco mostram o **title screen** ("Press ✕") em `display` e `output`
+byte-idênticos; o ramo `upscaled`/`DisplayOverride` nunca é tomado (`Display: host buffer` com
+zero ocorrências). Trabalho de GPU igual nos dois estados = 7.230 draws/frame **normalizados**
+(divididos pelo intervalo de `GOW3_FRAME_MAP_EVERY`), agora atribuído à animação do próprio
+título.
+
+| Fonte | display==output | SHA-256 | Estado |
+|---|---|---|---|
+| `pbc`/`paintc`/`p2c` (antigas) | sim (14 arquivos) | `7aaff933c47fa13f` | title screen |
+| `bright-fresh/try1` (nova, isolada) | sim (3 pares) | `7aaff933c47fa13f` | title screen |
+| `bright-fresh/try6-presscap` (nova) | sim (3 pares) | `7aaff933c47fa13f` | title screen |
+| `g1` (controle scene) | sim | `0577a3c27ff01bbc` | cena 3D |
+
+| Execução nova | Input | Desfecho |
+|---|---|---|
+| `try1` | cross desde a leitura #1 | título |
+| `try2` | nenhum | título |
+| `try3` | nenhum | **cena direto** (1561..12781) |
+| `try4` | nenhum | **cena direto** (1501..12841) |
+| `try5` | cross ancorado no `bright` (frame ~1801, confirmado `buttons=0x4000`) | título não avança |
+
+Ferramentas: `scripts/capture_bright_run.py` (runner com manifesto/perfil isolado/saída
+antecipada), `scripts/title_press_test.py`, `scripts/verify_bright_captures.py`,
+`scripts/compare_bright_captures.py`, `scripts/raw_to_png.py`,
+`scripts/make_runtime_bundle.py` (bundle de DLLs ffmpeg ABI-62; corre o runtime em máquinas com
+msys2 atualizado). Suíte Python: **102/102 OK** após `run.py`/`test_native.py` usarem o bundle.
+
+## Mapa de estado por frame — instrumentação e resultado (2026-11-01, leitura da época)
 
 Registro novo, `GOW3_FRAME_MAP=1`, amostra a grade de luminância 3×3 da imagem final e os draws
 desde a amostra anterior. `scripts/frame_states.py` lê o log e imprime as faixas de estado.
